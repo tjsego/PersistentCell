@@ -1,0 +1,46 @@
+{
+  "buffer": {
+    "description":"Minimum distance between cell centroid and spatial domain boundary. Simulation stops when this criterion is no longer satisfied.",
+    "type": "number"
+  },
+  "cpm_area_c": {
+    "description": "Cellular Potts model area constraint coefficient; required for CPM methods. A cell is initialized with this area.",
+    "type": "number"
+  },
+  "cpm_area_v":  {
+    "description": "Cellular Potts model area constraint value; required for CPM methods.",
+    "type": "number"
+  },
+  "cpm_contact_c": {
+    "description": "Cellular Potts model contact energy cell-medium coefficient; required for CPM methods.",
+    "type": "number"
+  },
+  "cpm_contact_n":  {
+    "description": "Cellular Potts model contact energy neighborhood order; required for CPM methods.",
+    "type": "number"
+  },
+  "len_1": {
+    "description": "Spatial domain length along the first spatial dimension. A cell is initialized with a centroid halfway along this length in the first dimension.",
+    "type": "number"
+  },
+  "len_2":  {
+    "description": "Spatial domain length along the second spatial dimension. A cell is initialized with a centroid halfway along this length in the second dimension.",
+    "type": "number"
+  },
+  "max_time": {
+    "description": "Maximum simulation time.",
+    "type": "number"
+  },
+  "method":  {
+    "description": "Methodology label; one of those defined in supported methods.",
+    "type": "string"
+  },
+  "model": {
+    "description": "Persistent random walk model label; one of those defined in supported models.",
+    "type": "string"
+  },
+  "model_args":  {
+    "description": "Persistent random walk model parameters; empty if none required.",
+    "type": "array"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "com_1": {
+    "description": "Centroid positions along first spatial dimension",
+    "type": "array",
+    "items": {
+      "type": "number"
+    }
+  },
+  "com_2": {
+    "description": "Centroid positions along second spatial dimension",
+    "type": "array",
+    "items": {
+      "type": "number"
+    }
+  },
+  "time": {
+    "description": "Simulation times",
+    "type": "array",
+    "items": {
+      "type": "number"
+    }
+  }
+}
