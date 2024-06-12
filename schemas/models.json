@@ -10,5 +10,9 @@
   "MODEL002": {
     "method": "CPM",
     "description": "Equation 3 in 10.1007/978-3-7643-8123-3_7"
+  },
+  "MODEL003": {
+    "method": "CPM",
+    "description": "Constant persistence as implemented by ExternalPotentialPlugin in CompuCell3D"
   }
 }
