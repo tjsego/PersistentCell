@@ -1,0 +1,20 @@
+{
+    "model": {
+        "cpm_area_c": 36,
+        "cpm_area_v": 2.0,
+        "len_1": 100,
+        "len_2": 100,
+        "buffer": 20,
+        "cpm_nbs_n": 2,
+        "cpm_contact_c": 10.0,
+        "cpm_contact_n": 2,
+        "max_time": 100000,
+        "model": "MODEL003",
+        "model_args": [-1.0, 0.0]
+    },
+    "cc3d": {
+        "num_sims": 100,
+        "output_name": "persistent_constant",
+        "output_per": 10
+    }
+}
