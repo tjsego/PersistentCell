@@ -8,6 +8,7 @@ Simulation specification schema
 | cpm_area_v    | number   | Cellular Potts model area constraint value; required for CPM methods.                                                                              |
 | cpm_contact_c | number   | Cellular Potts model contact energy cell-medium coefficient; required for CPM methods.                                                             |
 | cpm_contact_n | number   | Cellular Potts model contact energy neighborhood order; required for CPM methods.                                                                  |
+| cpm_nbs_n     | number   | Cellular Potts model copy attempt neighbor order; required for CPM methods.                                                                        |
 | len_1         | number   | Spatial domain length along the first spatial dimension. A cell is initialized with a centroid halfway along this length in the first dimension.   |
 | len_2         | number   | Spatial domain length along the second spatial dimension. A cell is initialized with a centroid halfway along this length in the second dimension. |
 | max_time      | number   | Maximum simulation time.                                                                                                                           |

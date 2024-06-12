@@ -15,15 +15,19 @@
     "description": "Cellular Potts model contact energy cell-medium coefficient; required for CPM methods.",
     "type": "number"
   },
-  "cpm_contact_n":  {
+  "cpm_contact_n": {
     "description": "Cellular Potts model contact energy neighborhood order; required for CPM methods.",
+    "type": "number"
+  },
+  "cpm_nbs_n": {
+    "description": "Cellular Potts model copy attempt neighbor order; required for CPM methods.",
     "type": "number"
   },
   "len_1": {
     "description": "Spatial domain length along the first spatial dimension. A cell is initialized with a centroid halfway along this length in the first dimension.",
     "type": "number"
   },
-  "len_2":  {
+  "len_2": {
     "description": "Spatial domain length along the second spatial dimension. A cell is initialized with a centroid halfway along this length in the second dimension.",
     "type": "number"
   },
@@ -31,7 +35,7 @@
     "description": "Maximum simulation time.",
     "type": "number"
   },
-  "method":  {
+  "method": {
     "description": "Methodology label; one of those defined in supported methods.",
     "type": "string"
   },
@@ -39,7 +43,7 @@
     "description": "Persistent random walk model label; one of those defined in supported models.",
     "type": "string"
   },
-  "model_args":  {
+  "model_args": {
     "description": "Persistent random walk model parameters; empty if none required.",
     "type": "array"
   }
