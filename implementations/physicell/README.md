@@ -1,4 +1,4 @@
-# pc_persistent_cell
+# PersistentCell reproducibility testing for PhysiCell
 
 **Versions:** PhysiCell 1.14.0-RC
 
@@ -11,17 +11,13 @@ This model has the following relevant edits to C++:
 * `main.cpp`:
   - stop execution when the cell's x-pos > `max_x` (in User Params)
   - comment out call to `microenvironment.simulate_diffusion_decay` to speed up sim
-* `custom_modules/custom.cpp`:
+* `custom_modules/custom.cpp : create_cell_types()`:
 ```
-      cell_defaults.functions.update_migration_bias = custom_cell_motility;
-  
-std::vector<double> ctype1_direction {1.0, 0.0, 0.0};
-void custom_cell_motility( Cell* pCell, Phenotype& phenotype, double dt )
-{
-    phenotype.motility.migration_bias_direction = ctype1_direction;	
-    // normalize( &( phenotype.motility.migration_bias_direction ) );			
-    return; 
-}
+    SeedRandom();    // uses  std::chrono::system_clock::now().time_since_epoch().count();
+
+    // cell_defaults.functions.update_migration_bias = custom_cell_motility;  //rwh
+    std::vector<double> ctype1_direction {1.0, 0.0, 0.0};
+    cell_defaults.phenotype.motility.migration_bias_direction = ctype1_direction;
 ```
 
 ## Run in the Studio
