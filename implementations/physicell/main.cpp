@@ -92,21 +92,30 @@ int main( int argc, char* argv[] )
 	// load and parse settings file(s)
 	
 	bool XML_status = false; 
-	int run_num = 1; 
+	// int run_num = 1; 
 	char copy_command [1024]; 
+    int num_runs = 2;
+
+    std::cout << "-------- argc= " << argc << std::endl;
+    if (argc < 3)
+    {
+        std::cout << "Usage: " << argv[0] << " <config file>  <num_runs>" << std::endl;
+        exit(-1);
+    }
 	if( argc > 1 )
 	{
 		XML_status = load_PhysiCell_config_file( argv[1] ); 
 		sprintf( copy_command , "cp %s %s" , argv[1] , PhysiCell_settings.folder.c_str() ); 
 
-		run_num = std::stoi(argv[2]); 
-        std::cout << "-------- run_num= " << run_num << std::endl;
+		num_runs = std::stoi(argv[2]); 
+        std::cout << "-------- num_runs= " << num_runs << std::endl;
 	}
-	else
-	{
-		XML_status = load_PhysiCell_config_file( "./config/PhysiCell_settings.xml" );
-		sprintf( copy_command , "cp ./config/PhysiCell_settings.xml %s" , PhysiCell_settings.folder.c_str() ); 
-	}
+	// else
+	// {
+	// 	XML_status = load_PhysiCell_config_file( "./config/PhysiCell_settings.xml" );
+	// 	sprintf( copy_command , "cp ./config/PhysiCell_settings.xml %s" , PhysiCell_settings.folder.c_str() ); 
+	// }
+
 	if( !XML_status )
 	{ exit(-1); }
 	
@@ -194,7 +203,8 @@ int main( int argc, char* argv[] )
     // std::string 
     // outFile << path_filename.rdbuf();
     char path_filename [1024]; 
-	sprintf( path_filename , "path_%03d.mat" , run_num ); 
+	// sprintf( path_filename , "path_%03d.mat" , run_num ); 
+	sprintf( path_filename , "paths_all.mat"); 
     // int size_of_each_datum = cell_data_size;
 	// int number_of_data_entries = (*all_cells).size();  
     // double dTemp; 
@@ -203,8 +213,23 @@ int main( int argc, char* argv[] )
 
     std::vector<double> xvals;
     std::vector<double> yvals;
+    // int num_runs = 8;
+    // num_runs = 2;
 	try 
-	{		
+	{
+        for (int irun=0; irun<num_runs; irun++)
+        {
+            std::cout << "\n\n-------------------------- doing irun= " << irun << std::endl;
+	    SeedRandom();  
+		PhysiCell_globals.current_time = 0.0;
+		PhysiCell_globals.next_full_save_time = PhysiCell_settings.SVG_save_interval;  // from .xml
+		PhysiCell_globals.next_SVG_save_time = PhysiCell_settings.SVG_save_interval;  // from .xml
+        // next_mech_save_time = PhysiCell::mechanics_dt;
+        // next_mech_save_time = 30.0;
+        // next_mech_save_time = PhysiCell_settings.SVG_save_interval;
+        (*all_cells)[0]->position[0] = 50.0;
+        (*all_cells)[0]->position[1] = 0.0;
+
 		while( PhysiCell_globals.current_time < PhysiCell_settings.max_time + 0.1*diffusion_dt )
 		{
 			// save data if it's time. 
@@ -244,6 +269,7 @@ int main( int argc, char* argv[] )
 			if( fabs( PhysiCell_globals.current_time - next_mech_save_time  ) < 0.01 * diffusion_dt )
 			{
                 next_mech_save_time  += PhysiCell::mechanics_dt;
+                // next_mech_save_time  += PhysiCell_settings.SVG_save_interval;
                 // next_mech_save_time  += PhysiCell_globals.next_SVG_save_time;
                 std::cout << "t="<<PhysiCell_globals.current_time <<" : x= "<< ((*all_cells)[0]->position[0])<<", y= "<<((*all_cells)[0]->position[1]) << std::endl;
 
@@ -266,9 +292,15 @@ int main( int argc, char* argv[] )
             if ((*all_cells)[0]->position[0] > max_x)
             {
                 // exit(-1);
+                std::cout << (*all_cells)[0]->position[0] << " > max_x =" <<max_x<< " ; break!!!\n";
+                xvals.push_back(-99.0);
+                yvals.push_back(-99.0);
                 break;
             }
 		}
+		}
+        xvals.push_back(-99.0);
+        yvals.push_back(-99.0);
 
         // ------ rwh ----------
         // int size_of_each_datum = 8;
