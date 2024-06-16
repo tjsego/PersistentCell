@@ -31,3 +31,13 @@ We provide a slightly customized version of the Studio in this repo. Customizati
 python studio/bin/studio.py -c p_motion.xml
 ```
 You can use `File -> Save user project` (or `Load user project`) to save/load different sets of params.
+
+## Run N sims at command line
+```
+$ project p_motion_brief.xml 50
+$ python plot_pos.py
+```
+
+<img src="./images/bias_07_runs_50.png" width="40%"> 
+
+
