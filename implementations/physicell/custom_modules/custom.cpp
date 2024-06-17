@@ -70,8 +70,8 @@
 void create_cell_types( void )
 {
 	// set the random seed 
-	// SeedRandom( parameters.ints("random_seed") );  
-	SeedRandom();  
+	SeedRandom( parameters.ints("random_seed") );  
+	// SeedRandom();    // uses  std::chrono::system_clock::now().time_since_epoch().count();
 	
 	/* 
 	   Put any modifications to default cell definition here if you 
@@ -203,16 +203,16 @@ void setup_tissue( void )
 	return; 
 }
 
-std::vector<double> ctype1_direction {1.0, 0.0, 0.0};
+// std::vector<double> ctype1_direction {1.0, 0.0, 0.0};
 
-void custom_cell_motility( Cell* pCell, Phenotype& phenotype, double dt )
-{
-    // migration_bias_direction = {1.,0.,0.};
+// void custom_cell_motility( Cell* pCell, Phenotype& phenotype, double dt )
+// {
+//     // migration_bias_direction = {1.,0.,0.};
 
-    phenotype.motility.migration_bias_direction = ctype1_direction;	
-		// normalize( &( phenotype.motility.migration_bias_direction ) );			
-	return; 
-}
+//     phenotype.motility.migration_bias_direction = ctype1_direction;	
+// 		// normalize( &( phenotype.motility.migration_bias_direction ) );			
+// 	return; 
+// }
 
 std::vector<std::string> my_coloring_function( Cell* pCell )
 { return paint_by_number_cell_coloring(pCell); }

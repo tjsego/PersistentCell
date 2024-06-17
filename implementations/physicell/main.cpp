@@ -72,10 +72,6 @@
 #include <cmath>
 #include <omp.h>
 #include <fstream>
-#include <sstream>      // std::stringstream
-#include <iomanip>
-#include <string>
-
 
 #include "./core/PhysiCell.h"
 #include "./modules/PhysiCell_standard_modules.h" 
@@ -92,30 +88,17 @@ int main( int argc, char* argv[] )
 	// load and parse settings file(s)
 	
 	bool XML_status = false; 
-	// int run_num = 1; 
 	char copy_command [1024]; 
-    int num_runs = 2;
-
-    std::cout << "-------- argc= " << argc << std::endl;
-    if (argc < 3)
-    {
-        std::cout << "Usage: " << argv[0] << " <config file>  <num_runs>" << std::endl;
-        exit(-1);
-    }
 	if( argc > 1 )
 	{
 		XML_status = load_PhysiCell_config_file( argv[1] ); 
 		sprintf( copy_command , "cp %s %s" , argv[1] , PhysiCell_settings.folder.c_str() ); 
-
-		num_runs = std::stoi(argv[2]); 
-        std::cout << "-------- num_runs= " << num_runs << std::endl;
 	}
-	// else
-	// {
-	// 	XML_status = load_PhysiCell_config_file( "./config/PhysiCell_settings.xml" );
-	// 	sprintf( copy_command , "cp ./config/PhysiCell_settings.xml %s" , PhysiCell_settings.folder.c_str() ); 
-	// }
-
+	else
+	{
+		XML_status = load_PhysiCell_config_file( "./config/PhysiCell_settings.xml" );
+		sprintf( copy_command , "cp ./config/PhysiCell_settings.xml %s" , PhysiCell_settings.folder.c_str() ); 
+	}
 	if( !XML_status )
 	{ exit(-1); }
 	
@@ -191,45 +174,10 @@ int main( int argc, char* argv[] )
 		report_file<<"simulated time\tnum cells\tnum division\tnum death\twall time"<<std::endl;
 	}
 	
-    double max_x = parameters.doubles("max_x");
 	// main loop 
 	
-    double next_mech_save_time = PhysiCell::mechanics_dt;
-    // double next_mech_save_time = PhysiCell_globals.next_SVG_save_time;
-    // int run_num = 1;
-    // std::stringstream  path_filename;
-    // path_filename << "path_" << std::setw(5) << std::setfill('0') << run_num << ".mat";
-    // std::ofstream file(path_filename);
-    // std::string 
-    // outFile << path_filename.rdbuf();
-    char path_filename [1024]; 
-	// sprintf( path_filename , "path_%03d.mat" , run_num ); 
-	sprintf( path_filename , "paths_all.mat"); 
-    // int size_of_each_datum = cell_data_size;
-	// int number_of_data_entries = (*all_cells).size();  
-    // double dTemp; 
-    // dTemp = (double) pCell->ID;
-    // std::fwrite( &( dTemp ) , sizeof(double) , 1 , fp ); 
-
-    std::vector<double> xvals;
-    std::vector<double> yvals;
-    // int num_runs = 8;
-    // num_runs = 2;
 	try 
-	{
-        for (int irun=0; irun<num_runs; irun++)
-        {
-            std::cout << "\n\n-------------------------- doing irun= " << irun << std::endl;
-	    SeedRandom();  
-		PhysiCell_globals.current_time = 0.0;
-		PhysiCell_globals.next_full_save_time = PhysiCell_settings.SVG_save_interval;  // from .xml
-		PhysiCell_globals.next_SVG_save_time = PhysiCell_settings.SVG_save_interval;  // from .xml
-        // next_mech_save_time = PhysiCell::mechanics_dt;
-        // next_mech_save_time = 30.0;
-        // next_mech_save_time = PhysiCell_settings.SVG_save_interval;
-        (*all_cells)[0]->position[0] = 50.0;
-        (*all_cells)[0]->position[1] = 0.0;
-
+	{		
 		while( PhysiCell_globals.current_time < PhysiCell_settings.max_time + 0.1*diffusion_dt )
 		{
 			// save data if it's time. 
@@ -265,20 +213,8 @@ int main( int argc, char* argv[] )
 				}
 			}
 
-            // rwh: custom for single cell persistence migration
-			if( fabs( PhysiCell_globals.current_time - next_mech_save_time  ) < 0.01 * diffusion_dt )
-			{
-                next_mech_save_time  += PhysiCell::mechanics_dt;
-                // next_mech_save_time  += PhysiCell_settings.SVG_save_interval;
-                // next_mech_save_time  += PhysiCell_globals.next_SVG_save_time;
-                std::cout << "t="<<PhysiCell_globals.current_time <<" : x= "<< ((*all_cells)[0]->position[0])<<", y= "<<((*all_cells)[0]->position[1]) << std::endl;
-
-                xvals.push_back(((*all_cells)[0]->position[0]));
-                yvals.push_back(((*all_cells)[0]->position[1]));
-			}
-
 			// update the microenvironment
-			// microenvironment.simulate_diffusion_decay( diffusion_dt );  //rwh
+			microenvironment.simulate_diffusion_decay( diffusion_dt );
 			
 			// run PhysiCell 
 			((Cell_Container *)microenvironment.agent_container)->update_all_cells( PhysiCell_globals.current_time );
@@ -288,47 +224,8 @@ int main( int argc, char* argv[] )
 			*/
 			
 			PhysiCell_globals.current_time += diffusion_dt;
-
-            if ((*all_cells)[0]->position[0] > max_x)
-            {
-                // exit(-1);
-                std::cout << (*all_cells)[0]->position[0] << " > max_x =" <<max_x<< " ; break!!!\n";
-                xvals.push_back(-99.0);
-                yvals.push_back(-99.0);
-                break;
-            }
 		}
-		}
-        xvals.push_back(-99.0);
-        yvals.push_back(-99.0);
-
-        // ------ rwh ----------
-        // int size_of_each_datum = 8;
-        int ncols = 2;
-        // int number_of_data_entries = xvals.size();  
-        int nrows = xvals.size();  
-        std::cout << "main.cpp: -------- ncols (for .mat) = " << ncols << std::endl; 
-        FILE* fp = write_matlab_header( nrows, ncols,  path_filename, "cell_pos" );  
-        if( fp == NULL )
-        { 
-            std::cout << std::endl << "main.cpp: Error: Failed to open " << filename << " for MAT writing." << std::endl << std::endl; 
-
-            std::cout << std::endl << "Error: We're not writing data like we expect. " << std::endl
-            << "Check to make sure your save directory exists. " << std::endl << std::endl
-            << "I'm going to exit with a crash code of -1 now until " << std::endl 
-            << "you fix your directory. Sorry!" << std::endl << std::endl; 
-            exit(-1); 
-        } 
-        // std::fwrite( (char*)&xvals[0], sizeof(double), xvals.size() , fp ); 
-        // std::fwrite( (char*)&yvals[0], sizeof(double), yvals.size() , fp ); 
-        // std::fwrite( xvals.data(), sizeof(double), xvals.size() , fp ); 
-        // std::fwrite( yvals.data(), sizeof(double), yvals.size() , fp ); 
-        std::fwrite( xvals.data(), sizeof(char), 8*xvals.size() , fp ); 
-        std::fwrite( yvals.data(), sizeof(char), 8*yvals.size() , fp ); 
-        std::fclose(fp); 
 		
-
-
 		if( PhysiCell_settings.enable_legacy_saves == true )
 		{			
 			log_output(PhysiCell_globals.current_time, PhysiCell_globals.full_output_index, microenvironment, report_file);

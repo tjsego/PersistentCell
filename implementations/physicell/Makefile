@@ -76,6 +76,10 @@ name:
 	@echo "Executable name is" $(PROGRAM_NAME)
 	@echo ""
 
+multiruns: main-multiruns.cpp $(ALL_OBJECTS)
+	$(COMPILE_COMMAND) -o project_multiruns $(ALL_OBJECTS) custom_modules/custom-multiruns.cpp main-multiruns.cpp 
+	echo project_multiruns
+
 # PhysiCell core components	
 
 PhysiCell_phenotype.o: ./core/PhysiCell_phenotype.cpp
