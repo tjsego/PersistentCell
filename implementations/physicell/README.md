@@ -34,10 +34,10 @@ You can use `File -> Save user project` (or `Load user project`) to save/load di
 
 ## Run N sims at command line
 ```
-$ project p_motion_brief.xml 50
+$ project p_motion.xml 50   # run 50 sims (stochastic due to PRNG seed)
 $ python plot_pos.py
 ```
 
-<img src="./images/bias_07_runs_50.png" width="40%"> 
+<img src="./images/bias_07_runs_50.png" width="40%"> <img src="./images/bias_08_runs_50.png" width="40%"> 
 
 
