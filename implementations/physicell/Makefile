@@ -64,6 +64,7 @@ pugixml_OBJECTS := pugixml.o
 
 PhysiCell_OBJECTS := $(BioFVM_OBJECTS)  $(pugixml_OBJECTS) $(PhysiCell_core_OBJECTS) $(PhysiCell_module_OBJECTS)
 ALL_OBJECTS := $(PhysiCell_OBJECTS) $(PhysiCell_custom_module_OBJECTS)
+CORE_OBJECTS := $(PhysiCell_OBJECTS) 
 
 # compile the project 
 
@@ -77,7 +78,7 @@ name:
 	@echo ""
 
 multiruns: main-multiruns.cpp $(ALL_OBJECTS)
-	$(COMPILE_COMMAND) -o project_multiruns $(ALL_OBJECTS) custom_modules/custom-multiruns.cpp main-multiruns.cpp 
+	$(COMPILE_COMMAND) -o project_multiruns $(CORE_OBJECTS) custom_modules/custom_multiruns.cpp main_multiruns.cpp 
 	echo project_multiruns
 
 # PhysiCell core components	
