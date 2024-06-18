@@ -1,5 +1,18 @@
 import scipy
 import matplotlib.pyplot as plt
+import sys,string
+
+argc=len(sys.argv)
+print('argv=',sys.argv)
+# print('argv[0]=',sys.argv[0])
+
+if argc < 2:
+    print(f'Usage: {sys.argv[0]} <bias>')
+    sys.exit(-1)
+
+bias_str = sys.argv[1]
+print('bias_str=',bias_str)
+
 
 info_dict = {}
 xy = []
@@ -42,5 +55,5 @@ for idx in range(1,len(ix0)-1):
 plt.xlim([0, 1000])
 # plt.ylim([-100, 100])
 plt.ylim([-50, 50])
-plt.title("PhysiCell migration bias = 0.8")
+plt.title("PhysiCell migration bias = " + bias_str)
 plt.show()
