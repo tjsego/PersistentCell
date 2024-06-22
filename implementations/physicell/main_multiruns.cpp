@@ -95,6 +95,7 @@ int main( int argc, char* argv[] )
 	// int run_num = 1; 
 	char copy_command [1024]; 
     int num_runs = 2;
+	double migration_bias = 0.9; 
 
     std::cout << "-------- argc= " << argc << std::endl;
     if (argc < 3)
@@ -109,6 +110,9 @@ int main( int argc, char* argv[] )
 
 		num_runs = std::stoi(argv[2]); 
         std::cout << "-------- num_runs= " << num_runs << std::endl;
+
+		migration_bias = std::stof(argv[3]); 
+        std::cout << "-------- migration_bias= " << migration_bias << std::endl;
 	}
 	// else
 	// {
@@ -140,7 +144,7 @@ int main( int argc, char* argv[] )
 	
 	/* Users typically start modifying here. START USERMODS */ 
 	
-	create_cell_types();
+	create_cell_types_bias(migration_bias);
 	
 	setup_tissue();
 
@@ -196,6 +200,8 @@ int main( int argc, char* argv[] )
 	
     double next_mech_save_time = PhysiCell::mechanics_dt;
     // double next_mech_save_time = PhysiCell_globals.next_SVG_save_time;
+    // double next_mech_save_time = PhysiCell_settings.SVG_save_interval;
+
     // int run_num = 1;
     // std::stringstream  path_filename;
     // path_filename << "path_" << std::setw(5) << std::setfill('0') << run_num << ".mat";
@@ -217,6 +223,7 @@ int main( int argc, char* argv[] )
     // num_runs = 2;
 	try 
 	{
+        int idx_xy = 0;
         for (int irun=0; irun<num_runs; irun++)
         {
             std::cout << "\n\n-------------------------- doing irun= " << irun << std::endl;
@@ -224,11 +231,14 @@ int main( int argc, char* argv[] )
 		PhysiCell_globals.current_time = 0.0;
 		PhysiCell_globals.next_full_save_time = PhysiCell_settings.SVG_save_interval;  // from .xml
 		PhysiCell_globals.next_SVG_save_time = PhysiCell_settings.SVG_save_interval;  // from .xml
-        // next_mech_save_time = PhysiCell::mechanics_dt;
+
+        // ---- Needs to match that below!
+        next_mech_save_time = PhysiCell::mechanics_dt;
         // next_mech_save_time = 30.0;
         // next_mech_save_time = PhysiCell_settings.SVG_save_interval;
         (*all_cells)[0]->position[0] = 50.0;
         (*all_cells)[0]->position[1] = 0.0;
+            std::cout << "    reset cell pos= " << (*all_cells)[0]->position[0] << ", " << (*all_cells)[0]->position[1] << std::endl;
 
 		while( PhysiCell_globals.current_time < PhysiCell_settings.max_time + 0.1*diffusion_dt )
 		{
@@ -268,11 +278,14 @@ int main( int argc, char* argv[] )
             // rwh: custom for single cell persistence migration
 			if( fabs( PhysiCell_globals.current_time - next_mech_save_time  ) < 0.01 * diffusion_dt )
 			{
+                // std::cout << "--- x = " << (*all_cells)[0]->position[0] << std::endl;
                 next_mech_save_time  += PhysiCell::mechanics_dt;
                 // next_mech_save_time  += PhysiCell_settings.SVG_save_interval;
                 // next_mech_save_time  += PhysiCell_globals.next_SVG_save_time;
                 // std::cout << "main: t="<<PhysiCell_globals.current_time <<" : x= "<< ((*all_cells)[0]->position[0])<<", y= "<<((*all_cells)[0]->position[1]) << std::endl;
 
+                idx_xy++;
+                // std::cout << "main: t="<<PhysiCell_globals.current_time <<" : x= "<< ((*all_cells)[0]->position[0])<<", y= "<<((*all_cells)[0]->position[1]) << ", idx_xy= " << idx_xy << std::endl;
                 xvals.push_back(((*all_cells)[0]->position[0]));
                 yvals.push_back(((*all_cells)[0]->position[1]));
 			}
@@ -292,13 +305,22 @@ int main( int argc, char* argv[] )
             if ((*all_cells)[0]->position[0] > max_x)
             {
                 // exit(-1);
-                std::cout << (*all_cells)[0]->position[0] << " > max_x =" <<max_x<< " ; break!!!\n";
+                // std::cout << (*all_cells)[0]->position[0] << " > max_x =" <<max_x<< " ; break!!!\n";
                 xvals.push_back(-99.0);
                 yvals.push_back(-99.0);
+                // std::cout << "main -- insert -99s: t="<<PhysiCell_globals.current_time <<" : x= "<< ((*all_cells)[0]->position[0])<<", y= "<<((*all_cells)[0]->position[1]) << ", idx_xy= " << idx_xy << std::endl;
+
+                (*all_cells)[0]->get_container()->last_mechanics_time = 0.0;
+
                 break;
             }
 		}
 		}
+
+        xvals.push_back(PhysiCell_globals.current_time);
+        yvals.push_back(PhysiCell_globals.current_time);
+        std::cout << "main.cpp: -------- final time= " << PhysiCell_globals.current_time << std::endl; 
+
         xvals.push_back(-99.0);
         yvals.push_back(-99.0);
 
@@ -307,7 +329,7 @@ int main( int argc, char* argv[] )
         int ncols = 2;
         // int number_of_data_entries = xvals.size();  
         int nrows = xvals.size();  
-        std::cout << "main.cpp: -------- ncols (for .mat) = " << ncols << std::endl; 
+        std::cout << "main.cpp: -------- nrows (for .mat) = " << nrows << std::endl; 
         FILE* fp = write_matlab_header( nrows, ncols,  path_filename, "cell_pos" );  
         if( fp == NULL )
         { 

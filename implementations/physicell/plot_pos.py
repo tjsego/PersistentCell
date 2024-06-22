@@ -53,7 +53,10 @@ for idx in range(1,len(ix0)-1):
 # print(f"plot from {istart} to {iend} --> del={iend-istart}")
 # plt.plot(xy[istart:iend,0], xy[istart:iend,1],'gray',linewidth=0.5)
 plt.xlim([0, 1000])
-# plt.ylim([-100, 100])
-plt.ylim([-50, 50])
-plt.title("PhysiCell migration bias = " + bias_str)
+plt.ylim([-100, 100])
+# plt.ylim([-80, 80])
+max_idx = xy.shape[0]
+end_time = xy[max_idx-2,0]
+print("end time = ",end_time)
+plt.title(f'PhysiCell migration: speed,persistence,bias= 2, 1, {bias_str}; T={end_time:.2f}')
 plt.show()

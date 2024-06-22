@@ -73,6 +73,7 @@ using namespace PhysiCell;
 
 // setup functions to help us along 
 
+void create_cell_types_bias( double );
 void create_cell_types( void );
 void setup_tissue( void ); 
 
