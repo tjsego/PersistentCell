@@ -227,7 +227,7 @@ int main( int argc, char* argv[] )
         for (int irun=0; irun<num_runs; irun++)
         {
             std::cout << "\n\n-------------------------- doing irun= " << irun << std::endl;
-	    SeedRandom();  
+	    SeedRandom();    // rwh: use clock for PRNG seed
 		PhysiCell_globals.current_time = 0.0;
 		PhysiCell_globals.next_full_save_time = PhysiCell_settings.SVG_save_interval;  // from .xml
 		PhysiCell_globals.next_SVG_save_time = PhysiCell_settings.SVG_save_interval;  // from .xml

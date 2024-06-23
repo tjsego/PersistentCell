@@ -67,7 +67,7 @@
 
 #include "./custom.h"
 
-void create_cell_types_bias( double bias=0.75 )
+void create_cell_types( void )
 {
 	// set the random seed 
 	SeedRandom( parameters.ints("random_seed") );  

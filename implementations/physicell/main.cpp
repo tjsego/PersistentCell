@@ -173,11 +173,21 @@ int main( int argc, char* argv[] )
 		report_file.open(filename); 	// create the data log file 
 		report_file<<"simulated time\tnum cells\tnum division\tnum death\twall time"<<std::endl;
 	}
-	
+
+
+    // --------  rwh: custom for plotting cell path
+    char path_filename [1024]; 
+	sprintf( path_filename , "path_1cell.mat"); 
+    std::vector<double> xvals;
+    std::vector<double> yvals;
+    int idx_xy = 0;
+    double next_mech_save_time = PhysiCell::mechanics_dt;
+    double max_x = parameters.doubles("max_x");
+
 	// main loop 
 	
 	try 
-	{		
+	{
 		while( PhysiCell_globals.current_time < PhysiCell_settings.max_time + 0.1*diffusion_dt )
 		{
 			// save data if it's time. 
@@ -213,8 +223,23 @@ int main( int argc, char* argv[] )
 				}
 			}
 
+            // ---------  rwh: custom cell path (for single cell persistence migration)
+			if( fabs( PhysiCell_globals.current_time - next_mech_save_time  ) < 0.01 * diffusion_dt )
+			{
+                // std::cout << "--- x = " << (*all_cells)[0]->position[0] << std::endl;
+                next_mech_save_time  += PhysiCell::mechanics_dt;
+                // next_mech_save_time  += PhysiCell_settings.SVG_save_interval;
+                // next_mech_save_time  += PhysiCell_globals.next_SVG_save_time;
+                // std::cout << "main: t="<<PhysiCell_globals.current_time <<" : x= "<< ((*all_cells)[0]->position[0])<<", y= "<<((*all_cells)[0]->position[1]) << std::endl;
+
+                idx_xy++;
+                // std::cout << "main: t="<<PhysiCell_globals.current_time <<" : x= "<< ((*all_cells)[0]->position[0])<<", y= "<<((*all_cells)[0]->position[1]) << ", idx_xy= " << idx_xy << std::endl;
+                xvals.push_back(((*all_cells)[0]->position[0]));
+                yvals.push_back(((*all_cells)[0]->position[1]));
+			}
+
 			// update the microenvironment
-			microenvironment.simulate_diffusion_decay( diffusion_dt );
+			// microenvironment.simulate_diffusion_decay( diffusion_dt );
 			
 			// run PhysiCell 
 			((Cell_Container *)microenvironment.agent_container)->update_all_cells( PhysiCell_globals.current_time );
@@ -224,6 +249,21 @@ int main( int argc, char* argv[] )
 			*/
 			
 			PhysiCell_globals.current_time += diffusion_dt;
+
+
+            // ------------- rwh: 
+            if ((*all_cells)[0]->position[0] > max_x)
+            {
+                // exit(-1);
+                // std::cout << (*all_cells)[0]->position[0] << " > max_x =" <<max_x<< " ; break!!!\n";
+                xvals.push_back(-99.0);
+                yvals.push_back(-99.0);
+                // std::cout << "main -- insert -99s: t="<<PhysiCell_globals.current_time <<" : x= "<< ((*all_cells)[0]->position[0])<<", y= "<<((*all_cells)[0]->position[1]) << ", idx_xy= " << idx_xy << std::endl;
+
+                (*all_cells)[0]->get_container()->last_mechanics_time = 0.0;
+
+                break;
+            }
 		}
 		
 		if( PhysiCell_settings.enable_legacy_saves == true )
@@ -236,6 +276,40 @@ int main( int argc, char* argv[] )
 	{ // reference to the base of a polymorphic object
 		std::cout << e.what(); // information from length_error printed
 	}
+
+
+        // -----------  rwh: - save x,y for cell path
+        xvals.push_back(PhysiCell_globals.current_time);
+        yvals.push_back(PhysiCell_globals.current_time);
+        std::cout << "main.cpp: -------- final time= " << PhysiCell_globals.current_time << std::endl; 
+
+        xvals.push_back(-99.0);
+        yvals.push_back(-99.0);
+
+        // ------ rwh ----------
+        // int size_of_each_datum = 8;
+        int ncols = 2;
+        // int number_of_data_entries = xvals.size();  
+        int nrows = xvals.size();  
+        std::cout << "main.cpp: -------- nrows (for .mat) = " << nrows << std::endl; 
+        FILE* fp = write_matlab_header( nrows, ncols,  path_filename, "cell_pos" );  
+        if( fp == NULL )
+        { 
+            std::cout << std::endl << "main.cpp: Error: Failed to open " << filename << " for MAT writing." << std::endl << std::endl; 
+
+            std::cout << std::endl << "Error: We're not writing data like we expect. " << std::endl
+            << "Check to make sure your save directory exists. " << std::endl << std::endl
+            << "I'm going to exit with a crash code of -1 now until " << std::endl 
+            << "you fix your directory. Sorry!" << std::endl << std::endl; 
+            exit(-1); 
+        } 
+        // std::fwrite( (char*)&xvals[0], sizeof(double), xvals.size() , fp ); 
+        // std::fwrite( (char*)&yvals[0], sizeof(double), yvals.size() , fp ); 
+        // std::fwrite( xvals.data(), sizeof(double), xvals.size() , fp ); 
+        // std::fwrite( yvals.data(), sizeof(double), yvals.size() , fp ); 
+        std::fwrite( xvals.data(), sizeof(char), 8*xvals.size() , fp ); 
+        std::fwrite( yvals.data(), sizeof(char), 8*yvals.size() , fp ); 
+        std::fclose(fp); 
 	
 	// save a final simulation snapshot 
 	
