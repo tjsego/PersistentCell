@@ -6,11 +6,13 @@ argc=len(sys.argv)
 print('argv=',sys.argv)
 # print('argv[0]=',sys.argv[0])
 
-if argc < 2:
-    print(f'Usage: {sys.argv[0]} <bias>')
+if argc < 4:
+    print(f'Usage: {sys.argv[0]} <speed> <persistence> <bias>')
     sys.exit(-1)
 
-bias_str = sys.argv[1]
+speed_str = sys.argv[1]
+persistence_str = sys.argv[2]
+bias_str = sys.argv[3]
 print('bias_str=',bias_str)
 
 
@@ -59,5 +61,6 @@ max_idx = xy.shape[0]
 end_time = xy[max_idx-2,0]
 print("end time = ",end_time)
 # plt.title(f'PhysiCell migration: speed,persistence,bias= 2, 0, {bias_str}; T={end_time:.2f}')
-plt.title(f'PhysiCell migration: speed,persistence,bias= 2, 1, {bias_str}; T={end_time:.2f}')
+# plt.title(f'PhysiCell migration: speed,persistence,bias= 2, 1, {bias_str}; T={end_time:.2f}')
+plt.title(f'PhysiCell migration: speed,persistence,bias= {speed_str}, {persistence_str}, {bias_str}')
 plt.show()
