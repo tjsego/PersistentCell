@@ -11,16 +11,16 @@
     "description": "Cellular Potts model area constraint value; required for CPM methods.",
     "type": "number"
   },
-  "cpm_contact_c": {
-    "description": "Cellular Potts model contact energy cell-medium coefficient; required for CPM methods.",
-    "type": "number"
-  },
-  "cpm_contact_n": {
-    "description": "Cellular Potts model contact energy neighborhood order; required for CPM methods.",
-    "type": "number"
-  },
   "cpm_nbs_n": {
     "description": "Cellular Potts model copy attempt neighbor order; required for CPM methods.",
+    "type": "number"
+  },
+  "cpm_perim_c": {
+    "description": "Cellular Potts model perimeter constraint coefficient; required for CPM methods. A cell is initialized with this area.",
+    "type": "number"
+  },
+  "cpm_perim_v": {
+    "description": "Cellular Potts model perimeter constraint value; required for CPM methods. A cell is initialized with this area.",
     "type": "number"
   },
   "len_1": {

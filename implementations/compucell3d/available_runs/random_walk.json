@@ -2,12 +2,12 @@
     "model": {
         "cpm_area_c": 36,
         "cpm_area_v": 2.0,
+        "cpm_perim_c": 20.0,
+        "cpm_perim_v": 2.0,
         "len_1": 100,
         "len_2": 100,
         "buffer": 20,
         "cpm_nbs_n": 2,
-        "cpm_contact_c": 10.0,
-        "cpm_contact_n": 2,
         "max_time": 100000,
         "model": "MODEL000",
         "model_args": []

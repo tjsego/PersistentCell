@@ -34,8 +34,8 @@ def create_specs(dim_1,
                  neighbor_order_potts, 
                  cell_area_target, 
                  cell_area_lm, 
-                 contact_lm, 
-                 contact_nbs_order,
+                 cell_perim_target,
+                 cell_perim_lm,
                  model_label, 
                  model_args):
     result = [
@@ -44,7 +44,7 @@ def create_specs(dim_1,
                       neighbor_order=neighbor_order_potts),
         pcs.CellTypePlugin(cell_type_name),
         pcs.VolumePlugin(pcs.VolumeEnergyParameter(cell_type_name, cell_area_target, cell_area_lm)),
-        pcs.ContactPlugin(contact_nbs_order, pcs.ContactEnergyParameter('Medium', cell_type_name, contact_lm)),
+        pcs.SurfacePlugin(pcs.SurfaceEnergyParameter(cell_type_name, cell_perim_target, cell_perim_lm)),
         pcs.CenterOfMassPlugin()
     ]
     result.extend(model_implementations[model_label](*model_args))
@@ -75,9 +75,9 @@ def model(cell_area_target,
           dim_1, 
           dim_2, 
           buffer, 
-          neighbor_order_potts, 
-          contact_lm,
-          contact_nbs_order,
+          neighbor_order_potts,
+          cell_perim_target,
+          cell_perim_lm,
           model_label,
           model_args):
     SimTrackingSteppable._cell_length_target = int(sqrt(cell_area_target))
@@ -87,8 +87,8 @@ def model(cell_area_target,
                         neighbor_order_potts,
                         cell_area_target,
                         cell_area_lm,
-                        contact_lm,
-                        contact_nbs_order,
+                        cell_perim_target,
+                        cell_perim_lm,
                         model_label,
                         model_args), SimTrackingSteppable
 
@@ -100,8 +100,8 @@ def from_json_data(spec_data: dict):
                  dim_2=int(spec_data['len_2']),
                  buffer=int(spec_data['buffer']),
                  neighbor_order_potts=int(spec_data['cpm_nbs_n']),
-                 contact_lm=float(spec_data['cpm_contact_c']),
-                 contact_nbs_order=int(spec_data['cpm_contact_n']),
+                 cell_perim_target=float(spec_data['cpm_perim_c']),
+                 cell_perim_lm=float(spec_data['cpm_perim_v']),
                  model_label=spec_data['model'],
                  model_args=spec_data['model_args'])
 

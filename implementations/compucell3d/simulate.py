@@ -143,6 +143,6 @@ def simulate(output_dir: str,
                 indent=4
             )
     
-    if not os.path.isdir(os.path.join(output_dir, screenshot_name)):
+    if not os.path.isfile(os.path.join(output_dir, screenshot_name)):
         with open(os.path.join(output_dir, screenshot_name), 'w') as f:
             json.dump(generate_screenshot_data(specs, steppable_type, field_names=field_names), f, indent=4)
