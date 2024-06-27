@@ -33,10 +33,11 @@ for idx in range(1, xy.shape[0]):
     # if xn < xn_m1:
     if xy[idx,0] == -99.0:
         # print(f'{xn} < {xn_m1}')
-        print(f'--- found -99 terminator token')
+        # print(f'--- found -99 terminator token')
         ix0.append(idx)
 
-print("ix0= ",ix0)
+# print("ix0= ",ix0)
+print("# runs= ",len(ix0)-2)
 istart = 0
 iend = ix0[1]
 print(f"plot from {istart} to {iend} --> del={iend-istart}")
@@ -47,7 +48,7 @@ for idx in range(1,len(ix0)-1):
     iend = ix0[idx+1]
     if istart == iend:
         break
-    print(f"plot from {istart} to {iend} --> del={iend-istart}")
+    # print(f"plot from {istart} to {iend} --> del={iend-istart}")
     plt.plot(xy[istart:iend,0], xy[istart:iend,1],'gray',linewidth=0.5)
 # plt.ylim((-100,100))
 # istart = iend
