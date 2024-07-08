@@ -1,8 +1,4 @@
 {
-  "buffer": {
-    "description":"Minimum distance between cell centroid and spatial domain boundary. Simulation stops when this criterion is no longer satisfied.",
-    "type": "number"
-  },
   "cpm_area_c": {
     "description": "Cellular Potts model area constraint coefficient; required for CPM methods. A cell is initialized with this area.",
     "type": "number"

@@ -28,30 +28,10 @@ def load_results(results_dir: str):
     return results_files_map, results_data
 
 
-def clean_results(results_data: Dict[int, Dict[str, np.ndarray]]):
-    min_steps = None
-    for v in results_data.values():
-        num_steps = v['time'].shape[0]
-        min_steps = num_steps if min_steps is None else min(min_steps, num_steps)
-
-    result = {}
-    for k, v in results_data.items():
-        result_k = {}
-        for kk, vv in v.items():
-            result_k[kk] = vv[:min_steps]
-        result[k] = result_k
-    return result, min_steps
-
-
-def format_ssr(results_data: Dict[int, Dict[str, np.ndarray]],
-               clean=False):
+def format_ssr(results_data: Dict[int, Dict[str, np.ndarray]]):
     sample_int = list(results_data.keys())[0]
-    
-    if not clean:
-        cleaned_data, min_steps = clean_results(results_data)
-    else:
-        cleaned_data = results_data
-        min_steps = results_data[sample_int]['time'].shape[0]
+
+    min_steps = results_data[sample_int]['time'].shape[0]
     
     num_reps = len(results_data.keys())
     results_names = list(results_data[sample_int])
@@ -59,9 +39,9 @@ def format_ssr(results_data: Dict[int, Dict[str, np.ndarray]],
 
     results_times = results_data[sample_int]['time']
     results = {name: np.ndarray((min_steps, num_reps), dtype=float) for name in results_names}
-    for i, rep_num in enumerate(cleaned_data.keys()):
+    for i, rep_num in enumerate(results_data.keys()):
         for name in results:
-            results[name][:, i] = cleaned_data[rep_num][name][:]
+            results[name][:, i] = results_data[rep_num][name][:]
 
     return num_reps, results_times, results
 
@@ -115,7 +95,6 @@ def aggregate_stats(results_dir: str,
                     output_dir: str,
                     export_ssr: bool,
                     export_figs: bool,
-                    render_clean: bool,
                     dpi=DEF_DPI,
                     rendered_names: List[str] = None,
                     figsize: Tuple[float, float] = None,
@@ -131,23 +110,15 @@ def aggregate_stats(results_dir: str,
     print('Output directory :', output_dir)
     print('Export SSR data  :', export_ssr)
     print('Export figures   :', export_figs)
-    if export_figs:
-        print('Render clean     :', render_clean)
-    else:
-        render_clean = False
 
     print('Loading results...')
     results = load_results(results_dir)[1]
-
-    if export_ssr or render_clean:
-        print('Cleaning data...')
-        results_clean, _ = clean_results(results)
 
     if export_ssr:
         print('Exporting ssr data...')
         ssr_fp = os.path.join(output_dir, 'ssr.json')
         print(f'\t{ssr_fp}')
-        num_reps, ssr_results_times, ssr_results = format_ssr(results_clean, True)
+        num_reps, ssr_results_times, ssr_results = format_ssr(results)
         with open(ssr_fp, 'w') as f:
             json.dump(
                 {
@@ -162,10 +133,6 @@ def aggregate_stats(results_dir: str,
     if export_figs:
         print('Exporting rendered data...')
         generate_plots(results, output_dir, name_prefix='raw', dpi=dpi, results_names=rendered_names, figsize=figsize, alpha=alpha, color=color)
-        
-        if render_clean:
-            print('Exporting rendered clean data...')
-            generate_plots(results_clean, output_dir, name_prefix='clean', dpi=dpi, results_names=rendered_names, figsize=figsize, alpha=alpha, color=color)
 
 
 class ArgParser(argparse.ArgumentParser):
@@ -196,12 +163,6 @@ class ArgParser(argparse.ArgumentParser):
                           required=False,
                           dest='export_figs',
                           help='Flag to export figures')
-        
-        self.add_argument('-c', '--export-clean',
-                          action='store_true',
-                          required=False,
-                          dest='render_clean',
-                          help='Flag to also export figures of clean data. Does nothing without exporting figures.')
         
         self.add_argument('-d', '--dpi',
                           type=int,
@@ -259,10 +220,6 @@ class ArgParser(argparse.ArgumentParser):
         return self.parsed_args.export_figs
 
     @property
-    def render_clean(self):
-        return self.parsed_args.render_clean
-
-    @property
     def dpi(self):
         return self.parsed_args.dpi
 
@@ -286,8 +243,7 @@ class ArgParser(argparse.ArgumentParser):
         return dict(results_dir=self.results_dir, 
                     output_dir=self.output_dir, 
                     export_ssr=self.export_ssr, 
-                    export_figs=self.export_figs, 
-                    render_clean=self.render_clean, 
+                    export_figs=self.export_figs,
                     dpi=self.dpi, 
                     rendered_names=self.rendered_names, 
                     figsize=self.figsize, 

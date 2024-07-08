@@ -1,7 +1,6 @@
 from cc3d.core import PyCoreSpecs as pcs
 import json
 from math import sqrt
-from simulate import TrackingSteppable
 
 cell_type_name = 'Cell'
 
@@ -39,8 +38,11 @@ def create_specs(dim_1,
                  model_label, 
                  model_args):
     result = [
+        pcs.Metadata(num_processors=1),
         pcs.PottsCore(dim_x=dim_1, 
-                      dim_y=dim_2, 
+                      dim_y=dim_2,
+                      boundary_x=pcs.POTTSBOUNDARYPERIODIC,
+                      boundary_y=pcs.POTTSBOUNDARYPERIODIC,
                       neighbor_order=neighbor_order_potts),
         pcs.CellTypePlugin(cell_type_name),
         pcs.VolumePlugin(pcs.VolumeEnergyParameter(cell_type_name, cell_area_target, cell_area_lm)),
@@ -51,37 +53,15 @@ def create_specs(dim_1,
     return result
 
 
-class SimTrackingSteppable(TrackingSteppable):
-    
-    _cell_type_name = cell_type_name
-    _cell_length_target = 0
-    _buffer = 0
-
-    @classmethod
-    def cell_type_name(cls) -> str:
-        return cls._cell_type_name
-
-    @classmethod
-    def cell_length_target(cls) -> int:
-        return cls._cell_length_target
-
-    @classmethod
-    def buffer(cls) -> int:
-        return cls._buffer
-
-
 def model(cell_area_target, 
           cell_area_lm, 
           dim_1, 
-          dim_2, 
-          buffer, 
+          dim_2,
           neighbor_order_potts,
           cell_perim_target,
           cell_perim_lm,
           model_label,
           model_args):
-    SimTrackingSteppable._cell_length_target = int(sqrt(cell_area_target))
-    SimTrackingSteppable._buffer = buffer
     return create_specs(dim_1, 
                         dim_2, 
                         neighbor_order_potts,
@@ -90,7 +70,7 @@ def model(cell_area_target,
                         cell_perim_target,
                         cell_perim_lm,
                         model_label,
-                        model_args), SimTrackingSteppable
+                        model_args), cell_type_name, int(sqrt(cell_area_target))
 
 
 def from_json_data(spec_data: dict):
@@ -98,7 +78,6 @@ def from_json_data(spec_data: dict):
                  cell_area_lm=int(spec_data['cpm_area_v']),
                  dim_1=int(spec_data['len_1']),
                  dim_2=int(spec_data['len_2']),
-                 buffer=int(spec_data['buffer']),
                  neighbor_order_potts=int(spec_data['cpm_nbs_n']),
                  cell_perim_target=float(spec_data['cpm_perim_c']),
                  cell_perim_lm=float(spec_data['cpm_perim_v']),

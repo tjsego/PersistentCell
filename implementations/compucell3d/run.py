@@ -20,15 +20,16 @@ def run(fp: str):
     output_per = int(cc3d_data['output_per'])
     screenshot_name = cc3d_data.get('screenshot_name', DEF_SCREENSHOT_NAME)
     
-    specs, steppable_type = from_json_data(model_data)
+    specs, cell_type_name, cell_length_target = from_json_data(model_data)
     
     simulate(output_dir=output_dir,
              num_sims=num_sims,
              output_per=output_per,
              screenshot_name=screenshot_name,
              specs=specs,
-             steppable_type=steppable_type,
-             max_steps=int(model_data['max_time']))
+             cell_type_name=cell_type_name,
+             cell_length_target=cell_length_target,
+             max_time=int(model_data['max_time']))
 
 
 class ArgParser(argparse.ArgumentParser):

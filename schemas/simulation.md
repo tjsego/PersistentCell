@@ -3,7 +3,6 @@ Simulation specification schema
 
 | Key         | Type     | Description                                                                                                                                        |
 |-------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------|
-| buffer      | number   | Minimum distance between cell centroid and spatial domain boundary. Simulation stops when this criterion is no longer satisfied.                   |
 | cpm_area_c  | number   | Cellular Potts model area constraint coefficient; required for CPM methods. A cell is initialized with this area.                                  | 
 | cpm_area_v  | number   | Cellular Potts model area constraint value; required for CPM methods.                                                                              |
 | cpm_nbs_n   | number   | Cellular Potts model copy attempt neighbor order; required for CPM methods.                                                                        |
