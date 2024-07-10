@@ -31,7 +31,7 @@ let cpmParms = {
 
 let config = {
 
-	field_size : [800,800],
+	field_size : [100,100],
 	conf : {
 		torus : [true,true],					
 		seed : 1,		
@@ -46,12 +46,12 @@ let config = {
 		BURNIN : 0,
 		RUNTIME : 4000,
 		CANVASCOLOR : "eaecef",
-		CELLCOLOR : ["00FF00"],	
-		zoom : 1,							
-		SAVEIMG : false,	
-		IMGFRAMERATE : 1,	
-		SAVEPATH : "./",
-		EXPNAME : "x",		
+		CELLCOLOR : ["CC0000"],	
+		zoom : 3,							
+		SAVEIMG : true,	
+		IMGFRAMERATE : 10,	
+		SAVEPATH : "./results/img/example",
+		EXPNAME : "example",		
 		STATSOUT : { browser: false, node: true },
 		LOGRATE : 10
 
@@ -79,7 +79,7 @@ function drawOnTop(){
 
 	let pdc = this.C.getConstraint( "PersistenceConstraint" )
 	let ctx = this.Cim.context(), zoom = this.conf["zoom"]
-	let prefdir = ( pdc.conf["LAMBDA_DIR"][ cellkind+1 ] > 0  ) || false
+	let prefdir = ( pdc.conf["LAMBDA_DIR"][ 1 ] > 0  ) || false
 	ctx.beginPath()
 	ctx.lineWidth = 2*zoom
 
@@ -87,7 +87,6 @@ function drawOnTop(){
 		
 		// Only draw for cells that have a preferred direction.
 		//if( i == 0 ) continue
-		prefdir = ( pdc.conf["LAMBDA_DIR"][ this.C.cellKind( i ) ] > 0  ) || false
 		if( !prefdir ) continue
 			
 		ctx.moveTo( 
