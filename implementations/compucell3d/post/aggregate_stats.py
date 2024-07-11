@@ -38,10 +38,10 @@ def format_ssr(results_data: Dict[int, Dict[str, np.ndarray]]):
     results_names.remove('time')
 
     results_times = results_data[sample_int]['time']
-    results = {name: np.ndarray((min_steps, num_reps), dtype=float) for name in results_names}
+    results = {name: np.ndarray((num_reps, min_steps), dtype=float) for name in results_names}
     for i, rep_num in enumerate(results_data.keys()):
         for name in results:
-            results[name][:, i] = results_data[rep_num][name][:]
+            results[name][i, :] = results_data[rep_num][name][:]
 
     return num_reps, results_times, results
 
