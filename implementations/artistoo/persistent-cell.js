@@ -1,9 +1,10 @@
 let CPM = require("./src/artistoo-cjs.js")
 
+ 
 let scaling = {
-	dur : 0.5 * 0.2,
+	dur : 1 * 0.2,
 	len : 0.2,
-	xi : 1
+	xi : 3
 }
 
 // parms in continuous parametrisation
@@ -13,8 +14,8 @@ let contParms = {
 	la : 10,
 	perim : 2*Math.PI,
 	lp : 5,
-	mu : 0.5,
-	omega : 0.25
+	mu : 20*0.5,
+	k : -Math.log(0.5)/1
 }
 
 let cpmParms = {
@@ -23,7 +24,7 @@ let cpmParms = {
 	perim : contParms.perim / scaling.len * scaling.xi,
 	lp : contParms.lp * Math.pow( scaling.len / scaling.xi, 2 ),
 	mu : contParms.mu * scaling.dur * scaling.len,
-	omega : contParms.omega
+	persist : contParms.k * scaling.dur
 }
 
  // angular diffusion: normally distributed with mean 0 and variance omega / sqrt(mcs_d)
@@ -35,7 +36,7 @@ let config = {
 	conf : {
 		torus : [true,true],					
 		seed : 1,		
-		T : scaling.len,			
+		T : 2*scaling.len,			
 		LAMBDA_V : [0,cpmParms.la],					
 		V : [0,cpmParms.area],						
 		LAMBDA_P : [0,cpmParms.lp],
@@ -66,10 +67,13 @@ let custommethods = {
 }
 let sim = new CPM.Simulation( config, custommethods )
 
+
+
 let pconstraint = new CPM.PersistenceConstraint( 
 	{
-		LAMBDA_DIR: [0,100], 
-		PERSIST: [0,.7]	
+		LAMBDA_DIR: [0,cpmParms.mu], 
+		PERSIST: [0,cpmParms.persist],
+		DELTA_T : [0,30]
 	} 
 )
 sim.C.add( pconstraint )
@@ -88,12 +92,27 @@ function drawOnTop(){
 		// Only draw for cells that have a preferred direction.
 		//if( i == 0 ) continue
 		if( !prefdir ) continue
-			
+
+		
+		function normalize( a ){
+			let norm = 0
+			for( let i = 0 ; i < a.length ; i ++ ){
+				norm += a[i]*a[i]
+			}
+			norm = Math.sqrt(norm)
+			b = []
+			for( let i = 0 ; i < a.length ; i ++ ){
+				b.push( a[i] / norm )
+			}
+			return b
+		}
+		let cdir = normalize(pdc.celldirections[i])
+		
 		ctx.moveTo( 
 			pdc.cellcentroidlists[i][0][0]*zoom,
 			pdc.cellcentroidlists[i][0][1]*zoom)
-		ctx.lineTo( (pdc.cellcentroidlists[i][0][0]+.1*pdc.celldirections[i][0])*zoom,
-			(pdc.cellcentroidlists[i][0][1]+.1*pdc.celldirections[i][1])*zoom)
+		ctx.lineTo( (pdc.cellcentroidlists[i][0][0]+5*cdir[0])*zoom,
+			(pdc.cellcentroidlists[i][0][1]+5*cdir[1])*zoom)
 	}
 	ctx.stroke()		
 }
