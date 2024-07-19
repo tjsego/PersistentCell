@@ -15,7 +15,7 @@ def compare(efect_rep: libssr.EFECTReport, results):
         err = 0.0
         for j in range(efect_rep.simulation_times.shape[0]):
             ecf_rep = efect_rep.ecf_evals[j, i, :, :]
-            ecf_res = libssr.ecf(results[name][:, j],
+            ecf_res = libssr.ecf(libssr.round_arr_to_sigfigs(results[name][:, j], efect_rep.sig_figs),
                                  libssr.get_eval_info_times(efect_rep.ecf_nval, efect_rep.ecf_tval[j, i]))
             err = max(err, libssr.ecf_compare(ecf_rep, ecf_res))
         err_names[name] = err

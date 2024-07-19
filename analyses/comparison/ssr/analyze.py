@@ -32,7 +32,7 @@ def efect_report(results,
 
     for i in range(num_sim_steps):
         for j, name in enumerate(results_names):
-            sample_i = results[name][:sample_size // 2, j]
+            sample_i = results[name][:sample_size // 2, i]
             ecf_tval[i, j] = libssr.eval_final(sample_i, num_var_pers)
             ecf_evals[i, j, :, :] = libssr.ecf(sample_i, libssr.get_eval_info_times(num_steps, ecf_tval[i, j]))
 
