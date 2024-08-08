@@ -1,5 +1,3 @@
-# todo: adapt towards project model structure
-
 import numpy as np
 import tissue_forge as tf
 from typing import Any, List, Tuple

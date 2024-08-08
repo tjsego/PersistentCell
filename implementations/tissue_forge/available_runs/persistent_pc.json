@@ -1,0 +1,19 @@
+{
+  "model": {
+    "len_1": 100,
+    "len_2": 100,
+    "max_time": 10000,
+    "model": "MODEL004",
+    "model_args": [0.0, 0.5, 1.0, 1.0, 0.0]
+  },
+  "center-model": {
+    "damping": 1.0,
+    "space_conv": 1.0,
+    "time_conv": 0.1
+  },
+  "tissue-forge": {
+    "num_sims": 100,
+    "output_name": "persistent_pc",
+    "output_per": 100.0
+  }
+}
