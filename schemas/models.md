@@ -7,3 +7,4 @@ Persistent random walk models
 | MODEL001 | CPM    | Equation 2 in 10.1084/jem.20061278                                            |
 | MODEL002 | CPM    | Equation 3 in 10.1007/978-3-7643-8123-3_7                                     |
 | MODEL003 | CPM    | Constant persistence as implemented by ExternalPotentialPlugin in CompuCell3D |
+| MODEL004 | CM     | Equation 9 in 10.1371/journal.pcbi.1005991                                    |

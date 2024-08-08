@@ -14,5 +14,9 @@
   "MODEL003": {
     "method": "CPM",
     "description": "Constant persistence as implemented by ExternalPotentialPlugin in CompuCell3D"
+  },
+  "MODEL004": {
+    "method": "CM",
+    "description": "Equation 9 in 10.1371/journal.pcbi.1005991"
   }
 }
