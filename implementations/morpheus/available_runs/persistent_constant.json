@@ -1,0 +1,22 @@
+{
+    "model": {
+        "cpm_area_v": 80,
+        "cpm_area_c": 0.05,
+        "cpm_perim_v": 352.0,
+        "cpm_perim_c": 0.005,
+        "len_1": 100,
+        "len_2": 100,
+        "cpm_surface_nbs_n": 4,
+        "cpm_update_nbs_n": 2,
+        "cpm_temp" : 0.5,
+        "max_time": 10000,
+        "model": "MODEL003",
+        "model_mu": 0.3,
+        "model_omega":  0.1
+    },
+    "sim": {
+        "num_sims": 50,
+        "output_name": "persistent_constant",
+        "output_per": 10
+    }
+}
