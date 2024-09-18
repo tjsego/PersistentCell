@@ -1,58 +1,43 @@
 let CPM = require("./src/artistoo-cjs.js")
+let fs = require('fs')
 
- 
-let scaling = {
-	dur : 1 * 0.2,
-	len : 0.2,
-	xi : 3
+let jsonFile = "./" + process.argv[2] 
+let seed = process.argv[3]
+
+let configJSON = require( jsonFile )
+
+
+let img = true
+if (seed > 1 ) img = false
+
+let outPath = "./results/"+ configJSON["model"] + "/img/sim" + seed
+if (!fs.existsSync(outPath)){
+    fs.mkdirSync(outPath)
 }
-
-// parms in continuous parametrisation
-let contParms = {
-	radius : 1,
-	area : Math.PI ,
-	la : 10,
-	perim : 2*Math.PI,
-	lp : 5,
-	mu : 20*0.5,
-	k : -Math.log(0.5)/1
-}
-
-let cpmParms = {
-	area : contParms.area / Math.pow( scaling.len, 2 ),
-	la : contParms.la * Math.pow( scaling.len, 4 ),
-	perim : contParms.perim / scaling.len * scaling.xi,
-	lp : contParms.lp * Math.pow( scaling.len / scaling.xi, 2 ),
-	mu : contParms.mu * scaling.dur * scaling.len,
-	persist : contParms.k * scaling.dur
-}
-
- // angular diffusion: normally distributed with mean 0 and variance omega / sqrt(mcs_d)
-
 
 let config = {
 
-	field_size : [100,100],
+	field_size : [configJSON["len_1"],configJSON["len_2"]],
 	conf : {
 		torus : [true,true],					
-		seed : 1,		
-		T : 2*scaling.len,			
-		LAMBDA_V : [0,cpmParms.la],					
-		V : [0,cpmParms.area],						
-		LAMBDA_P : [0,cpmParms.lp],
-		P : [0,cpmParms.perim]
+		seed : seed,		
+		T : configJSON["cpm_temperature"],			
+		LAMBDA_V : [0,configJSON["cpm_area_c"]],					
+		V : [0,configJSON["cpm_area_v"]],						
+		LAMBDA_P : [0,configJSON["cpm_perim_c"]],
+		P : [0,configJSON["cpm_perim_v"]]
 	},
 	simsettings : {
 		NRCELLS : [1],					
 		BURNIN : 0,
-		RUNTIME : 4000,
+		RUNTIME : configJSON["max_time"],
 		CANVASCOLOR : "eaecef",
 		CELLCOLOR : ["CC0000"],	
 		zoom : 3,							
-		SAVEIMG : true,	
+		SAVEIMG : img,	
 		IMGFRAMERATE : 10,	
-		SAVEPATH : "./results/img/example",
-		EXPNAME : "example",		
+		SAVEPATH : outPath,
+		EXPNAME : configJSON["model"]+"-seed"+seed,		
 		STATSOUT : { browser: false, node: true },
 		LOGRATE : 10
 
@@ -63,24 +48,29 @@ let config = {
 
 // add a drawOnTop method
 let custommethods = {
-	drawOnTop : drawOnTop
+	drawOnTop : drawOnTop,
+	logStats : logStats
 }
 let sim = new CPM.Simulation( config, custommethods )
 
-
+// print header
+console.log( "TimeMCS" + "," + "cellID" + ",x,y" )	
 
 let pconstraint = new CPM.PersistenceConstraint( 
 	{
-		LAMBDA_DIR: [0,cpmParms.mu], 
-		PERSIST: [0,cpmParms.persist],
-		DELTA_T : [0,30]
-	} 
-)
+		LAMBDA_DIR: [0,configJSON["model_args"]["mu"]], 
+		PERSIST: [0,configJSON["model_args"]["persist"]]
+	} )
 sim.C.add( pconstraint )
 
+function logStats(){
+	let centroid = this.C.getStat( CPM.CentroidsWithTorusCorrection )[1]
+	console.log( this.time + "," + seed + "," + centroid.join(",") )		
+}
 
 function drawOnTop(){
 
+	// ========= draw direction vectors on top
 	let pdc = this.C.getConstraint( "PersistenceConstraint" )
 	let ctx = this.Cim.context(), zoom = this.conf["zoom"]
 	let prefdir = ( pdc.conf["LAMBDA_DIR"][ 1 ] > 0  ) || false
@@ -115,7 +105,12 @@ function drawOnTop(){
 			(pdc.cellcentroidlists[i][0][1]+5*cdir[1])*zoom)
 	}
 	ctx.stroke()		
-}
 	
+	// ========= Add model title and time stamp
+	const logger = configJSON["model"] + "; " +this.time + " MCS"
+	ctx.font = "10px sans serif";
+	ctx.fillStyle = "black"
+	ctx.fillText(logger,6*zoom,6*zoom);
+}
 
 sim.run()
