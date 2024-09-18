@@ -33,7 +33,16 @@ class morpheus_model:
     
     def get(self, spec_data: dict) :
         model_xml = ET.parse(os.path.join(self.input_dir, self.model_file()))
-        ET.dump(model_xml)
+         # ET.dump(model_xml)
+        
+        ## unpack annonymous model args
+        if "model_args" in spec_data :
+            xtra_args = spec_data["model_args"]
+            for i in range(len(xtra_args)) :
+                spec_data[f'model_args[{i}]'] = xtra_args[i]
+            del spec_data["model_args"]
+            
+        
         
         x4p = self.xpath4param();
         for p, value in spec_data.items() : 
@@ -59,8 +68,8 @@ class morpheus_model:
     
 
 
-class morpheus_model_3(morpheus_model) :
-    """ morpheus implementation for model 3, classical persistent random walk"""
+class morpheus_model_5(morpheus_model) :
+    """ morpheus implementation for model 5, classical persistent random walk"""
     
     def __init__(self, input_dir : str) :
         morpheus_model.__init__(self,input_dir)
@@ -71,8 +80,10 @@ class morpheus_model_3(morpheus_model) :
     
     def xpath4param(self) :
         base = super().xpath4param()
-        base["model_mu"] = "./CellTypes/CellType/Constant[@symbol='mu_cpm']/@value"
-        base["model_omega"] = "./Global/Constant[@symbol='ω']/@value"
+        # base["model_mu"] = "./CellTypes/CellType/Constant[@symbol='mu_cpm']/@value"
+        # base["model_omega"] = "./Global/Constant[@symbol='ω']/@value"
+        base["model_args[0]"] = "./CellTypes/CellType/Constant[@symbol='mu_cpm']/@value"
+        base["model_args[1]"] = "./Global/Constant[@symbol='ω']/@value"
         return base;
 
 
@@ -80,8 +91,8 @@ def from_json_data(spec_data: dict, input_dir='.'):
     model_name = spec_data['model']
     del spec_data['model']
     
-    if model_name == 'MODEL003' :
-        return morpheus_model_3(input_dir).get(spec_data);
+    if model_name == 'MODEL005' :
+        return morpheus_model_5(input_dir).get(spec_data);
     else :
         raise "Unknown model " + model_name + " in mode spec";
 

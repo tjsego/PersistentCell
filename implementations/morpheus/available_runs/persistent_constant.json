@@ -10,9 +10,8 @@
         "cpm_update_nbs_n": 2,
         "cpm_temp" : 0.5,
         "max_time": 10000,
-        "model": "MODEL003",
-        "model_mu": 0.3,
-        "model_omega":  0.1
+        "model": "MODEL005",
+        "model_args" : [ 0.3, 0.1 ]
     },
     "sim": {
         "num_sims": 50,

@@ -18,5 +18,9 @@
   "MODEL004": {
     "method": "CM",
     "description": "Equation 9 in 10.1371/journal.pcbi.1005991"
+  },
+  "MODEL005": {
+    "method": "CPM",
+    "description": "Peristent motion controlled by cell-intrinsic orientation"
   }
 }
