@@ -24,7 +24,7 @@ and $\vec{t}(\sigma)$ the current target direction of cell $\sigma$.
 
 Target directions are initialized randomly and updated every step:
 
-$$\vec{t}(\sigma, t)$$ = (1-P_\text{persist}) \vec{t}(\sigma, t-1) + P_\text{persist} \Delta p (\sigma)
+$$\vec{t}(\sigma, t) = (1-P_\text{persist}) \vec{t}(\sigma, t-1) + P_\text{persist} \Delta p (\sigma)$$
 
 where $\Delta p (\sigma)$ is the observed displacement of cell $\sigma$ over the last
 $\Delta t$ MCS.
