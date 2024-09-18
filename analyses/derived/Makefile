@@ -8,7 +8,11 @@ data :
 plots : 
 	mkdir -p $@
 
-data/example-comp.rds : scripts/load-and-preprocess-tracks.R example-comparison.json | data
+.Rsetup : Rsetup.R Rpackages.txt 
+	Rscript $^ | tee $@
+
+
+data/example-comp.rds : scripts/load-and-preprocess-tracks.R example-comparison.json | data .Rsetup
 	Rscript $^ $@
 	
 plots/example-comp.pdf : scripts/simple-speeds.R data/example-comp.rds  | plots
