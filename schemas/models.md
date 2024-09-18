@@ -18,7 +18,7 @@ term:
 
 $$\Delta H_{PRW} = -\lambda_{\text{dir}} * \cos \alpha$$
 
-where $\alpha$ is the angle between directions $\vec{a}$ and $\vec{t}($\sigma$)$, with 
+where $\alpha$ is the angle between directions $\vec{a}$ and $\vec{t}(\sigma)$, with 
 $\vec{a}$ the direction from source $\rightarrow$ target of the copy attempt,
 and $\vec{t}(\sigma)$ the current target direction of cell $\sigma$.
 
