@@ -1,7 +1,7 @@
 .SECONDARY:
 .DELETE_ON_ERROR:
 
-all : model000 model001
+all : model000 model005
 
 REPS=$(shell seq 1 100)
 
@@ -44,22 +44,22 @@ results/MODEL000/analysis.pdf : analysis.R results/MODEL000/combined-tracks.csv
 
 
 
-# MODEL001
+# MODEL005
 # ===============================
-model001 : results/MODEL001/example.mp4 results/MODEL001/analysis.pdf
+model005 : results/MODEL005/example.mp4 results/MODEL005/analysis.pdf
 
 
-results/MODEL001/tracks/track%.csv : persistent-cell.js model001.json | results/MODEL001/tracks \
-	results/MODEL001/img node_modules
+results/MODEL005/tracks/track%.csv : persistent-cell.js model005.json | results/MODEL005/tracks \
+	results/MODEL005/img node_modules
 	node $^ $* > $@
 
-results/MODEL001/example.mp4 : results/MODEL001/tracks/track1.csv
-	ffmpeg -r 10 -i results/MODEL001/img/sim1/MODEL001-seed1-t%01d0.png -vcodec libx264 -pix_fmt yuv420p -y $@
+results/MODEL005/example.mp4 : results/MODEL005/tracks/track1.csv
+	ffmpeg -r 10 -i results/MODEL005/img/sim1/MODEL005-seed1-t%01d0.png -vcodec libx264 -pix_fmt yuv420p -y $@
 
 # combine tracks of independently simulated cells	
-results/MODEL001/combined-tracks.csv : $(foreach s, $(REPS), results/MODEL001/tracks/track$(s).csv)
+results/MODEL005/combined-tracks.csv : $(foreach s, $(REPS), results/MODEL005/tracks/track$(s).csv)
 	@cat $< | head -n 1 > $@ && cat $^ | grep -v TimeMCS >> $@
 
 # Analysis summary
-results/MODEL001/analysis.pdf : analysis.R results/MODEL001/combined-tracks.csv 
-	Rscript $^ model001.json $@
+results/MODEL005/analysis.pdf : analysis.R results/MODEL005/combined-tracks.csv 
+	Rscript $^ model005.json $@

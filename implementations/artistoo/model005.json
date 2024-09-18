@@ -1,0 +1,17 @@
+{
+	"cpm_temperature" : 0.4 ,
+	"cpm_area_c" : 0.016,
+	"cpm_area_v" : 79,
+	"cpm_nbs_n" : 2,
+	"cpm_perim_c" : 0.0222,
+	"cpm_perim_v" : 94,
+	"len_1" : 100,
+	"len_2" : 100,
+	"max_time" : 4000,
+	"method" : "CPM",
+	"model" : "MODEL005",
+	"model_args" : {
+		"persist" : 0.13862943611198905,
+		"mu" : 0.4
+	}
+}
