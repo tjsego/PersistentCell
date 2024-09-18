@@ -39,7 +39,7 @@ let config = {
 		SAVEPATH : outPath,
 		EXPNAME : configJSON["model"]+"-seed"+seed,		
 		STATSOUT : { browser: false, node: true },
-		LOGRATE : 10
+		LOGRATE : 2
 
 	}
 }
