@@ -1,3 +1,4 @@
+jsonlite
 celltrackR
 dplyr 
 ggplot2
