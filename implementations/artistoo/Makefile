@@ -8,6 +8,9 @@ REPS=$(shell seq 1 100)
 # Install node
 node_modules : 
 	npm install
+	
+.Rsetup : Rsetup.R Rpackages.txt 
+	Rscript $^ | tee $@
 
 # Directories
 results :
