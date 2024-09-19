@@ -11,12 +11,20 @@
     "description": "Cellular Potts model copy attempt neighbor order; required for CPM methods.",
     "type": "number"
   },
+  "cpm_surface_nbs_n": {
+    "description": "Cellular Potts model surface length estimation neighbor order; required for CPM methods for contact energy and perimeter estimation.",
+    "type": "number"
+  },
   "cpm_perim_c": {
     "description": "Cellular Potts model perimeter constraint coefficient; required for CPM methods. A cell is initialized with this area.",
     "type": "number"
   },
   "cpm_perim_v": {
     "description": "Cellular Potts model perimeter constraint value; required for CPM methods. A cell is initialized with this area.",
+    "type": "number"
+  },
+  "cpm_temperature": {
+    "description": "Cellular Potts model temperature of Metropolis kinetics.",
     "type": "number"
   },
   "len_1": {
