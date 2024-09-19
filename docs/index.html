@@ -12,6 +12,8 @@
 
 <!-- Model scripts -->
 <script src="./configuration.js"></script>
+<script src="./gui.js"></script>
+
 
 
 <script>
@@ -41,30 +43,103 @@ let config = {
 		}
 	}
 
-/*	---------------------------------- */
-
-let sims = []
+let sims = {}
 let model_config = configJSON[ "model_args" ]
 let model_names = Object.keys( model_config )
 
-// linking configuration parameters to the slider's ID in the html
-let rangeMap = {
-	"perim" : { key: 'P', position: 1},
-	"T" : { key:'T', position: 'none'},
-	"larea" : {key:'LAMBDA_V',position:1},
-	"area" : {key:'V',position:1},
-	"lper" :  {key:'LAMBDA_P',position:1}
-}
+// linking configuration parameters to the slider's ID in the html;
+// used in ./gui.js to set sliders and update model parameters if sliders change
 
-let modelRangeMap = {
-		"MODEL000" : {
-			// none
+let rangeMap = {
+	"perim" : {
+		model : "shared",
+		key : 'P',
+		position : 1,
+		rangeToModel : function(v){ return v/1000 },
+		modelToRange : function(v){ return v*1000 }
+	},
+	"T" : {
+		model : "shared",
+		key : 'T',
+		position : 'none',
+		rangeToModel : function(v){ return v/1000 },
+		modelToRange : function(v){ return v*1000 }
+	},
+	"larea" : {
+		model : "shared",
+		key : 'LAMBDA_V',
+		position : 1,
+		rangeToModel : function(v){ return v/1000 },
+		modelToRange : function(v){ return v*1000 }
+	},
+	"area" : {
+		model : "shared",
+		key : 'V',
+		position : 1,
+		rangeToModel : function(v){ return v/1000 },
+		modelToRange : function(v){ return v*1000 }
+	},
+	"lper" : {
+		model : "shared",
+		key : 'LAMBDA_P',
+		position : 1,
+		rangeToModel : function(v){ return v/1000 },
+		modelToRange : function(v){ return v*1000 }
+	},
+	"ldir003" : {
+		model : "MODEL003",
+		constraint : "PreferredDirectionConstraint", 
+		key : 'LAMBDA_DIR',
+		position : 1,
+		rangeToModel : function(v){ return v/1000 },
+		modelToRange : function(v){ return v*1000 }
+	},
+	"phi003" : {
+		model : "MODEL003",
+		constraint : "PreferredDirectionConstraint", 
+		key : 'DIR',
+		position : 1,
+		rangeToModel : function(v){ 
+			let angle = Math.PI * 2 * v/360 
+			return [ Math.cos( angle ), Math.sin(angle)]
 		},
-		"MODEL005" : {
-			"ldir" : { constraint : "PersistenceConstraint", key: 'LAMBDA_DIR', position: 1 },
-			"pper" : { constraint : "PersistenceConstraint", key: 'PERSIST', position: 1 },
-			"dt" : { constraint : "PersistenceConstraint", key: 'DELTA_T', position: 1 }
+		bubbleText : function(v){
+			return v 
+		},
+		modelToRange : function(v){ 
+			console.log( v )
+			let ang = Math.atan2( v[1], v[0] )
+			ang = Math.round( 180 * ang / Math.PI )
+			console.log( ang )
+			
+			return ang
 		}
+	},
+	"ldir" : {
+		model : "MODEL005",
+		constraint : "PersistenceConstraint", 
+		key : 'LAMBDA_DIR',
+		position : 1,
+		rangeToModel : function(v){ return v/1000 },
+		modelToRange : function(v){ return v*1000 }
+	},
+	"pper" : {
+		model : "MODEL005",
+		constraint : "PersistenceConstraint", 
+		key : 'PERSIST',
+		position : 1,
+		rangeToModel : function(v){ return v/1000 },
+		modelToRange : function(v){ return v*1000 }
+	},
+	"dt" : {
+		model : "MODEL005",
+		constraint : "PersistenceConstraint", 
+		key : 'DELTA_T',
+		position : 1,
+		rangeToModel : function(v){ return v/1000 },
+		modelToRange : function(v){ return v*1000 }
+	}
+	
 }
 
 
@@ -171,56 +246,91 @@ let custommethods = {
 
 function initialize(){
 
-	sims = []
+	sims = {}
 	
 	for( let mi of model_names ){
 		let simi = new CPM.Simulation( config, custommethods )
 		simi.centroids = []
 		simi.running = false
-		sims.push( simi )
+		sims[mi] = simi 
 	}
 	
 	initCanvas()
 	
 	for( let i = 0; i < model_names.length; i++ ){
-		let simi = sims[i]
-		let mi = model_names[i]
-		let pconstraint = new CPM.PersistenceConstraint( 
-			{
-				LAMBDA_DIR: [0,configJSON["model_args"][mi]["lambda_dir"]], 
-				PERSIST: [0,configJSON["model_args"][mi]["persist"]],
-				DELTA_T : [0,configJSON["model_args"][mi]["delta_t"]]
-			} )
-		simi.C.add( pconstraint )
+	
+		let modelName = model_names[i]
+		let simi = sims[modelName]
+		
+		
+		
+		switch( modelName ){
+	
+			case 'MODEL000' : {
+				let pconstraint = new CPM.PersistenceConstraint( 
+					{
+						LAMBDA_DIR: [0,configJSON["model_args"][modelName]["lambda_dir"]], 
+						PERSIST: [0,configJSON["model_args"][modelName]["persist"]],
+						DELTA_T : [0,configJSON["model_args"][modelName]["dt"]]
+					} )
+				simi.C.add( pconstraint )
+				break
+			}
+			case 'MODEL005' : {
+				let pconstraint = new CPM.PersistenceConstraint( 
+					{
+						LAMBDA_DIR: [0,configJSON["model_args"][modelName]["lambda_dir"]], 
+						PERSIST: [0,configJSON["model_args"][modelName]["persist"]],
+						DELTA_T : [0,configJSON["model_args"][modelName]["dt"]]
+					} )
+				simi.C.add( pconstraint )
+				break
+			}
+			case 'MODEL003' : {
+				const alpha = configJSON["model_args"][modelName]["target_angle"]
+			
+				let prefdir = new CPM.PreferredDirectionConstraint( 
+					{
+						LAMBDA_DIR: [0,configJSON["model_args"][modelName]["lambda_dir"]], 
+						DIR: [[0,0], [Math.cos(alpha),Math.sin(alpha)]]
+					} )
+				simi.C.add( prefdir )
+				// non-active persistence just for the visualization
+				let pconstraint = new CPM.PersistenceConstraint( 
+					{
+						LAMBDA_DIR: [0,0.000001], 
+						PERSIST: [0,0],
+						DELTA_T : [0,5]
+					} )
+				simi.C.add( pconstraint )
+				break
+			}
+			default : {
+				throw( "Unsupported model " + modelName  )
+			}
+		
+		
+			
+		}
+
 	}
 	
 }
 
 
 function step(){
-	for( let i = 0; i < sims.length; i++ ){
-		if( sims[i].running ) sims[i].step()
+	for( let mi of model_names ){
+		if( sims[mi].running ) sims[mi].step()
 	}
 	requestAnimationFrame( step )
 }
 
-function resetSim(){
-	
-	for( let i = 0; i < sims.length; i++ ){
-		sims[i].running = false
-	}
-	initialize()
-	sliderInput()
-	setPlayPause()
-}
-
 function initCanvas(){
 
-	for( let i = 0; i < model_names.length; i++ ){
-		const name = model_names[i]
+	for( let name of model_names ){
 		const canvasID = "canvas" + name
 		document.getElementById(canvasID).innerHTML = ""
-		const sim = sims[i]
+		const sim = sims[name]
 		sim.helpClasses["canvas"] = true
 		sim.Cim = new CPM.Canvas( sim.C, {zoom:3, parentElement: document.getElementById(canvasID) } )
 	}
@@ -228,60 +338,9 @@ function initCanvas(){
 	document.getElementById("time").innerHTML = 0
 }
 
-function setSliders(){
-
-	for( let i = 0; i < Object.keys( rangeMap ).length; i++ ){
-		const sliderID = Object.keys( rangeMap )[i]
-		const confID = rangeMap[sliderID]
-		if( confID.position == "none" ){
-			document.getElementById( sliderID ).value = sims[0].C.conf[confID.key] * 1000
-		
-		} else {
-			document.getElementById( sliderID ).value = sims[0].C.conf[confID.key][confID.position] * 1000
-		}
-	}
-	
-	for( let i = 0; i < model_names.length; i++ ){
-		const map = modelRangeMap[ model_names[i] ]
-		for( let sliderID of Object.keys(map) ){
-			const confID = map[sliderID]
-			document.getElementById( sliderID ).value = sims[i].C.getConstraint( confID.constraint ).conf[confID.key][confID.position] * 1000
-		}
-	}
-	
-	/*document.getElementById("pper").value = sims[1].C.getConstraint("PersistenceConstraint").conf.PERSIST[1] * 1000
-	document.getElementById("ldir").value =  sims[1].C.getConstraint("PersistenceConstraint").conf.LAMBDA_DIR[1] * 1000
-	document.getElementById("dt").value =  sims[1].C.getConstraint("PersistenceConstraint").conf.DELTA_T[1] * 1000*/
-}
-
-function sliderInput(){
-
-	
-	for( let si = 0; si < sims.length; si++ ){	
-		for( let i = 0; i < Object.keys( rangeMap ).length; i++ ){
-			const sliderID = Object.keys( rangeMap )[i]
-			const confID = rangeMap[sliderID]
-			if( confID.position == "none" ){
-				sims[si].C.conf[confID.key] = parseFloat( document.getElementById( sliderID ).value )/1000
-			} else {
-				sims[si].C.conf[confID.key][confID.position] = parseFloat( document.getElementById( sliderID ).value )/1000
-			}
-		}
-	}
-	
-	for( let i = 0; i < model_names.length; i++ ){
-		const map = modelRangeMap[ model_names[i] ]
-		for( let sliderID of Object.keys(map) ){
-			const confID = map[sliderID]
-			sims[i].C.getConstraint( confID.constraint ).conf[confID.key][confID.position] = parseFloat( document.getElementById( sliderID ).value ) / 1000
-		}
-	}
-	
-}
-
 </script>
 </head>
-<body onload = "initialize(); setPlayPause(); setSliders(); initializeSliders(); step()">
+<body onload = "initialize(); setPlayPause(); setSliders(); sliderInput(); step()">
 
 <div style="text-align:center;max-width:1000px;margin:auto">
 
@@ -365,12 +424,42 @@ all models, whereas others can be controlled for each model individually.<br><br
 	<div class="row sim-controls">
 		<div class="col-12 col-sm-12 col-md-6 col-lg-4 col-xl-4">
 			<h3>MODEL000</h3>
-			<p>No persistence, diffusive motion.</p>
+			<p>A basic CPM with no persistence and diffusive motion.</p>
 			<div id="canvasMODEL000" class="simulationCanvas"></div><br>
 		</div>	
-		<div class="col-12 col-sm-12 col-md-6 col-lg-6 col-xl-6">
+		<div class="col-12 col-sm-12 col-md-6 col-lg-4 col-xl-4">
+			<h3>MODEL003</h3>
+			<p>Extends MODEL000 with a term in &Delta;H that favours motion in a (fixed) target direction.</p>
+			<div id="canvasMODEL003" class="simulationCanvas"></div><br>
+			<table width="350px" align="center">
+				<tr>
+					<td style="width:20%">&lambda;<sub>dir</sub></td>
+					<td style="width:5%">0</td>
+					<td style="width:70%"> 
+						<div class="range-wrap">
+						  <input type="range" class="range" min="0" max="10000" step="100" id="ldir003" oninput="sliderInput()">
+						  <output class="bubble"></output>
+						</div>
+					</td>
+					<td style="width:5%">10</td>
+				</tr>
+				<tr>
+					<td style="width:20%">&phi;<sub>target</sub></td>
+					<td style="width:5%">0</td>
+					<td style="width:70%"> 
+						<div class="range-wrap">
+						  <input type="range" class="range" min="0" max="360" step="1" id="phi003" oninput="sliderInput()">
+						  <output class="bubble"></output>
+						</div>
+					</td>
+					<td style="width:5%">360</td>
+				</tr>
+				</table>
+
+		</div>	
+		<div class="col-12 col-sm-12 col-md-6 col-lg-4 col-xl-4">
 			<h3>MODEL005</h3>
-			<p>A PRW based on simple self-reinforcement.</p>
+			<p>Extends MODEL003 with updates to target directions; simple self-reinforcement.</p>
 			<div id="canvasMODEL005" class="simulationCanvas"></div><br>
 			<table width="350px" align="center">
 				<tr>
@@ -378,7 +467,7 @@ all models, whereas others can be controlled for each model individually.<br><br
 					<td style="width:5%">0</td>
 					<td style="width:70%"> 
 						<div class="range-wrap">
-						  <input type="range" class="range" min="0" max="1000" id="pper" oninput="sliderInput()" >
+						  <input type="range" class="range" min="0" max="1000" step = "10" id="pper" oninput="sliderInput()" >
 						  <output class="bubble"></output>
 						</div>
 					</td>
@@ -389,11 +478,11 @@ all models, whereas others can be controlled for each model individually.<br><br
 					<td style="width:5%">0</td>
 					<td style="width:70%"> 
 						<div class="range-wrap">
-						  <input type="range" class="range" min="0" max="1000" id="ldir" oninput="sliderInput()">
+						  <input type="range" class="range" min="0" max="10000" step="100" id="ldir" oninput="sliderInput()">
 						  <output class="bubble"></output>
 						</div>
 					</td>
-					<td style="width:5%">0.1</td>
+					<td style="width:5%">10</td>
 				</tr>
 				<tr>
 					<td style="width:20%">&Delta;<sub>t</sub></td>
@@ -423,52 +512,10 @@ all models, whereas others can be controlled for each model individually.<br><br
 </body>
 <script>
 	
-	setPlayPause = function(){
-		if( sims[0].running ){
-			$('#playIcon').removeClass('fa-play');$('#playIcon').addClass('fa-pause')
-		} else {
-			$('#playIcon').removeClass('fa-pause');$('#playIcon').addClass('fa-play')
-		}	
-	}
-	
-	
-	function initializeSliders(){
-		const allRanges = document.querySelectorAll(".range-wrap");
-		allRanges.forEach(wrap => {
-		  const range = wrap.querySelector(".range");
-		  const bubble = wrap.querySelector(".bubble");
-	
-		  range.addEventListener("input", () => {
-			/*if( range.id == "mact" ){
-				sim.C.getConstraint("ActivityConstraint").conf.MAX_ACT[1]=range.value
-			} else if ( range.id == "lact" ){
-				sim.C.getConstraint("ActivityConstraint").conf.LAMBDA_ACT[1]=range.value
-			}*/
-			setBubble(range, bubble);
-		  });
-		  setBubble(range, bubble);
-		});
-		
-	
-	}
-	
-	function setBubble(range, bubble) {
-	  const val = range.value;
-	  const min = range.min ? range.min : 0;
-	  const max = range.max ? range.max : 100;
-	  const newVal = Number(((val - min) * 100) / (max - min));
-	  bubble.innerHTML = val / 1000;
-	
-	  // Sorta magic numbers based on size of the native UI thumb
-	  bubble.style.left = `calc(${newVal}% + (${8 - newVal * 0.15}px))`;
-	}
-
-
-	
 	$(document).ready(function () {
 			
 		$('#playPause').on('click', function () {
-			for( let i = 0; i < sims.length; i++ ){
+			for( let i of model_names ){
 				sims[i].toggleRunning()
 			}
 			//sim0.toggleRunning()
@@ -480,5 +527,6 @@ all models, whereas others can be controlled for each model individually.<br><br
 			setPlayPause()
 		});
 	});
+
 </script>
 </html>

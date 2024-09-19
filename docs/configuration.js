@@ -14,12 +14,16 @@ let configJSON = {
 		"MODEL000" : {
 			"lambda_dir" : 0.0000000000000000000001,
 			"persist" : 0,
-			"delta_t" : 10
+			"dt" : 10
+		},
+		"MODEL003" : {
+			"lambda_dir" : 1,
+			"target_angle" : 0
 		},
 		"MODEL005" : {
 			"persist" : 0.13862943611198905,
 			"lambda_dir" : 0.4,
-			"delta_t" : 10
+			"dt" : 10
 		}
 	}
 }
