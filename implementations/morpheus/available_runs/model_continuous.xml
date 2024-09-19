@@ -2,14 +2,14 @@
 <MorpheusModel version="4">
     <Description>
         <Details></Details>
-        <Title>PRW continuous fast scaling</Title>
+        <Title>PRW continuous</Title>
     </Description>
     <Space>
         <Lattice class="square">
             <Neighborhood>
                 <Order>optimal</Order>
             </Neighborhood>
-            <Size symbol="size" value="cell_spacing * array_size, cell_spacing * array_size , 0"/>
+            <Size symbol="size" value="ceil(len_x/l_n), ceil(len_y/l_n), 1"/>
             <BoundaryConditions>
                 <Condition type="periodic" boundary="x"/>
                 <Condition type="periodic" boundary="y"/>
@@ -23,16 +23,17 @@
         <TimeSymbol symbol="time"/>
     </Time>
     <Analysis>
-        <ModelGraph include-tags="#untagged" format="dot" reduced="false"/>
-        <Gnuplotter time-step="100">
+        <!--     <Disabled>   <Gnuplotter time-step="100">
             <Plot>
                 <Cells value="dir.phi"/>
-                <CellArrows orientation="10*dir"/>
+                <CellArrows center="origin" orientation="dir*10"/>
             </Plot>
             <Terminal name="png" size="1200,1200,0"/>
-        </Gnuplotter>
-        <Logger time-step="1.0">
+        </Gnuplotter>  </Disabled>  -->
+        <Logger time-step="log_freq">
             <Input>
+                <Symbol symbol-ref="cell.center.x"/>
+                <Symbol symbol-ref="cell.center.y"/>
                 <Symbol symbol-ref="msd"/>
             </Input>
             <Output>
@@ -50,44 +51,60 @@
                     </Y-axis>
                 </Plot>
             </Plots>
+            <Restriction>
+                <CellType celltype="cell" />
+            </Restriction>        
         </Logger>
     </Analysis>
     <Global>
-        <Constant symbol="cpm_time_scale" value="0.5"/>
-        <Constant symbol="l_n" name="node length" value="0.1"/>
-        <Constant symbol="r" name="cell radius" value="1"/>
+        <Constant symbol="cpm_time_scale" value="1"/>
+        <Constant symbol="l_n" name="node length" value="1"/>
+        <Constant symbol="len_x" name="x lattice size" value="20*r * (array_size+5)"/>
+        <Constant symbol="len_y" name="y lattice size" value="20*r * (array_size+5)"/>
+        <Constant symbol="a_cpm" value="60" />
+        <Constant symbol="r" name="cell radius" value="sqrt(a_cpm/pi) * l_n"/>
         <Constant symbol="a" name="cell area" value="pi*r^2"/>
         <Constant symbol="λ_a" value="10"/>
         <Constant symbol="p" name="cell perimeter" value="2*pi*r">
             <Annotation>we assume an approximately circular shape</Annotation>
         </Constant>
         <Constant symbol="λ_p" value="5"/>
-        <Constant symbol="xi_p" name="..." value="1">
+        <Constant symbol="xi_p" value="3">
             <Annotation>Correction factor for the estimation of surface length in the CPM. Depend on the neighborhood choice.
                 In this model we make use normalization of interface / surface lengths, such that xi==1 </Annotation>
         </Constant>
         <Constant symbol="mu" name="cell motility strength" value="0.5"/>
         <Constant symbol="ω" name="angular noise amplitude" value="0.25"/>
-        <Constant symbol="mcs_d" name="MonteCarloStep duration" value="cpm_time_scale*sqrt(l_n)"/>
-        <Constant symbol="array_size" value="8"/>
+        <Constant symbol="mcs_d" name="MonteCarloStep duration" value="cpm_time_scale * l_n"/>
+        <Constant symbol="array_size" value="1">
+            <Annotation>Population array size</Annotation>
+        </Constant>
         <Constant symbol="cell_spacing" value="ceil(20*r/l_n)"/>
         <Variable symbol="msd" name="mean squared displacement" value="0.0"/>
+        <Constant symbol="log_freq" value="5"/>
     </Global>
     <CellTypes>
         <CellType name="cell" class="biological">
-            <Constant symbol="a_cpm" name="area in nodes" value="a/l_n^2"/>
+            <!-- <Constant symbol="a_cpm" name="area in nodes" value="a/l_n^2"/> -->
             <Constant symbol="λ_a_cpm" value="λ_a*l_n^4"/>
             <VolumeConstraint target="a_cpm" strength="λ_a_cpm"/>
-            <Constant symbol="p_cpm" value="p / l_n*xi_p"/>
+            <Constant symbol="p_cpm" value="p / l_n * xi_p"/>
             <Constant symbol="λ_p_cpm" value="λ_p * (l_n/xi_p)^2"/>
             <SurfaceConstraint target="p_cpm" strength="λ_p_cpm" mode="surface"/>
             <Constant symbol="mu_cpm" value="mu * mcs_d * l_n"/>
+            <Constant symbol="reenf_rate" value="reenf_rate * mcs_d" />
             <DirectedMotion strength="mu_cpm" direction="dir"/>
             <Property symbol="α" value="rand_uni(0,2*pi)"/>
+<!--             <Property symbol="α" value="0"/> -->
             <PropertyVector notation="r,φ,θ" symbol="dir" value="1,α,0"/>
+            <PropertyVector symbol="vel" name="observed velocity" value="dir"/>
+            <MotilityReporter time-step="5.0">
+                <Velocity symbol-ref="vel"/>
+            </MotilityReporter>
+
             <System time-step="mcs_d" solver="Euler [fixed, O(1)]">
                 <DiffEqn symbol-ref="α" name="orientation">
-                    <Expression>rand_norm(0,ω / sqrt(mcs_d))</Expression>
+                    <Expression>rand_norm(0,ω / sqrt(mcs_d)) + reenf_rate * sin(α-vel.phi) </Expression>
                 </DiffEqn>
                 <VectorRule symbol-ref="dir" notation="r,φ,θ">
                     <Expression>1, α, 0.0</Expression>
@@ -107,23 +124,23 @@
         <Population type="cell" size="1">
             <InitCellObjects mode="distance">
                 <Arrangement repetitions="array_size, array_size, 1" displacements="cell_spacing, cell_spacing, 1">
-                    <Sphere center="cell_spacing/2, cell_spacing/2, 0" radius="r/l_n"/>
+                    <Sphere center="cell_spacing*3, cell_spacing*3, 0" radius="r/l_n"/>
                 </Arrangement>
             </InitCellObjects>
         </Population>
     </CellPopulations>
     <CPM>
-        <Interaction/>
-        <ShapeSurface scaling="norm">
+        <Interaction default="0" />
+        <ShapeSurface scaling="none">
             <Neighborhood>
-                <Order>optimal</Order>
+                <Order>2</Order>
             </Neighborhood>
         </ShapeSurface>
         <MonteCarloSampler stepper="edgelist">
             <MCSDuration value="mcs_d"/>
-            <MetropolisKinetics temperature="2 * l_n"/>
+            <MetropolisKinetics temperature="1 * l_n"/>
             <Neighborhood>
-                <Order>optimal</Order>
+                <Order>2</Order>
             </Neighborhood>
         </MonteCarloSampler>
     </CPM>
