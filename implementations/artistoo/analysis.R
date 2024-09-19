@@ -124,7 +124,7 @@ fuerthMSD <- function( dt, M, P, dim = 2 ){
 # values or the fitting algorithm will not work properly. 
 msdFit <- msd %>% filter( dt < 1000 )
 
-coefs <- tryCatch({
+coefs <- tryCatch(expr = {
 		model <- nls( log(mean) ~ log( fuerthMSD( dt, exp(logM), exp(logP), dim = 2 ) ), 
               data = msdFit, 
               start = list( logM = log(0.1), logP = log(0.01) ), 
@@ -132,10 +132,12 @@ coefs <- tryCatch({
               weights = msdFit$ntracks,
               algorithm = "port" 
 		)
-		return( c( "M" = exp( coefficients(model)[["logM"]] ), "P" = exp( coefficients(model)[["logP"]] )) )
+		out <- c( "M" = exp( coefficients(model)[["logM"]] ), "P" = exp( coefficients(model)[["logP"]] ))
+		out
 
 	}, error = function( cond ){
-		return( c( "M" = NA, "P" = NA ))
+		print(cond)
+		 c( "M" = NA, "P" = NA )
 	} )
 
 # Motility coefficient M in units of pix^2/MCS, persistence time in MCS
@@ -146,7 +148,7 @@ if( !is.na( coefs[["M"]] ) ){
 	)
 	pMSD <- pMSD + 
 		geom_line( data = msdfit, aes( y = fit ), color = "red", lty = 2, linewidth = .4 ) +
-		annotate( "text", x = 2, y = 1000, hjust = 0, label = paste0( "fit : M = ", format( M, digits = 3 ), ", P = ", format( P, digits = 3) ),
+		annotate( "text", x = 2, y = 1000, hjust = 0, label = paste0( "fit : M = ", format( coefs[["M"]], digits = 3 ), ", P = ", format( coefs[["P"]], digits = 3) ),
 			color = "red", size = 7 * (5/14) )
 
 }

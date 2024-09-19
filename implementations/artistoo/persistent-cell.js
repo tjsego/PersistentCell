@@ -24,10 +24,10 @@ let config = {
 		torus : [true,true],					
 		seed : seed,		
 		T : configJSON["cpm_temperature"],			
-		LAMBDA_V : [0,configJSON["cpm_area_c"]],					
-		V : [0,configJSON["cpm_area_v"]],						
-		LAMBDA_P : [0,configJSON["cpm_perim_c"]],
-		P : [0,configJSON["cpm_perim_v"]]
+		LAMBDA_V : [0,configJSON["cpm_area_v"]],					
+		V : [0,configJSON["cpm_area_c"]],						
+		LAMBDA_P : [0,configJSON["cpm_perim_v"]],
+		P : [0,configJSON["cpm_perim_c"]]
 	},
 	simsettings : {
 		NRCELLS : [1],					
