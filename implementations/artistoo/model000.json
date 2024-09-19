@@ -12,6 +12,7 @@
 	"model" : "MODEL000",
 	"model_args" : {
 		"mu" : 0.0000000000000000000001,
-		"persist" : 0
+		"persist" : 0,
+		"dt" : 10
 	}
 }

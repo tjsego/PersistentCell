@@ -10,7 +10,9 @@ let configJSON = require( jsonFile )
 let img = true
 if (seed > 1 ) img = false
 
-let outPath = "./results/"+ configJSON["model"] + "/img/sim" + seed
+const modelName = configJSON["model"]
+
+let outPath = "./results/"+ modelName + "/img/sim" + seed
 if (!fs.existsSync(outPath)){
     fs.mkdirSync(outPath)
 }
@@ -56,12 +58,55 @@ let sim = new CPM.Simulation( config, custommethods )
 // print header
 console.log( "TimeMCS" + "," + "cellID" + ",x,y" )	
 
-let pconstraint = new CPM.PersistenceConstraint( 
-	{
-		LAMBDA_DIR: [0,configJSON["model_args"]["mu"]], 
-		PERSIST: [0,configJSON["model_args"]["persist"]]
-	} )
-sim.C.add( pconstraint )
+switch( modelName ){
+	
+	case 'MODEL000' : {
+		let pconstraint = new CPM.PersistenceConstraint( 
+			{
+				LAMBDA_DIR: [0,configJSON["model_args"]["mu"]], 
+				PERSIST: [0,configJSON["model_args"]["persist"]],
+				DELTA_T : [0,configJSON["model_args"]["dt"]]
+			} )
+		sim.C.add( pconstraint )
+		break
+	}
+	case 'MODEL005' : {
+		let pconstraint = new CPM.PersistenceConstraint( 
+			{
+				LAMBDA_DIR: [0,configJSON["model_args"]["mu"]], 
+				PERSIST: [0,configJSON["model_args"]["persist"]],
+				DELTA_T : [0,configJSON["model_args"]["dt"]]
+			} )
+		sim.C.add( pconstraint )
+		break
+	}
+	case 'MODEL003' : {
+		const alpha = configJSON["model_args"]["target_angle"]
+	
+		let prefdir = new CPM.PreferredDirectionConstraint( 
+			{
+				LAMBDA_DIR: [0,configJSON["model_args"]["lambda_dir"]], 
+				DIR: [[0,0], [Math.cos(alpha),Math.sin(alpha)]]
+			} )
+		sim.C.add( prefdir )
+		// non-active persistence just for the visualization
+		let pconstraint = new CPM.PersistenceConstraint( 
+			{
+				LAMBDA_DIR: [0,0.000001], 
+				PERSIST: [0,0],
+				DELTA_T : [0,5]
+			} )
+		sim.C.add( pconstraint )
+		break
+	}
+	default : {
+		throw( "Unsupported model " + modelName  )
+	}
+
+
+	
+}
+
 
 function logStats(){
 	let centroid = this.C.getStat( CPM.CentroidsWithTorusCorrection )[1]
