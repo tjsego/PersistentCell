@@ -11,64 +11,64 @@
 <script src="./artistoo.js"></script>
 
 <!-- Model scripts -->
+<script src="./configuration.js"></script>
+
 
 <script>
 "use strict"
 
-let configJSON = {
-	"cpm_temperature" : 0.4 ,
-	"cpm_area_c" : 0.016,
-	"cpm_area_v" : 79,
-	"cpm_nbs_n" : 2,
-	"cpm_perim_c" : 0.0222,
-	"cpm_perim_v" : 94,
-	"len_1" : 100,
-	"len_2" : 100,
-	"max_time" : 4000,
-	"method" : "CPM",
-	"model_args" : {
-		"MODEL000" : {
-			"lambda_dir" : 0.0000000000000000000001,
-			"persist" : 0,
-			"delta_t" : 10
+let config = {
+		field_size : [configJSON["len_1"],configJSON["len_2"]],
+		conf : {
+			torus : [true,true],					
+			seed : 1,		
+			T : configJSON["cpm_temperature"],			
+			LAMBDA_V : [0,configJSON["cpm_area_c"]],					
+			V : [0,configJSON["cpm_area_v"]],						
+			LAMBDA_P : [0,configJSON["cpm_perim_c"]],
+			P : [0,configJSON["cpm_perim_v"]]
 		},
-		"MODEL005" : {
-			"persist" : 0.13862943611198905,
-			"lambda_dir" : 0.4,
-			"delta_t" : 10
+		simsettings : {
+			NRCELLS : [1],					
+			BURNIN : 0,
+			RUNTIME : configJSON["max_time"],
+			CANVASCOLOR : "eaecef",
+			CELLCOLOR : ["CC0000"],	
+			zoom : 3,							
+			SAVEIMG : false,		
+			STATSOUT : { browser: false, node: true },
+			LOGRATE : 2
 		}
 	}
-}
 
-
-
-let config = {
-
-	field_size : [configJSON["len_1"],configJSON["len_2"]],
-	conf : {
-		torus : [true,true],					
-		seed : 1,		
-		T : configJSON["cpm_temperature"],			
-		LAMBDA_V : [0,configJSON["cpm_area_c"]],					
-		V : [0,configJSON["cpm_area_v"]],						
-		LAMBDA_P : [0,configJSON["cpm_perim_c"]],
-		P : [0,configJSON["cpm_perim_v"]]
-	},
-	simsettings : {
-		NRCELLS : [1],					
-		BURNIN : 0,
-		RUNTIME : configJSON["max_time"],
-		CANVASCOLOR : "eaecef",
-		CELLCOLOR : ["CC0000"],	
-		zoom : 3,							
-		SAVEIMG : false,		
-		STATSOUT : { browser: false, node: true },
-		LOGRATE : 2
-	}
-}
 /*	---------------------------------- */
 
-let sim0, sim5
+let sims = []
+let model_config = configJSON[ "model_args" ]
+let model_names = Object.keys( model_config )
+
+// linking configuration parameters to the slider's ID in the html
+let rangeMap = {
+	"perim" : { key: 'P', position: 1},
+	"T" : { key:'T', position: 'none'},
+	"larea" : {key:'LAMBDA_V',position:1},
+	"area" : {key:'V',position:1},
+	"lper" :  {key:'LAMBDA_P',position:1}
+}
+
+let modelRangeMap = {
+		"MODEL000" : {
+			// none
+		},
+		"MODEL005" : {
+			"ldir" : { constraint : "PersistenceConstraint", key: 'LAMBDA_DIR', position: 1 },
+			"pper" : { constraint : "PersistenceConstraint", key: 'PERSIST', position: 1 },
+			"dt" : { constraint : "PersistenceConstraint", key: 'DELTA_T', position: 1 }
+		}
+}
+
+
+
 let trackMemory = 500, trackResolution = 10
 
 
@@ -162,7 +162,6 @@ function postMCSListener(){
 	
 }
 
-// add a drawOnTop method
 let custommethods = {
 	drawOnTop : drawOnTop,
 	drawBelow : drawBelow,
@@ -171,68 +170,115 @@ let custommethods = {
 }
 
 function initialize(){
-	sim0 = new CPM.Simulation( config, custommethods )
-	sim5 = new CPM.Simulation( config, custommethods )
-	sim0.centroids = []
-	sim5.centroids = []
+
+	sims = []
+	
+	for( let mi of model_names ){
+		let simi = new CPM.Simulation( config, custommethods )
+		simi.centroids = []
+		simi.running = false
+		sims.push( simi )
+	}
 	
 	initCanvas()
 	
-	let pconstraint0 = new CPM.PersistenceConstraint( 
-		{
-			LAMBDA_DIR: [0,configJSON["model_args"]["MODEL000"]["lambda_dir"]], 
-			PERSIST: [0,configJSON["model_args"]["MODEL000"]["persist"]],
-			DELTA_T : [0,configJSON["model_args"]["MODEL000"]["delta_t"]]
-		} )
-	let pconstraint5 = new CPM.PersistenceConstraint( 
-		{
-			LAMBDA_DIR: [0,configJSON["model_args"]["MODEL005"]["lambda_dir"]], 
-			PERSIST: [0,configJSON["model_args"]["MODEL005"]["persist"]],
-			DELTA_T : [0,configJSON["model_args"]["MODEL005"]["delta_t"]]
-		} )
-	sim0.C.add( pconstraint0 )
-	sim5.C.add( pconstraint5 )
+	for( let i = 0; i < model_names.length; i++ ){
+		let simi = sims[i]
+		let mi = model_names[i]
+		let pconstraint = new CPM.PersistenceConstraint( 
+			{
+				LAMBDA_DIR: [0,configJSON["model_args"][mi]["lambda_dir"]], 
+				PERSIST: [0,configJSON["model_args"][mi]["persist"]],
+				DELTA_T : [0,configJSON["model_args"][mi]["delta_t"]]
+			} )
+		simi.C.add( pconstraint )
+	}
+	
 }
 
 
 function step(){
-	sim0.step()
-	sim5.step()
+	for( let i = 0; i < sims.length; i++ ){
+		if( sims[i].running ) sims[i].step()
+	}
 	requestAnimationFrame( step )
 }
 
 function resetSim(){
 	
-	if( sim0.running ) sim0.running = false
-	if( sim5.running ) sim5.running = false
+	for( let i = 0; i < sims.length; i++ ){
+		sims[i].running = false
+	}
 	initialize()
-	initCanvas()
+	sliderInput()
 	setPlayPause()
-	sim0.drawCanvas()
-	sim5.drawCanvas()
 }
 
 function initCanvas(){
-	document.getElementById("canvasModel000").innerHTML = ""
-	document.getElementById("canvasModel005").innerHTML = ""	
-	sim0.helpClasses[ "canvas" ] = true
-	sim5.helpClasses[ "canvas" ] = true
-	sim0.Cim = new CPM.Canvas( sim0.C, {zoom:3, parentElement: document.getElementById("canvasModel000") } )
-	sim5.Cim = new CPM.Canvas( sim5.C, {zoom:3, parentElement: document.getElementById("canvasModel005") } )
+
+	for( let i = 0; i < model_names.length; i++ ){
+		const name = model_names[i]
+		const canvasID = "canvas" + name
+		document.getElementById(canvasID).innerHTML = ""
+		const sim = sims[i]
+		sim.helpClasses["canvas"] = true
+		sim.Cim = new CPM.Canvas( sim.C, {zoom:3, parentElement: document.getElementById(canvasID) } )
+	}
 	
 	document.getElementById("time").innerHTML = 0
 }
 
 function setSliders(){
-	document.getElementById("T").value = config.conf.T * 1000
-	document.getElementById("larea").value = config.conf.LAMBDA_V[1] * 1000
-	document.getElementById("area").value = config.conf.V[1] * 1000
-	document.getElementById("lper").value = config.conf.LAMBDA_P[1] * 1000
-	document.getElementById("perim").value = config.conf.P[1] * 1000
-	document.getElementById("pper").value = sim5.C.getConstraint("PersistenceConstraint").conf.PERSIST[1] * 1000
-	document.getElementById("ldir").value =  sim5.C.getConstraint("PersistenceConstraint").conf.LAMBDA_DIR[1] * 1000
-	document.getElementById("dt").value =  sim5.C.getConstraint("PersistenceConstraint").conf.DELTA_T[1] * 1000
+
+	for( let i = 0; i < Object.keys( rangeMap ).length; i++ ){
+		const sliderID = Object.keys( rangeMap )[i]
+		const confID = rangeMap[sliderID]
+		if( confID.position == "none" ){
+			document.getElementById( sliderID ).value = sims[0].C.conf[confID.key] * 1000
+		
+		} else {
+			document.getElementById( sliderID ).value = sims[0].C.conf[confID.key][confID.position] * 1000
+		}
+	}
+	
+	for( let i = 0; i < model_names.length; i++ ){
+		const map = modelRangeMap[ model_names[i] ]
+		for( let sliderID of Object.keys(map) ){
+			const confID = map[sliderID]
+			document.getElementById( sliderID ).value = sims[i].C.getConstraint( confID.constraint ).conf[confID.key][confID.position] * 1000
+		}
+	}
+	
+	/*document.getElementById("pper").value = sims[1].C.getConstraint("PersistenceConstraint").conf.PERSIST[1] * 1000
+	document.getElementById("ldir").value =  sims[1].C.getConstraint("PersistenceConstraint").conf.LAMBDA_DIR[1] * 1000
+	document.getElementById("dt").value =  sims[1].C.getConstraint("PersistenceConstraint").conf.DELTA_T[1] * 1000*/
 }
+
+function sliderInput(){
+
+	
+	for( let si = 0; si < sims.length; si++ ){	
+		for( let i = 0; i < Object.keys( rangeMap ).length; i++ ){
+			const sliderID = Object.keys( rangeMap )[i]
+			const confID = rangeMap[sliderID]
+			if( confID.position == "none" ){
+				sims[si].C.conf[confID.key] = parseFloat( document.getElementById( sliderID ).value )/1000
+			} else {
+				sims[si].C.conf[confID.key][confID.position] = parseFloat( document.getElementById( sliderID ).value )/1000
+			}
+		}
+	}
+	
+	for( let i = 0; i < model_names.length; i++ ){
+		const map = modelRangeMap[ model_names[i] ]
+		for( let sliderID of Object.keys(map) ){
+			const confID = map[sliderID]
+			sims[i].C.getConstraint( confID.constraint ).conf[confID.key][confID.position] = parseFloat( document.getElementById( sliderID ).value ) / 1000
+		}
+	}
+	
+}
+
 </script>
 </head>
 <body onload = "initialize(); setPlayPause(); setSliders(); initializeSliders(); step()">
@@ -253,7 +299,7 @@ all models, whereas others can be controlled for each model individually.<br><br
 	<td style="width:5%">0</td>
 	<td style="width:70%"> 
 		<div class="range-wrap">
-		  <input type="range" class="range" min="0" max="1000" id="T" oninput="config.conf.T=parseFloat(this.value)/1000" >
+		  <input type="range" class="range" min="0" max="1000" id="T" oninput="sliderInput()" >
 		  <output class="bubble"></output>
 		</div>
 	</td>
@@ -264,7 +310,7 @@ all models, whereas others can be controlled for each model individually.<br><br
 	<td style="width:5%">0</td>
 	<td style="width:70%"> 
 		<div class="range-wrap">
-		  <input type="range" class="range" min="0" max="100" id="larea" oninput="config.conf.LAMBDA_V[1]=parseFloat(this.value)/1000">
+		  <input type="range" class="range" min="0" max="100" id="larea" oninput="sliderInput()">
 		  <output class="bubble"></output>
 		</div>
 	</td>
@@ -275,7 +321,7 @@ all models, whereas others can be controlled for each model individually.<br><br
 	<td style="width:5%">0</td>
 	<td style="width:70%"> 
 		<div class="range-wrap">
-		  <input type="range" class="range" min="0" max="100000"  step = "1000" id="area" oninput="config.conf.V[1]=parseInt(this.value)/1000">
+		  <input type="range" class="range" min="0" max="100000"  step = "1000" id="area" oninput="sliderInput()">
 		  <output class="bubble"></output>
 		</div>
 	</td>
@@ -286,7 +332,7 @@ all models, whereas others can be controlled for each model individually.<br><br
 	<td style="width:5%">0</td>
 	<td style="width:70%"> 
 		<div class="range-wrap">
-		  <input type="range" class="range" min="0" max="100" id="lper" oninput="config.conf.LAMBDA_P[1]=parseFloat(this.value)/1000">
+		  <input type="range" class="range" min="0" max="100" id="lper" oninput="sliderInput()">
 		  <output class="bubble"></output>
 		</div>
 	</td>
@@ -297,7 +343,7 @@ all models, whereas others can be controlled for each model individually.<br><br
 	<td style="width:5%">0</td>
 	<td style="width:70%"> 
 		<div class="range-wrap">
-		  <input type="range" class="range" min="0" max="200000"  step = "1000" id="perim" oninput="config.conf.P[1]=parseInt(this.value)/1000">
+		  <input type="range" class="range" min="0" max="200000"  step = "1000" id="perim" oninput="sliderInput()">
 		  <output class="bubble"></output>
 		</div>
 	</td>
@@ -317,22 +363,22 @@ all models, whereas others can be controlled for each model individually.<br><br
 
 <div align="center">
 	<div class="row sim-controls">
-		<div class="col-6">
+		<div class="col-12 col-sm-12 col-md-6 col-lg-4 col-xl-4">
 			<h3>MODEL000</h3>
 			<p>No persistence, diffusive motion.</p>
-			<div id="canvasModel000" class="simulationCanvas"></div><br>
+			<div id="canvasMODEL000" class="simulationCanvas"></div><br>
 		</div>	
-		<div class="col-6">
+		<div class="col-12 col-sm-12 col-md-6 col-lg-6 col-xl-6">
 			<h3>MODEL005</h3>
 			<p>A PRW based on simple self-reinforcement.</p>
-			<div id="canvasModel005" class="simulationCanvas"></div><br>
+			<div id="canvasMODEL005" class="simulationCanvas"></div><br>
 			<table width="350px" align="center">
 				<tr>
 					<td style="width:20%">P<sub>persist</sub></td>
 					<td style="width:5%">0</td>
 					<td style="width:70%"> 
 						<div class="range-wrap">
-						  <input type="range" class="range" min="0" max="1000" id="pper" oninput="sim5.C.getConstraint('PersistenceConstraint').conf['PERSIST'][1]=parseFloat(this.value)/1000" >
+						  <input type="range" class="range" min="0" max="1000" id="pper" oninput="sliderInput()" >
 						  <output class="bubble"></output>
 						</div>
 					</td>
@@ -343,7 +389,7 @@ all models, whereas others can be controlled for each model individually.<br><br
 					<td style="width:5%">0</td>
 					<td style="width:70%"> 
 						<div class="range-wrap">
-						  <input type="range" class="range" min="0" max="1000" id="ldir" oninput="sim5.C.getConstraint('PersistenceConstraint').conf['LAMBDA_DIR'][1]=parseFloat(this.value)/1000">
+						  <input type="range" class="range" min="0" max="1000" id="ldir" oninput="sliderInput()">
 						  <output class="bubble"></output>
 						</div>
 					</td>
@@ -354,7 +400,7 @@ all models, whereas others can be controlled for each model individually.<br><br
 					<td style="width:5%">0</td>
 					<td style="width:70%"> 
 						<div class="range-wrap">
-						  <input type="range" class="range" min="0" max="100000" step="1000" id="dt" oninput="sim5.C.getConstraint('PersistenceConstraint').conf['DELTA_T'][1]=parseFloat(this.value)/1000">
+						  <input type="range" class="range" min="0" max="100000" step="1000" id="dt" oninput="sliderInput()">
 						  <output class="bubble"></output>
 						</div>
 					</td>
@@ -378,7 +424,7 @@ all models, whereas others can be controlled for each model individually.<br><br
 <script>
 	
 	setPlayPause = function(){
-		if( sim0.running ){
+		if( sims[0].running ){
 			$('#playIcon').removeClass('fa-play');$('#playIcon').addClass('fa-pause')
 		} else {
 			$('#playIcon').removeClass('fa-pause');$('#playIcon').addClass('fa-play')
@@ -422,8 +468,11 @@ all models, whereas others can be controlled for each model individually.<br><br
 	$(document).ready(function () {
 			
 		$('#playPause').on('click', function () {
-			sim0.toggleRunning()
-			sim5.toggleRunning()
+			for( let i = 0; i < sims.length; i++ ){
+				sims[i].toggleRunning()
+			}
+			//sim0.toggleRunning()
+			//sim5.toggleRunning()
 			setPlayPause()		
 		});
 		$('#reset').on('click', function () {
