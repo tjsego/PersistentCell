@@ -13,7 +13,8 @@ Simulation specification schema
 | cpm_perim_c | number   | Cellular Potts model perimeter constraint coefficient; required for CPM methods.                                                                   |
 | cpm_perim_v | number   | Cellular Potts model perimeter constraint value; required for CPM methods.                                                                         |
 | len_1       | number   | Spatial domain length along the first spatial dimension. A cell is initialized with a centroid halfway along this length in the first dimension.   |
-| len_2       | number   | Spatial domain length along the second spatial dimension. A cell is initialized with a centroid halfway along this length in the second dimension. |
+| len_2       | number   | Spatial domain length along the second spatial dimension. A cell is initialized with a centroid halfway along this length in the second dimension.
+|
 | max_time    | number   | Maximum simulation time.                                                                                                                           |
 | method      | string   | Methodology label; one of those defined in supported methods.                                                                                      |
 | model       | string   | Persistent random walk model label; one of those defined in supported models.                                                                      |
