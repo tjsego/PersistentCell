@@ -92,8 +92,9 @@ class morpheus_model_0(morpheus_model) :
             "reenf_rate" : "0"
         }
 
-class morpheus_model_5(morpheus_model) :
-    """ morpheus implementation for model 5, classical persistent random walk """
+
+class morpheus_model_6(morpheus_model) :
+    """ morpheus implementation for model 6, classical persistent random walk """
     
     def __init__(self, input_dir : str) :
         morpheus_model.__init__(self,input_dir)
@@ -114,8 +115,8 @@ class morpheus_model_5(morpheus_model) :
             "reenf_rate" : "0"
         }
 
-class morpheus_model_6(morpheus_model) :
-    """ morpheus implementation for model 6, classical persistent random walk with self-reenforcement """
+class morpheus_model_7(morpheus_model) :
+    """ morpheus implementation for model 7, classical persistent random walk with self-reenforcement """
     
     def __init__(self, input_dir : str) :
         morpheus_model.__init__(self,input_dir)
@@ -143,10 +144,10 @@ def from_json_data(spec_data: dict, input_dir='.'):
     
     if model_name == 'MODEL000' :
         return morpheus_model_0(input_dir).get(spec_data);
-    elif model_name == 'MODEL005' :
-        return morpheus_model_5(input_dir).get(spec_data);
     elif model_name == 'MODEL006' :
         return morpheus_model_6(input_dir).get(spec_data);
+    elif model_name == 'MODEL007' :
+        return morpheus_model_7(input_dir).get(spec_data);
     else :
         raise "Unknown model " + model_name + " in mode spec";
 

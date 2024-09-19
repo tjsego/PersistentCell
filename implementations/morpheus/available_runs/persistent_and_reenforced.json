@@ -10,7 +10,7 @@
         "cpm_surface_nbs_n": 2,
         "cpm_temperature" : 0.5,
         "max_time": 10000,
-        "model": "MODEL006",
+        "model": "MODEL007",
         "model_args" : [ 0.3, 0.1, 0.01 ]
     },
     "sim": {

@@ -21,10 +21,14 @@
   },
   "MODEL005": {
     "method": "CPM",
-    "description": "Peristent motion controlled by cell-intrinsic orientation under effect of continuous time noise"
+    "description": "Simple self-reinforcing PRW in the CPM"
   },
   "MODEL006": {
     "method": "CPM",
-    "description": "Peristent motion controlled by cell-intrinsic orientation under effect of continuous time noise and self-reenforcement of direction of motion"
+    "description": "Persistent motion controlled by cell-intrinsic orientation under effect of continuous time noise"
+  },
+  "MODEL007": {
+    "method": "CPM",
+    "description": "Persistent motion controlled by cell-intrinsic orientation under effect of continuous time noise and self-reenforcement of direction of motion"
   }
 }
