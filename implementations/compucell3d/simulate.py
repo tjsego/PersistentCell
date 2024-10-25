@@ -167,8 +167,12 @@ def simulate(output_dir: str,
         input_args.append((specs, cell_type_name, cell_length_target, output_dir, sim_output_dir, output_per, max_time, sim_label))
         scheduled_labels.append(sim_label)
 
-    with mp.Pool() as p:
-        p.starmap(_simulate, input_args)
+    # Ensure clean memory space per batch. This is analogous to simservice features but with reduced overhead.
+    while input_args:
+        num_jobs = min(mp.cpu_count(), len(input_args))
+        jobs = [input_args.pop(0) for _ in range(num_jobs)]
+        with mp.Pool(num_jobs) as p:
+            p.starmap(_simulate, jobs)
     
     if not os.path.isfile(os.path.join(output_dir, screenshot_name)):
         with open(os.path.join(output_dir, screenshot_name), 'w') as f:
