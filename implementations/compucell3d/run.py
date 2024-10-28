@@ -18,7 +18,7 @@ def run(fp: str,
 
     num_sims = cc3d_data.get('num_sims', DEF_NUM_SIMS)
     if output_dir is None:
-        output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'results', cc3d_data['output_name'])
+        output_dir = str(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'results', cc3d_data['output_name']))
     output_per = int(cc3d_data['output_per'])
     screenshot_name = cc3d_data.get('screenshot_name', DEF_SCREENSHOT_NAME)
     
