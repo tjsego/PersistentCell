@@ -1,4 +1,5 @@
 import argparse
+import csv
 import json
 from matplotlib import pyplot as plt
 import numpy as np
@@ -28,22 +29,25 @@ def load_results(results_dir: str):
     return results_files_map, results_data
 
 
-def format_ssr(results_data: Dict[int, Dict[str, np.ndarray]]):
+def output_standard(results_data: Dict[int, Dict[str, np.ndarray]], fp: str):
     sample_int = list(results_data.keys())[0]
 
     min_steps = results_data[sample_int]['time'].shape[0]
-    
-    num_reps = len(results_data.keys())
+
     results_names = list(results_data[sample_int])
     results_names.remove('time')
+    results_names.insert(0, 'time')
 
-    results_times = results_data[sample_int]['time']
-    results = {name: np.ndarray((num_reps, min_steps), dtype=float) for name in results_names}
-    for i, rep_num in enumerate(results_data.keys()):
-        for name in results:
-            results[name][i, :] = results_data[rep_num][name][:]
-
-    return num_reps, results_times, results
+    # 'time', 'id', 'com_1', 'com_2', ...
+    column_names = [results_names[0]] + ['id'] + results_names[1:]
+    with open(fp, 'w', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=column_names)
+        writer.writeheader()
+        for rep_num, rep_data in results_data.items():
+            for i in range(min_steps):
+                data = {k: float(rep_data[k][i]) for k in results_names}
+                data['id'] = rep_num
+                writer.writerow(data)
 
 
 def generate_plots(results_data: Dict[int, Dict[str, np.ndarray]],
@@ -93,7 +97,7 @@ def generate_plots(results_data: Dict[int, Dict[str, np.ndarray]],
 
 def aggregate_stats(results_dir: str,
                     output_dir: str,
-                    export_ssr: bool,
+                    export_standard: bool,
                     export_figs: bool,
                     dpi=DEF_DPI,
                     rendered_names: List[str] = None,
@@ -106,29 +110,19 @@ def aggregate_stats(results_dir: str,
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir)
 
-    print('Results directory:', results_dir)
-    print('Output directory :', output_dir)
-    print('Export SSR data  :', export_ssr)
-    print('Export figures   :', export_figs)
+    print('Results directory   :', results_dir)
+    print('Output directory    :', output_dir)
+    print('Export standard data:', export_standard)
+    print('Export figures      :', export_figs)
 
     print('Loading results...')
     results = load_results(results_dir)[1]
 
-    if export_ssr:
-        print('Exporting ssr data...')
-        ssr_fp = os.path.join(output_dir, 'ssr.json')
-        print(f'\t{ssr_fp}')
-        num_reps, ssr_results_times, ssr_results = format_ssr(results)
-        with open(ssr_fp, 'w') as f:
-            json.dump(
-                {
-                    'num_reps': num_reps,
-                    'times': ssr_results_times.tolist(),
-                    'results': {k: v.tolist() for k, v in ssr_results.items()}
-                }, 
-                f, 
-                indent=4
-            )
+    if export_standard:
+        print('Exporting standard data...')
+        output_fp = os.path.join(output_dir, 'data.csv')
+        print(f'\t{output_fp}')
+        output_standard(results, output_fp)
 
     if export_figs:
         print('Exporting rendered data...')
@@ -152,11 +146,11 @@ class ArgParser(argparse.ArgumentParser):
                           dest='output_dir',
                           help='Absolute path of output directory')
         
-        self.add_argument('-s', '--ssr',
+        self.add_argument('-s', '--export-standard',
                           action='store_true',
                           required=False,
-                          dest='export_ssr',
-                          help='Flag to export SSR data')
+                          dest='export_standard',
+                          help='Flag to export standard formatted data')
         
         self.add_argument('-f', '--export-figs',
                           action='store_true',
@@ -212,8 +206,8 @@ class ArgParser(argparse.ArgumentParser):
         return self.parsed_args.output_dir
 
     @property
-    def export_ssr(self):
-        return self.parsed_args.export_ssr
+    def export_standard(self):
+        return self.parsed_args.export_standard
 
     @property
     def export_figs(self):
@@ -242,7 +236,7 @@ class ArgParser(argparse.ArgumentParser):
     def kwargs(self) -> dict:
         return dict(results_dir=self.results_dir, 
                     output_dir=self.output_dir, 
-                    export_ssr=self.export_ssr, 
+                    export_standard=self.export_standard,
                     export_figs=self.export_figs,
                     dpi=self.dpi, 
                     rendered_names=self.rendered_names, 
