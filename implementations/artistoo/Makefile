@@ -1,7 +1,7 @@
 .SECONDARY:
 .DELETE_ON_ERROR:
 
-all : model000 model005
+all : model000 model003 model005
 
 REPS=$(shell seq 1 100)
 
@@ -41,6 +41,26 @@ results/MODEL000/combined-tracks.csv : $(foreach s, $(REPS), results/MODEL000/tr
 # Analysis summary
 results/MODEL000/analysis.pdf : analysis.R results/MODEL000/combined-tracks.csv 
 	Rscript $^ model000.json $@
+
+
+# MODEL003
+# ===============================
+model003 : results/MODEL003/example.mp4 results/MODEL003/analysis.pdf
+
+results/MODEL003/tracks/track%.csv : persistent-cell.js model003.json | results/MODEL003/tracks \
+	results/MODEL003/img node_modules
+	node $^ $* > $@
+
+results/MODEL003/example.mp4 : results/MODEL003/tracks/track1.csv
+	ffmpeg -r 10 -i results/MODEL003/img/sim1/MODEL003-seed1-t%01d0.png -vcodec libx264 -pix_fmt yuv420p -y $@
+
+# combine tracks of independently simulated cells	
+results/MODEL003/combined-tracks.csv : $(foreach s, $(REPS), results/MODEL003/tracks/track$(s).csv)
+	cat $< | head -n 1 > $@ && cat $^ | grep -v TimeMCS >> $@
+
+# Analysis summary
+results/MODEL003/analysis.pdf : analysis.R results/MODEL003/combined-tracks.csv 
+	Rscript $^ model003.json $@
 
 
 

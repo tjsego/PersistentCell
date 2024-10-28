@@ -100,6 +100,18 @@ pStepSpeed <- ggplot( d2 ) +
 msd <- aggregate( tr, squareDisplacement, FUN = "mean.se", count.subtracks = TRUE )
 msd$dt <- msd$i * timeStep( tr )
 
+# Basic MSD plot
+pMSD <- ggplot( msd, aes( x = dt ) ) + 
+	geom_ribbon( aes( ymin = lower, ymax = upper ), color = NA, fill = "black", alpha = 0.1 ) +
+	geom_line( aes( y = mean ) , linewidth = .4 ) +
+	scale_x_log10( limits=c(1,NA), expand = c(0,0))+
+	scale_y_log10( limits=c(0.001,10000), expand = c(0,0))+
+	#coord_cartesian( xlim=c(0,NA), ylim=c(0,NA), expand=FALSE ) +
+	labs( x = expression(Delta*"t (MCS)"), y =  expression("MSD <"*Delta*"x"^2*"> (pixels"^2*")" )) +
+	plotTheme
+
+
+# Try to fit Fuerth's eqn
 fuerthMSD <- function( dt, M, P, dim = 2 ){
 	if( P == 0 ){
 	 	return( 2*dim*M* dt )
@@ -111,35 +123,35 @@ fuerthMSD <- function( dt, M, P, dim = 2 ){
 # dt < fitThreshold (see above), and need to provide reasonable starting
 # values or the fitting algorithm will not work properly. 
 msdFit <- msd %>% filter( dt < 1000 )
-model <- nls( log(mean) ~ log( fuerthMSD( dt, exp(logM), exp(logP), dim = 2 ) ), 
+
+coefs <- tryCatch(expr = {
+		model <- nls( log(mean) ~ log( fuerthMSD( dt, exp(logM), exp(logP), dim = 2 ) ), 
               data = msdFit, 
               start = list( logM = log(0.1), logP = log(0.01) ), 
               lower = list( logM = log(0.001), logP = log(0.00001) ), 
               weights = msdFit$ntracks,
               algorithm = "port" 
-)
-M <- exp( coefficients(model)[["logM"]] ) # this is now in units of pix^2/MCS
-P <- exp( coefficients(model)[["logP"]] ) # persistence time in MCS
+		)
+		out <- c( "M" = exp( coefficients(model)[["logM"]] ), "P" = exp( coefficients(model)[["logP"]] ))
+		out
 
-msdfit <- data.frame(
-	dt = seq( 1, 10000 ),
-	fit = fuerthMSD( seq(1,10000), M, P, dim = 2 )
-)
+	}, error = function( cond ){
+		print(cond)
+		 c( "M" = NA, "P" = NA )
+	} )
 
-msd$fit <- fuerthMSD( msd$dt, M, P, dim = 2 )
+# Motility coefficient M in units of pix^2/MCS, persistence time in MCS
+if( !is.na( coefs[["M"]] ) ){
+	msdfit <- data.frame(
+		dt = seq( 1, 10000 ),
+		fit = fuerthMSD( seq(1,10000), coefs[["M"]], coefs[["P"]], dim = 2 )
+	)
+	pMSD <- pMSD + 
+		geom_line( data = msdfit, aes( y = fit ), color = "red", lty = 2, linewidth = .4 ) +
+		annotate( "text", x = 2, y = 1000, hjust = 0, label = paste0( "fit : M = ", format( coefs[["M"]], digits = 3 ), ", P = ", format( coefs[["P"]], digits = 3) ),
+			color = "red", size = 7 * (5/14) )
 
-pMSD <- ggplot( msd, aes( x = dt ) ) + 
-	geom_ribbon( aes( ymin = lower, ymax = upper ), color = NA, fill = "black", alpha = 0.1 ) +
-	geom_line( data = msdfit, aes( y = fit ), color = "red", lty = 2, linewidth = .4 ) +
-	geom_line( aes( y = mean ) , linewidth = .4 ) +
-	scale_x_log10( limits=c(1,10000), expand = c(0,0))+
-	scale_y_log10( limits=c(0.001,10000), expand = c(0,0))+
-	annotate( "text", x = 2, y = 1000, hjust = 0, label = paste0( "fit : M = ", format( M, digits = 3 ), ", P = ", format( P, digits = 3) ),
-		color = "red", size = 7 * (5/14) ) +
-	#coord_cartesian( xlim=c(0,NA), ylim=c(0,NA), expand=FALSE ) +
-	labs( x = expression(Delta*"t (MCS)"), y =  expression("MSD <"*Delta*"x"^2*"> (pixels"^2*")" )) +
-	plotTheme
-
+}
 
 # Autocovariance
 acov <- aggregate( tr, overallDot, FUN = "mean.se" )
