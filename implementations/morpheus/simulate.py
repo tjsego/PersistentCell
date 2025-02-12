@@ -1,5 +1,6 @@
 import json
 import multiprocessing as mp
+from time import sleep
 import os
 import subprocess
 import csv
@@ -9,6 +10,9 @@ import xml.etree.ElementTree as ET
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from typing import Optional, List, Tuple
+from packaging.version import Version
+import re
+
 
 
 def ensure_output_dir(_output_dir: str):
@@ -31,9 +35,17 @@ def unique_data_dir(_output_dir: str, label : int):
 def _simulate(model, sim_label, sim_output_dir, output_freq):
     print(f'Simulation {sim_label}: {sim_output_dir}')
 
-    # model.write(os.path.join(sim_output_dir,'model.xml'));
+    
+    raw_version = subprocess.run(['morpheus','--version'], capture_output=True);
+    if raw_version:
+        match = re.search(r"\d+\.\d+\.\d+", raw_version.stdout.decode('utf-8'))
+        if Version(match[0]) < Version("2.3.9") :
+            raise r"Morpheus version of at least 2.3.9 required"
+    else :
+        raise r"Unable to launch Morpheus. Make sure 'morpheus' binary is reachable from path"
+     
     subprocess.run(
-        ['morpheus','--num-threads=1', f'-s  log_freq={output_freq}' , '-f model.xml'],
+        ['morpheus','--num-threads=1', f'-s  log_freq={output_freq}' , '-'],
         input=ET.tostring(model.getroot(), encoding='utf8', method='xml'),
         cwd=sim_output_dir)
 
@@ -41,8 +53,9 @@ def _simulate(model, sim_label, sim_output_dir, output_freq):
     data = []
     next(sim_data, None)  # Skip header row
     for row in sim_data:
-        data.append(row)
-    
+        row[1] = sim_label
+        data.append(row)    
+
     with open(os.path.join(sim_output_dir,"..", f'sim_{sim_label}.json'), 'w') as f:
         json.dump(
             dict(
@@ -78,9 +91,20 @@ def simulate(model,
         
         scheduled_labels.append(sim_label)
         sim_label = sim_label+1
-
+    
     with mp.Pool() as p:
         p.starmap(_simulate, input_args)
+    
+    for spec in input_args :
+        sim_label = spec[1]
+        sim_output_dir = spec[2]
+        sim_data = csv.reader(open(os.path.join(sim_output_dir,'logger.csv'),"r"), delimiter="\t",quoting=csv.QUOTE_NONNUMERIC)
+        next(sim_data, None)  # Skip header row
+        with open(os.path.join(sim_output_dir,"..", f'sim.csv'), 'a') as f:
+            writer = csv.writer(f)
+            for row in sim_data:
+                row[1] = sim_label
+                writer.writerow(row)
     
     if (plot):
         plot_DAC_MSD(output_data_dir, [ sim[1] for sim in input_args])
@@ -92,6 +116,8 @@ def plot_DAC_MSD(output_dir, sim_labels) :
     dac_count  = np.zeros(0)
     dac_sum    = np.zeros(0)
     dac_sqrsum = np.zeros(0)
+    dac_25quantil = np.zeros(0)
+    dac_75quantil = np.zeros(0)
     
     msd_count  = np.zeros(0)
     msd_sum    = np.zeros(0)
@@ -99,34 +125,41 @@ def plot_DAC_MSD(output_dir, sim_labels) :
         with open(os.path.join( output_dir, f'sim_{sim_label}.json'), mode="r", encoding="utf-8") as f :
             print("loading " + f'sim_{sim_label}.json')
             data = json.load(f)
-            x = data['com_1']; y = data['com_2'];
+            x = np.array(data['com_1']); y = np.array(data['com_2']);
             dt = data['time'][1]-data['time'][0];
             data_length = len(x)
             angles = np.zeros(data_length)
-            angles[0] =0;
-            for i in range(1,data_length) :
-                angles[i] = math.atan2( (y[i]-y[i-1]) , (x[i]-x[i-1]) )
+            dx=np.array((x[1:] - x[:-1], y[1:] - y[:-1] ))
+            dx=np.concatenate( ([[1],[0]],dx), 1)
+            dx_len = np.sqrt(np.sum(dx**2, axis=0))
+            dx_norm = dx / np.stack((dx_len, dx_len))
             
             if (len(dac_count) == 0) :
                 dac_count  = np.zeros(dac_lag_range)
                 dac_sum    = np.zeros(dac_lag_range)
                 dac_sqrsum = np.zeros(dac_lag_range)
+                dac_25quantil = np.zeros(dac_lag_range)
+                dac_75quantil = np.zeros(dac_lag_range)
                 msd_count  = np.zeros(msd_lag_range)
                 msd_sum    = np.zeros(msd_lag_range)
                 
             for lag in range(dac_lag_range) :
-                for i in range(0,data_length-lag) :
-                    corr = math.cos(angles[i+lag]-angles[i])
-                    dac_count[lag]  += 1
-                    dac_sum[lag]    += corr
-                    dac_sqrsum[lag] += corr*corr
+                corr = np.sum(np.multiply(dx_norm[:,lag:data_length-1] , dx_norm[:,0:data_length-lag-1] ), axis=0 )
+                corr.sort()
+                dac_25quantil[lag]    += corr[int(0.25*len(corr))]
+                dac_75quantil[lag]    += corr[int(0.75*len(corr))]
+                dac_count[lag]  += len(corr)
+                dac_sum[lag]    += np.sum(corr)
+                dac_sqrsum[lag] += np.sum(corr*corr)
+
             for lag in range(msd_lag_range) :
-                for i in range(0,msd_lag_range-lag) :
-                    msd_count[lag]  += 1
-                    msd_sum[lag]  += (x[i+lag]-x[i])**2 + (y[i+lag]-y[i])**2
+                msd_count[lag] += data_length-lag
+                msd_sum[lag] = np.sum( (x[lag:data_length-1] - x[0:data_length-lag-1])**2 + (y[lag:data_length-1] - y[0:data_length-lag-1])**2 )
     
     dac_mean = dac_sum / dac_count
     dac_std = (dac_sqrsum - dac_sum * dac_mean) / (dac_count -1)
+    dac_25quantil /= len(sim_labels)
+    dac_75quantil /= len(sim_labels)
     msd = msd_sum / msd_count
     
     ## Create the Mean squared displacement
@@ -134,7 +167,7 @@ def plot_DAC_MSD(output_dir, sim_labels) :
     
     fig, ax = plt.subplots(1,2)
     fig.title = output_dir
-    ax[0].errorbar (np.arange(0,dac_lag_range)*dt, dac_mean, np.sqrt(dac_std) )
+    ax[0].errorbar (np.arange(0,dac_lag_range)*dt, dac_mean, [[dac_25quantil-dac_mean,dac_75quantil-dac_mean]] ) #np.sqrt(dac_std) 
     ax[0].set_xlabel('lag time')
     ax[0].set_ylabel('dac')
     ax[1].plot (np.arange(0,msd_lag_range)*dt, msd)

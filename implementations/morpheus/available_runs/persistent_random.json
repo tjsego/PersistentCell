@@ -10,12 +10,12 @@
         "cpm_surface_nbs_n": 2,
         "cpm_temperature" : 0.5,
         "max_time": 10000,
-        "model": "MODEL003",
-        "model_args" : [ 0, 0.3]
+        "model": "MODEL006",
+        "model_args" : [ 0.3, 0.1]
     },
     "sim": {
         "num_sims": 50,
-        "output_name": "persistent_constant",
+        "output_name": "persistent_random",
         "output_per": 10
     }
 }
