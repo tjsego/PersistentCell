@@ -1,5 +1,6 @@
 {
     "model": {
+        "cpm_temperature": 10,
         "cpm_area_c": 36,
         "cpm_area_v": 2.0,
         "cpm_perim_c": 20.0,
@@ -7,7 +8,9 @@
         "len_1": 100,
         "len_2": 100,
         "cpm_nbs_n": 2,
+        "cpm_surface_nbs_n": 1,
         "max_time": 10000,
+        "method": "CPM",
         "model": "MODEL003",
         "model_args": [-1.0, 0.0]
     },

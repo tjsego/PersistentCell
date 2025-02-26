@@ -3,6 +3,7 @@
     "len_1": 100,
     "len_2": 100,
     "max_time": 10000,
+    "method": "CP",
     "model": "MODEL004",
     "model_args": [0.0, 0.5, 1.0, 1.0, 0.0]
   },
