@@ -3,14 +3,18 @@ let fs = require('fs')
 
 let jsonFile = "./" + process.argv[2] 
 let seed = process.argv[3]
-
-let configJSON = require( jsonFile )
+let configJSON = require( jsonFile )["model"]
 
 
 let img = true
 if (seed > 1 ) img = false
 
 const modelName = configJSON["model"]
+
+const surfN = configJSON["cpm_surface_nbs_n"]
+if( surfN != 2 ){
+	throw( "cpm_surface_nbs_n is set to " + surfN + ", but values other than 2 are not (yet) supported. Please change to continue.")
+}
 
 let outPath = "./results/"+ modelName + "/img/sim" + seed
 if (!fs.existsSync(outPath)){
@@ -63,9 +67,9 @@ switch( modelName ){
 	case 'MODEL000' : {
 		let pconstraint = new CPM.PersistenceConstraint( 
 			{
-				LAMBDA_DIR: [0,configJSON["model_args"]["mu"]], 
-				PERSIST: [0,configJSON["model_args"]["persist"]],
-				DELTA_T : [0,configJSON["model_args"]["dt"]]
+				LAMBDA_DIR: [0,0], 
+				PERSIST: [0,0],
+				DELTA_T : [0,10]
 			} )
 		sim.C.add( pconstraint )
 		break
