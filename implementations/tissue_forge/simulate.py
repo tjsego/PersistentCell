@@ -2,7 +2,7 @@ import json
 import os
 from simservice import close_service
 from threading import Thread, Lock
-from typing import Any, List, Tuple
+from typing import Any, Dict, Tuple
 
 from PersistentCellFactory import persistent_cell_simservice
 
@@ -21,7 +21,7 @@ def _simulate(output_dir: str,
               sim_time: float,
               dt: float,
               model_label: str,
-              model_args: List[Any],
+              model_args: Dict[str, Any],
               damping: float,
               sim_label: int):
     print(f'Simulation {sim_label}')
@@ -61,7 +61,7 @@ def simulate(output_dir: str,
              sim_time: float,
              dt: float,
              model_label: str,
-             model_args: List[Any],  # Assumes only one possible model
+             model_args: Dict[str, Any],  # Assumes only one possible model
              damping: float):
 
     ensure_output_dir(output_dir)

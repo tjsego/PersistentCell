@@ -20,12 +20,11 @@ def _do_impl_MODEL004(ptime: float,
 def _impl_MODEL004(ptime: float,
                    bias: float,
                    speed: float,
-                   bdirx: float,
-                   bdiry: float):
-    bdir = tf.FVector3(bdirx, bdiry, 0)
+                   bdir: float):
+    bdirv = tf.FVector3(np.cos(bdir), np.sin(bdir), 0)
     tf.event.on_time(period=0,
-                     invoke_method=lambda e: _do_impl_MODEL004(ptime, bias, speed, bdir))
-    _do_impl_MODEL004(ptime, bias, speed, bdir)
+                     invoke_method=lambda e: _do_impl_MODEL004(ptime, bias, speed, bdirv))
+    _do_impl_MODEL004(ptime, bias, speed, bdirv)
 
 
 model_implementations = {
@@ -40,6 +39,6 @@ def get_model_implementation(model_label: str):
         raise KeyError(f'Model with label {model_label} is not currently supported by Tissue Forge')
 
 
-def from_json_data(model_label, *model_args):
+def from_json_data(model_label, **model_args):
 
-    get_model_implementation(model_label)(*model_args)
+    get_model_implementation(model_label)(**model_args)
