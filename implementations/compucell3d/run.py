@@ -14,7 +14,12 @@ def run(fp: str,
         config_data = json.load(f)
 
     model_data: dict = config_data['model']
-    cc3d_data: dict = config_data['cc3d']
+    # Support 'sim' key, prefer 'cc3d' key
+    cc3d_data = {}
+    if 'sim' in config_data:
+        cc3d_data.update(config_data['sim'])
+    if 'cc3d' in config_data:
+        cc3d_data.update(config_data['cc3d'])
 
     num_sims = cc3d_data.get('num_sims', DEF_NUM_SIMS)
     if output_dir is None:
