@@ -4,12 +4,14 @@ let fs = require('fs')
 let jsonFile = "./" + process.argv[2] 
 let seed = process.argv[3]
 let configJSON = require( jsonFile )["model"]
+let outputJSON = require( jsonFile )["sim"]
 
 
 let img = true
 if (seed > 1 ) img = false
 
 const modelName = configJSON["model"]
+const lograte = outputJSON["output_per"] || 2
 
 const surfN = configJSON["cpm_surface_nbs_n"]
 if( surfN != 2 ){
@@ -36,7 +38,7 @@ let config = {
 	simsettings : {
 		NRCELLS : [1],					
 		BURNIN : 0,
-		RUNTIME : configJSON["max_time"],
+		RUNTIME : configJSON["max_time"]+1,
 		CANVASCOLOR : "eaecef",
 		CELLCOLOR : ["CC0000"],	
 		zoom : 3,							
@@ -45,12 +47,42 @@ let config = {
 		SAVEPATH : outPath,
 		EXPNAME : configJSON["model"]+"-seed"+seed,		
 		STATSOUT : { browser: false, node: true },
-		LOGRATE : 2
+		LOGRATE : lograte
 
 	}
 }
 /*	---------------------------------- */
 
+/* ============ Extend persistenceconstraint for MODEL006 dynamics */
+class LangevinPRW extends CPM.PersistenceConstraint {
+	
+	confChecker(){}
+	
+	deltaH ( sourcei, targeti, src_type, tgt_type ) {
+		if( src_type == 0 || !(src_type in this.celldirections) ) return 0
+		let b = this.celldirections[src_type]
+		let p1 = this.C.grid.i2p(sourcei), p2 = this.C.grid.i2p(targeti)
+		let a = []
+		for( let i = 0 ; i < p1.length ; i ++ ){
+			a[i] = p2[i]-p1[i]
+			// Correct for torus if necessary
+			if( this.C.grid.torus[i] ){
+				if( a[i] > this.halfsize[i] ){
+					a[i] -= this.C.extents[i]
+				} else if( a[i] < -this.halfsize[i] ){
+					a[i] += this.C.extents[i]
+				}
+			}
+		}
+		let dp = 0
+		for( let i = 0 ; i < a.length ; i ++ ){
+			dp += a[i]*b[i]
+		}
+		return - dp
+	}
+	
+	
+}
 
 // add a drawOnTop method
 let custommethods = {
@@ -60,7 +92,7 @@ let custommethods = {
 let sim = new CPM.Simulation( config, custommethods )
 
 // print header
-console.log( "TimeMCS" + "," + "cellID" + ",x,y" )	
+console.log( "time,id,com_1,com_2" )	
 
 switch( modelName ){
 	
@@ -102,6 +134,9 @@ switch( modelName ){
 			} )
 		sim.C.add( pconstraint )
 		break
+	}
+	case 'MODEL006' : {
+		const omega = configJSON["model_args"]["omega"]
 	}
 	default : {
 		throw( "Unsupported model " + modelName  )
