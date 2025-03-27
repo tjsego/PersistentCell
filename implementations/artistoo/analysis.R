@@ -67,8 +67,19 @@ correctTorus <- function( tracks, fieldsize ){
 
 }
 
-tr <- correctTorus( tr, fieldsize = c( json$len_1, json$len_2 ) )
+tr <- correctTorus( tr, fieldsize = c( json$model$len_1, json$model$len_2 ) )
 
+# ======= perimeter and area distributions
+
+pVol <- ggplot( d, aes( x = area ) ) +
+	geom_histogram( bins = 30 ) +
+	labs( x = "cell area (pixels)") +
+	plotTheme
+
+pPer <- ggplot( d, aes( x  = surface ) ) +
+	geom_histogram( bins = 30 ) +
+	labs( x = "cell perimeter (edges)" ) +
+	plotTheme
 
 
 # ======= Speed distributions
@@ -167,7 +178,7 @@ pAcov <- ggplot( acov, aes( x = dt ) ) +
 	plotTheme
 
 
-p <- pSpeed + pStepSpeed + pMSD + pAcov + plot_layout( ncol = 2 ) + plot_annotation( tag_levels = 'A' )
+p <- pSpeed + pStepSpeed + pVol + pMSD + pAcov + pPer + plot_layout( ncol = 3 ) + plot_annotation( tag_levels = 'A' )
 
-ggsave( file = outFile, width = 12, height = 10, units = "cm", useDingbats = FALSE )
+ggsave( file = outFile, width = 18, height = 10, units = "cm", useDingbats = FALSE )
 

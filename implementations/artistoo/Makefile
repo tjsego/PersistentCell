@@ -36,7 +36,7 @@ results/MODEL000/example.mp4 : results/MODEL000/tracks/track1.csv
 
 # combine tracks of independently simulated cells	
 results/MODEL000/combined-tracks.csv : $(foreach s, $(REPS), results/MODEL000/tracks/track$(s).csv)
-	cat $< | head -n 1 > $@ && cat $^ | grep -v TimeMCS >> $@
+	cat $< | head -n 1 > $@ && cat $^ | grep -v time >> $@
 
 # Analysis summary
 results/MODEL000/analysis.pdf : analysis.R results/MODEL000/combined-tracks.csv 
@@ -56,7 +56,7 @@ results/MODEL003/example.mp4 : results/MODEL003/tracks/track1.csv
 
 # combine tracks of independently simulated cells	
 results/MODEL003/combined-tracks.csv : $(foreach s, $(REPS), results/MODEL003/tracks/track$(s).csv)
-	cat $< | head -n 1 > $@ && cat $^ | grep -v TimeMCS >> $@
+	cat $< | head -n 1 > $@ && cat $^ | grep -v time >> $@
 
 # Analysis summary
 results/MODEL003/analysis.pdf : analysis.R results/MODEL003/combined-tracks.csv 
@@ -78,7 +78,7 @@ results/MODEL005/example.mp4 : results/MODEL005/tracks/track1.csv
 
 # combine tracks of independently simulated cells	
 results/MODEL005/combined-tracks.csv : $(foreach s, $(REPS), results/MODEL005/tracks/track$(s).csv)
-	@cat $< | head -n 1 > $@ && cat $^ | grep -v TimeMCS >> $@
+	@cat $< | head -n 1 > $@ && cat $^ | grep -v time >> $@
 
 # Analysis summary
 results/MODEL005/analysis.pdf : analysis.R results/MODEL005/combined-tracks.csv 

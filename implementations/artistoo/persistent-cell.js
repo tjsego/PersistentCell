@@ -92,7 +92,7 @@ let custommethods = {
 let sim = new CPM.Simulation( config, custommethods )
 
 // print header
-console.log( "time,id,com_1,com_2" )	
+console.log( "time,id,com_1,com_2,area,surface" )	
 
 switch( modelName ){
 	
@@ -149,7 +149,9 @@ switch( modelName ){
 
 function logStats(){
 	let centroid = this.C.getStat( CPM.CentroidsWithTorusCorrection )[1]
-	console.log( this.time + "," + seed + "," + centroid.join(",") )		
+	let area = this.C.cellvolume[1]
+	let perim = this.C.getConstraint("PerimeterConstraint").cellperimeters[1]
+	console.log( this.time + "," + seed + "," + centroid.join(",") + "," + area + "," + perim )		
 }
 
 function drawOnTop(){
