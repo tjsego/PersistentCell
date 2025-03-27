@@ -1,6 +1,6 @@
 import numpy as np
 import tissue_forge as tf
-from typing import Any, List, Tuple
+from typing import Any, Dict, Tuple
 
 from model import from_json_data
 
@@ -22,7 +22,7 @@ class Sim:
     def __init__(self,
                  dim: Tuple[float, float],
                  model_label: str,
-                 model_args: List[Any],
+                 model_args: Dict[str, Any],
                  sim_time: float,
                  dt: float,
                  damping: float,
@@ -84,7 +84,7 @@ class Sim:
         ph.mass = self.damping
         self.pid = ph.id
 
-        from_json_data(self.model_label, *self.model_args)
+        from_json_data(self.model_label, **self.model_args)
         tf.event.on_time(period=self.output_per, invoke_method=lambda e: self.record_data())
 
         tf.step(self.sim_time)

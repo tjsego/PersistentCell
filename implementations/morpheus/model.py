@@ -92,6 +92,27 @@ class morpheus_model_0(morpheus_model) :
             "reenf_rate" : "0"
         }
 
+class morpheus_model_3(morpheus_model) :
+    """ morpheus implementation for model 3, classical ballistic walk """
+    
+    def __init__(self, input_dir : str) :
+        morpheus_model.__init__(self,input_dir)
+        # self.source_path = input_dir
+        
+    def model_file(self):
+        return "model_continuous.xml";
+    
+    def xpath4param(self) :
+        base = super().xpath4param()
+        base["model_args[0]"] = base["orientation"]
+        base["model_args[1]"] = base["cpm_mu"]
+        return base;
+    
+    def addon_spec(self) :
+        return {
+            "orientation_noise" : "0",
+            "reenf_rate" : "0"
+        }
 
 class morpheus_model_6(morpheus_model) :
     """ morpheus implementation for model 6, classical persistent random walk """
@@ -144,6 +165,8 @@ def from_json_data(spec_data: dict, input_dir='.'):
     
     if model_name == 'MODEL000' :
         return morpheus_model_0(input_dir).get(spec_data);
+    elif model_name == 'MODEL003' :
+        return morpheus_model_3(input_dir).get(spec_data);
     elif model_name == 'MODEL006' :
         return morpheus_model_6(input_dir).get(spec_data);
     elif model_name == 'MODEL007' :

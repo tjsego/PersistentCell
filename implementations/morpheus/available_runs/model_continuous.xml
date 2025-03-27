@@ -19,21 +19,24 @@
     </Space>
     <Time>
         <StartTime value="0"/>
-        <StopTime value="4000"/>
+        <StopTime value="10000"/>
         <TimeSymbol symbol="time"/>
     </Time>
     <Analysis>
-        <!--     <Disabled>   <Gnuplotter time-step="100">
+		<!--    <Disabled> 
+        <Gnuplotter time-step="100">
             <Plot>
                 <Cells value="dir.phi"/>
                 <CellArrows center="origin" orientation="dir*10"/>
             </Plot>
             <Terminal name="png" size="1200,1200,0"/>
-        </Gnuplotter>  </Disabled>  -->
+        </Gnuplotter>
+	    </Disabled>
+-->
         <Logger time-step="log_freq">
             <Input>
-                <Symbol symbol-ref="cell.center.x"/>
-                <Symbol symbol-ref="cell.center.y"/>
+		    <Symbol symbol-ref="cell.center.x"/>
+		    <Symbol symbol-ref="cell.center.y"/>
                 <Symbol symbol-ref="msd"/>
             </Input>
             <Output>
@@ -52,16 +55,17 @@
                 </Plot>
             </Plots>
             <Restriction>
-                <CellType celltype="cell" />
-            </Restriction>        
+                <Celltype celltype="cell"/>
+            </Restriction>
         </Logger>
+        <ModelGraph include-tags="#untagged" format="dot" reduced="false"/>
     </Analysis>
     <Global>
         <Constant symbol="cpm_time_scale" value="1"/>
         <Constant symbol="l_n" name="node length" value="1"/>
         <Constant symbol="len_x" name="x lattice size" value="20*r * (array_size+5)"/>
         <Constant symbol="len_y" name="y lattice size" value="20*r * (array_size+5)"/>
-        <Constant symbol="a_cpm" value="60" />
+        <Constant symbol="a_cpm" value="60"/>
         <Constant symbol="r" name="cell radius" value="sqrt(a_cpm/pi) * l_n"/>
         <Constant symbol="a" name="cell area" value="pi*r^2"/>
         <Constant symbol="λ_a" value="10"/>
@@ -73,8 +77,9 @@
             <Annotation>Correction factor for the estimation of surface length in the CPM. Depend on the neighborhood choice.
                 In this model we make use normalization of interface / surface lengths, such that xi==1 </Annotation>
         </Constant>
-        <Constant symbol="mu" name="cell motility strength" value="0.5"/>
+        <Constant symbol="mu" name="cell motility strength" value="10"/>
         <Constant symbol="ω" name="angular noise amplitude" value="0.25"/>
+        <Constant symbol="reenf_rate" value="0"/>
         <Constant symbol="mcs_d" name="MonteCarloStep duration" value="cpm_time_scale * l_n"/>
         <Constant symbol="array_size" value="1">
             <Annotation>Population array size</Annotation>
@@ -92,19 +97,18 @@
             <Constant symbol="λ_p_cpm" value="λ_p * (l_n/xi_p)^2"/>
             <SurfaceConstraint target="p_cpm" strength="λ_p_cpm" mode="surface"/>
             <Constant symbol="mu_cpm" value="mu * mcs_d * l_n"/>
-            <Constant symbol="reenf_rate" value="reenf_rate * mcs_d" />
+            <Constant symbol="reenf_rate_cpm" value="reenf_rate * mcs_d"/>
             <DirectedMotion strength="mu_cpm" direction="dir"/>
             <Property symbol="α" value="rand_uni(0,2*pi)"/>
-<!--             <Property symbol="α" value="0"/> -->
+            <!--             <Property symbol="α" value="0"/> -->
             <PropertyVector notation="r,φ,θ" symbol="dir" value="1,α,0"/>
             <PropertyVector symbol="vel" name="observed velocity" value="dir"/>
             <MotilityReporter time-step="5.0">
                 <Velocity symbol-ref="vel"/>
             </MotilityReporter>
-
             <System time-step="mcs_d" solver="Euler [fixed, O(1)]">
                 <DiffEqn symbol-ref="α" name="orientation">
-                    <Expression>rand_norm(0,ω / sqrt(mcs_d)) + reenf_rate * sin(α-vel.phi) </Expression>
+			<Expression>rand_norm(0,ω / sqrt(mcs_d) ) + reenf_rate_cpm * sin(α-vel.phi) </Expression>
                 </DiffEqn>
                 <VectorRule symbol-ref="dir" notation="r,φ,θ">
                     <Expression>1, α, 0.0</Expression>
@@ -130,7 +134,7 @@
         </Population>
     </CellPopulations>
     <CPM>
-        <Interaction default="0" />
+        <Interaction default="0"/>
         <ShapeSurface scaling="none">
             <Neighborhood>
                 <Order>2</Order>

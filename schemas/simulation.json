@@ -49,6 +49,9 @@
   },
   "model_args": {
     "description": "Persistent random walk model parameters; empty if none required.",
-    "type": "array"
+    "type": "object",
+    "additionalProperties": {
+      "type": "number"
+    }
   }
 }

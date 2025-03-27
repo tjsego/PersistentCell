@@ -5,7 +5,12 @@
     "max_time": 10000,
     "method": "CP",
     "model": "MODEL004",
-    "model_args": [0.0, 0.5, 1.0, 1.0, 0.0]
+    "model_args": {
+      "ptime": 0.0,
+      "bias": 0.5,
+      "speed": 1.0,
+      "bdir": 0.0
+    }
   },
   "center-model": {
     "damping": 1.0,

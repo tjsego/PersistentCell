@@ -3,7 +3,7 @@ from cc3d import __revision__ as cc3d_revision
 from cc3d import __githash__ as cc3d_githash
 from cc3d.core import PyCoreSpecs as pcs
 import json
-from math import sqrt
+from math import sqrt, cos, sin
 from typing import Any, List, Optional, Type, Union
 
 cell_type_name = 'Cell'
@@ -12,13 +12,16 @@ cell_type_name = 'Cell'
 HAS_SURFACE_NBS = 'neighbor_order' in pcs.SurfacePlugin.check_dict
 
 
-def _impl_MODEL000(*args):
+def _impl_MODEL000(**kwargs):
     return []
 
 
-def _impl_MODEL003(*args):
+def _impl_MODEL003(**kwargs):
+    lambda_dir = - float(kwargs['lambda_dir'])
+    target_angle = float(kwargs['target_angle'])
     return [
-        pcs.ExternalPotentialPlugin(lambda_x=float(args[0]), lambda_y=float(args[1]))
+        pcs.ExternalPotentialPlugin(lambda_x=lambda_dir * cos(target_angle),
+                                    lambda_y=lambda_dir * sin(target_angle))
     ]
 
 
@@ -335,7 +338,7 @@ def create_specs(dim_1,
         result.append(
             pcs.SurfacePlugin(pcs.SurfaceEnergyParameter(cell_type_name, cell_perim_target, cell_perim_lm))
         )
-    result.extend(model_implementations[model_label](*model_args))
+    result.extend(model_implementations[model_label](**model_args))
     return result
 
 
