@@ -8,18 +8,17 @@ json <- read_json( argv[2] )
 outFile <- argv[3]
 
 
-tr <- as.tracks( d, time.column = 1, id.column = 2, pos.columns = 3:4 )
+tr <- as.tracks( d, time.column = 1, id.column = 2, pos.columns = 3:6 )
 
 # correct for the periodic boundary
 # Correct tracks when cells move in a torus
-correctTorus <- function( tracks, fieldsize ){
+correctTorus <- function( tracks, fieldsize, coordinate.cols = 2:3 ){
 
 	# Loop over separate tracks in the tracks object (can be just one)
 	for( t in 1:length(tracks) ){
 
-		# Loop over the dimensions x,y(,z) (first column is time)
-		coordlastcol <- ncol( tracks[[t]] )
-		for( d in 2:coordlastcol ){
+		# Loop over the dimensions x,y(,z) (first column is time, last two columns area/perimeter don't count)
+		for( d in coordinate.cols ){
 		
 			# do the correction only if the fieldsize in that dimension is not NA
 			# (which indicates that there is no torus to be corrected for)

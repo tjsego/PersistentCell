@@ -1,7 +1,7 @@
 .SECONDARY:
 .DELETE_ON_ERROR:
 
-all : model000 model003
+all : model000 model003 model005
 
 REPS=$(shell seq 1 100)
 
@@ -47,4 +47,18 @@ results/MODEL003/combined-tracks.csv : $(foreach s, $(REPS), results/MODEL003/tr
 	cat $< | head -n 1 > $@ && cat $^ | grep -v time >> $@
 
 results/model003-corrected-tracks.csv : correct-torus.R results/MODEL003/combined-tracks.csv model003.json
+	Rscript $^ $@
+
+# MODEL005
+# ===============================
+model005 : results/model005-corrected-tracks.csv
+
+results/MODEL005/tracks/track%.csv : ../persistent-cell.js model005.json | results/MODEL005/tracks results/MODEL005/img
+	node $< E0/model005.json $* > $@
+
+# combine tracks of independently simulated cells	
+results/MODEL005/combined-tracks.csv : $(foreach s, $(REPS), results/MODEL005/tracks/track$(s).csv)
+	cat $< | head -n 1 > $@ && cat $^ | grep -v time >> $@
+
+results/model005-corrected-tracks.csv : correct-torus.R results/MODEL005/combined-tracks.csv model005.json
 	Rscript $^ $@
