@@ -31,6 +31,22 @@
       "items": {
         "type": "number"
       }
+    },
+    {
+      "key": "area",
+      "description": "Area occupied by the cell",
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    },
+    {
+      "key": "surface",
+      "description": "Surface length of the cell",
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
     }
   ]
 }
