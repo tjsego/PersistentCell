@@ -22,6 +22,9 @@ def unique_data_dir(_output_dir: str, prev_labels: List[int] = None):
     return os.path.join(_output_dir, result), label
 
 
+Result = Tuple[int, float, float, float, float]
+
+
 class TrackingSteppable(SteppableBasePy):
 
     def __init__(self, cell_type_name: str, cell_length_target: int):
@@ -35,7 +38,7 @@ class TrackingSteppable(SteppableBasePy):
         self.ycom_prev = None
         self.xcom_adjust = 0
         self.ycom_adjust = 0
-        self.cell_pos: List[Tuple[int, float, float]] = []
+        self.data: List[Result] = []
         self.cell_id: Optional[int] = None
 
     @property
@@ -72,10 +75,10 @@ class TrackingSteppable(SteppableBasePy):
         self.xcom_prev, self.ycom_prev = xcom, ycom
 
         # Store data
-        self.cell_pos.append((mcs, xcom + self.xcom_adjust, ycom + self.ycom_adjust))
+        self.data.append((mcs, xcom + self.xcom_adjust, ycom + self.ycom_adjust, cell.volume, cell.surface))
 
     def output_data(self):
-        return self.cell_pos
+        return self.data
 
 
 def create_sim(specs, cell_type_name: str, cell_length_target: int, *args, **kwargs):
@@ -138,7 +141,9 @@ def _simulate(specs,
             dict(
                 time=[sd[0] for sd in sim_data],
                 com_1=[sd[1] for sd in sim_data],
-                com_2=[sd[2] for sd in sim_data]
+                com_2=[sd[2] for sd in sim_data],
+                area=[sd[3] for sd in sim_data],
+                surface=[sd[4] for sd in sim_data]
             ),
             f,
             indent=4

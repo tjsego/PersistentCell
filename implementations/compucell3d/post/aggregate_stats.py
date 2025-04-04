@@ -24,7 +24,9 @@ def load_results(results_dir: str):
             fdata = json.load(f)
             results_data[num] = dict(time=np.asarray(fdata['time'], dtype=int),
                                      com_1=np.asarray(fdata['com_1'], dtype=float),
-                                     com_2=np.asarray(fdata['com_2'], dtype=float))
+                                     com_2=np.asarray(fdata['com_2'], dtype=float),
+                                     area=np.asarray(fdata['area'], dtype=float),
+                                     surface=np.asarray(fdata['surface'], dtype=float))
 
     return results_files_map, results_data
 
