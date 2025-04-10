@@ -1,0 +1,4 @@
+@echo off
+
+set PC_CONDAENVNAME_COMPARE=persistent_cell_compare
+set PC_CONDAENVNAME_DERIVED=persistent_cell_derived
