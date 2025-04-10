@@ -1,0 +1,6 @@
+jsonlite
+celltrackR
+dplyr 
+ggplot2
+patchwork
+ggbeeswarm

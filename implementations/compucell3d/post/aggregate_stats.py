@@ -1,4 +1,5 @@
 import argparse
+import csv
 import json
 from matplotlib import pyplot as plt
 import numpy as np
@@ -23,47 +24,32 @@ def load_results(results_dir: str):
             fdata = json.load(f)
             results_data[num] = dict(time=np.asarray(fdata['time'], dtype=int),
                                      com_1=np.asarray(fdata['com_1'], dtype=float),
-                                     com_2=np.asarray(fdata['com_2'], dtype=float))
+                                     com_2=np.asarray(fdata['com_2'], dtype=float),
+                                     area=np.asarray(fdata['area'], dtype=float),
+                                     surface=np.asarray(fdata['surface'], dtype=float))
 
     return results_files_map, results_data
 
 
-def clean_results(results_data: Dict[int, Dict[str, np.ndarray]]):
-    min_steps = None
-    for v in results_data.values():
-        num_steps = v['time'].shape[0]
-        min_steps = num_steps if min_steps is None else min(min_steps, num_steps)
-
-    result = {}
-    for k, v in results_data.items():
-        result_k = {}
-        for kk, vv in v.items():
-            result_k[kk] = vv[:min_steps]
-        result[k] = result_k
-    return result, min_steps
-
-
-def format_ssr(results_data: Dict[int, Dict[str, np.ndarray]],
-               clean=False):
+def output_standard(results_data: Dict[int, Dict[str, np.ndarray]], fp: str):
     sample_int = list(results_data.keys())[0]
-    
-    if not clean:
-        cleaned_data, min_steps = clean_results(results_data)
-    else:
-        cleaned_data = results_data
-        min_steps = results_data[sample_int]['time'].shape[0]
-    
-    num_reps = len(results_data.keys())
+
+    min_steps = results_data[sample_int]['time'].shape[0]
+
     results_names = list(results_data[sample_int])
     results_names.remove('time')
+    results_names.insert(0, 'time')
 
-    results_times = results_data[sample_int]['time']
-    results = {name: np.ndarray((min_steps, num_reps), dtype=float) for name in results_names}
-    for i, rep_num in enumerate(cleaned_data.keys()):
-        for name in results:
-            results[name][:, i] = cleaned_data[rep_num][name][:]
-
-    return num_reps, results_times, results
+    # 'time', 'id', 'com_1', 'com_2', ...
+    column_names = [results_names[0]] + ['id'] + results_names[1:]
+    with open(fp, 'w', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=column_names)
+        writer.writeheader()
+        for rep_num, rep_data in results_data.items():
+            for i in range(min_steps):
+                data = {k: float(rep_data[k][i]) for k in results_names}
+                data['id'] = rep_num
+                writer.writerow(data)
 
 
 def generate_plots(results_data: Dict[int, Dict[str, np.ndarray]],
@@ -113,9 +99,8 @@ def generate_plots(results_data: Dict[int, Dict[str, np.ndarray]],
 
 def aggregate_stats(results_dir: str,
                     output_dir: str,
-                    export_ssr: bool,
+                    export_standard: bool,
                     export_figs: bool,
-                    render_clean: bool,
                     dpi=DEF_DPI,
                     rendered_names: List[str] = None,
                     figsize: Tuple[float, float] = None,
@@ -127,45 +112,23 @@ def aggregate_stats(results_dir: str,
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir)
 
-    print('Results directory:', results_dir)
-    print('Output directory :', output_dir)
-    print('Export SSR data  :', export_ssr)
-    print('Export figures   :', export_figs)
-    if export_figs:
-        print('Render clean     :', render_clean)
-    else:
-        render_clean = False
+    print('Results directory   :', results_dir)
+    print('Output directory    :', output_dir)
+    print('Export standard data:', export_standard)
+    print('Export figures      :', export_figs)
 
     print('Loading results...')
     results = load_results(results_dir)[1]
 
-    if export_ssr or render_clean:
-        print('Cleaning data...')
-        results_clean, _ = clean_results(results)
-
-    if export_ssr:
-        print('Exporting ssr data...')
-        ssr_fp = os.path.join(output_dir, 'ssr.json')
-        print(f'\t{ssr_fp}')
-        num_reps, ssr_results_times, ssr_results = format_ssr(results_clean, True)
-        with open(ssr_fp, 'w') as f:
-            json.dump(
-                {
-                    'num_reps': num_reps,
-                    'times': ssr_results_times.tolist(),
-                    'results': {k: v.tolist() for k, v in ssr_results.items()}
-                }, 
-                f, 
-                indent=4
-            )
+    if export_standard:
+        print('Exporting standard data...')
+        output_fp = os.path.join(output_dir, 'data.csv')
+        print(f'\t{output_fp}')
+        output_standard(results, output_fp)
 
     if export_figs:
         print('Exporting rendered data...')
         generate_plots(results, output_dir, name_prefix='raw', dpi=dpi, results_names=rendered_names, figsize=figsize, alpha=alpha, color=color)
-        
-        if render_clean:
-            print('Exporting rendered clean data...')
-            generate_plots(results_clean, output_dir, name_prefix='clean', dpi=dpi, results_names=rendered_names, figsize=figsize, alpha=alpha, color=color)
 
 
 class ArgParser(argparse.ArgumentParser):
@@ -185,23 +148,17 @@ class ArgParser(argparse.ArgumentParser):
                           dest='output_dir',
                           help='Absolute path of output directory')
         
-        self.add_argument('-s', '--ssr',
+        self.add_argument('-s', '--export-standard',
                           action='store_true',
                           required=False,
-                          dest='export_ssr',
-                          help='Flag to export SSR data')
+                          dest='export_standard',
+                          help='Flag to export standard formatted data')
         
         self.add_argument('-f', '--export-figs',
                           action='store_true',
                           required=False,
                           dest='export_figs',
                           help='Flag to export figures')
-        
-        self.add_argument('-c', '--export-clean',
-                          action='store_true',
-                          required=False,
-                          dest='render_clean',
-                          help='Flag to also export figures of clean data. Does nothing without exporting figures.')
         
         self.add_argument('-d', '--dpi',
                           type=int,
@@ -251,16 +208,12 @@ class ArgParser(argparse.ArgumentParser):
         return self.parsed_args.output_dir
 
     @property
-    def export_ssr(self):
-        return self.parsed_args.export_ssr
+    def export_standard(self):
+        return self.parsed_args.export_standard
 
     @property
     def export_figs(self):
         return self.parsed_args.export_figs
-
-    @property
-    def render_clean(self):
-        return self.parsed_args.render_clean
 
     @property
     def dpi(self):
@@ -285,9 +238,8 @@ class ArgParser(argparse.ArgumentParser):
     def kwargs(self) -> dict:
         return dict(results_dir=self.results_dir, 
                     output_dir=self.output_dir, 
-                    export_ssr=self.export_ssr, 
-                    export_figs=self.export_figs, 
-                    render_clean=self.render_clean, 
+                    export_standard=self.export_standard,
+                    export_figs=self.export_figs,
                     dpi=self.dpi, 
                     rendered_names=self.rendered_names, 
                     figsize=self.figsize, 

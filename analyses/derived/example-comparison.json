@@ -1,0 +1,28 @@
+{
+	"data" : [
+		{
+			"name" : "Artistoo-\nMODEL000",
+			"file" : "../../implementations/artistoo/results/MODEL000/combined-tracks.csv",
+			"fieldSize" : [100,100],
+			"periodicBoundary" : true,
+			"secondsPerSimulationStep" : 1,
+			"micronsPerLengthUnit" : 1,
+			"timeColumn" : 1,
+			"idColumn" : 2,
+			"xColumn" : 3,
+			"yColumn" : 4
+		},
+		{
+			"name" : "Artistoo-\nMODEL005",
+			"file" : "../../implementations/artistoo/results/MODEL005/combined-tracks.csv",
+			"fieldSize" : [100,100],
+			"periodicBoundary" : true,
+			"secondsPerSimulationStep" : 1,
+			"micronsPerLengthUnit" : 1,
+			"timeColumn" : 1,
+			"idColumn" : 2,
+			"xColumn" : 3,
+			"yColumn" : 4
+		}
+	]
+}

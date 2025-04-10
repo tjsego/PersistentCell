@@ -8,27 +8,35 @@ DEF_NUM_SIMS = 1
 DEF_SCREENSHOT_NAME = 'screenshot.json'
 
 
-def run(fp: str):
+def run(fp: str,
+        output_dir: str = None):
     with open(fp, 'r') as f:
         config_data = json.load(f)
 
     model_data: dict = config_data['model']
-    cc3d_data: dict = config_data['cc3d']
+    # Support 'sim' key, prefer 'cc3d' key
+    cc3d_data = {}
+    if 'sim' in config_data:
+        cc3d_data.update(config_data['sim'])
+    if 'cc3d' in config_data:
+        cc3d_data.update(config_data['cc3d'])
 
     num_sims = cc3d_data.get('num_sims', DEF_NUM_SIMS)
-    output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'results', cc3d_data['output_name'])
+    if output_dir is None:
+        output_dir = str(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'results', cc3d_data['output_name']))
     output_per = int(cc3d_data['output_per'])
     screenshot_name = cc3d_data.get('screenshot_name', DEF_SCREENSHOT_NAME)
     
-    specs, steppable_type = from_json_data(model_data)
+    specs, cell_type_name, cell_length_target = from_json_data(model_data)
     
     simulate(output_dir=output_dir,
              num_sims=num_sims,
              output_per=output_per,
              screenshot_name=screenshot_name,
              specs=specs,
-             steppable_type=steppable_type,
-             max_steps=int(model_data['max_time']))
+             cell_type_name=cell_type_name,
+             cell_length_target=cell_length_target,
+             max_time=int(model_data['max_time']))
 
 
 class ArgParser(argparse.ArgumentParser):
