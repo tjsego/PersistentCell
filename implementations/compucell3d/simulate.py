@@ -27,12 +27,13 @@ Result = Tuple[int, float, float, float, float]
 
 class TrackingSteppable(SteppableBasePy):
 
-    def __init__(self, cell_type_name: str, cell_length_target: int):
+    def __init__(self, cell_type_name: str, cell_length_target: int, output_per: int):
         
         super().__init__(frequency=1)
 
         self.cell_type_name = cell_type_name
         self.cell_length_target = cell_length_target
+        self.output_per = output_per
 
         self.xcom_prev = None
         self.ycom_prev = None
@@ -75,14 +76,15 @@ class TrackingSteppable(SteppableBasePy):
         self.xcom_prev, self.ycom_prev = xcom, ycom
 
         # Store data
-        self.data.append((mcs, xcom + self.xcom_adjust, ycom + self.ycom_adjust, cell.volume, cell.surface))
+        if divmod(mcs, self.output_per)[1] == 0:
+            self.data.append((mcs, xcom + self.xcom_adjust, ycom + self.ycom_adjust, cell.volume, cell.surface))
 
     def output_data(self):
         return self.data
 
 
-def create_sim(specs, cell_type_name: str, cell_length_target: int, *args, **kwargs):
-    steppable = TrackingSteppable(cell_type_name, cell_length_target)
+def create_sim(specs, cell_type_name: str, cell_length_target: int, output_per: int, *args, **kwargs):
+    steppable = TrackingSteppable(cell_type_name, cell_length_target, output_per)
     cc3d_sim = CC3DSimService(*args, **kwargs)
     cc3d_sim.register_specs(specs)
     cc3d_sim.register_steppable(steppable)
@@ -92,10 +94,10 @@ def create_sim(specs, cell_type_name: str, cell_length_target: int, *args, **kwa
     return cc3d_sim, steppable
 
 
-def generate_screenshot_data(specs, cell_type_name: str, cell_length_target: int, field_names: List[str] = None):
+def generate_screenshot_data(specs, cell_type_name: str, cell_length_target: int, output_per: int, field_names: List[str] = None):
     cc3d_sim = CC3DSimService()
     cc3d_sim.register_specs(specs)
-    cc3d_sim.register_steppable(TrackingSteppable(cell_type_name, cell_length_target))
+    cc3d_sim.register_steppable(TrackingSteppable(cell_type_name, cell_length_target, output_per))
     cc3d_sim.run()
     cc3d_sim.init()
     cc3d_sim.start()
@@ -130,9 +132,9 @@ def _simulate(specs,
               sim_label):
     print(f'Simulation {sim_label}: {sim_output_dir}')
 
-    cc3d_sim, steppable = create_sim(specs, cell_type_name, cell_length_target,
+    cc3d_sim, steppable = create_sim(specs, cell_type_name, cell_length_target, output_per,
                                      output_dir=sim_output_dir, output_frequency=output_per)
-    while cc3d_sim.current_step < max_time:
+    while cc3d_sim.current_step <= max_time:
         cc3d_sim.step()
 
     sim_data = steppable.output_data()
@@ -181,4 +183,4 @@ def simulate(output_dir: str,
     
     if not os.path.isfile(os.path.join(output_dir, screenshot_name)):
         with open(os.path.join(output_dir, screenshot_name), 'w') as f:
-            json.dump(generate_screenshot_data(specs, cell_type_name, cell_length_target, field_names=field_names), f, indent=4)
+            json.dump(generate_screenshot_data(specs, cell_type_name, cell_length_target, output_per, field_names=field_names), f, indent=4)
