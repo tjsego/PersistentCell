@@ -59,9 +59,11 @@ def _simulate(model, sim_label, sim_output_dir, output_freq):
     with open(os.path.join(sim_output_dir,"..", f'sim_{sim_label}.json'), 'w') as f:
         json.dump(
             dict(
-                time=[sd[0] for sd in data],
-                com_1=[sd[2] for sd in data],
-                com_2=[sd[3] for sd in data]
+                time = [sd[0] for sd in data],
+                com_1 = [sd[2] for sd in data],
+                com_2 = [sd[3] for sd in data],
+                area = [sd[4] for sd in data],
+                surface = [sd[5] for sd in data]
             ),
             f,
             indent=4
