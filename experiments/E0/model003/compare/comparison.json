@@ -1,0 +1,26 @@
+[
+    {
+        "named_efect_errors": {
+            "com_1": 1.9081429374873042,
+            "com_2": 1.793154896449408,
+            "area": 1.9933399945606973,
+            "surface": 1.9970988691983094
+        },
+        "efect_error": 1.9970988691983094,
+        "rejection_p_value": 0.001996007984031936,
+        "modeler": "artistoo",
+        "curator": "cc3d"
+    },
+    {
+        "named_efect_errors": {
+            "com_1": 1.9081429374873042,
+            "com_2": 1.793154896449408,
+            "area": 1.9933399945606973,
+            "surface": 1.9970988691983094
+        },
+        "efect_error": 1.9970988691983094,
+        "rejection_p_value": 0.004975124378109453,
+        "modeler": "cc3d",
+        "curator": "artistoo"
+    }
+]
