@@ -13,6 +13,7 @@ def efect_report(results,
                  sig_figs: int,
                  num_steps: int = DEF_EVAL_NUM,
                  num_var_pers: int = DEF_NUM_VAR_PERS,
+                 return_sampling=False,
                  **kwargs):
 
     results_time = results.pop(VAR_TIME)
@@ -36,7 +37,7 @@ def efect_report(results,
             ecf_tval[i, j] = libssr.eval_final(sample_i, num_var_pers)
             ecf_evals[i, j, :, :] = libssr.ecf(sample_i, libssr.get_eval_info_times(num_steps, ecf_tval[i, j]))
 
-    return libssr.EFECTReport.create(
+    rep = libssr.EFECTReport.create(
         results_names,
         results_time,
         sample_size // 2,
@@ -47,6 +48,9 @@ def efect_report(results,
         np.std(err_sample),
         sig_figs
     )
+    if return_sampling:
+        return rep, err_sample
+    return rep
 
 
 class ArgParser(argparse.ArgumentParser):

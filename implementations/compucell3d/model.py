@@ -25,9 +25,16 @@ def _impl_MODEL003(**kwargs):
     ]
 
 
+def _impl_MODEL005(**kwargs):
+    return [
+        pcs.ExternalPotentialPlugin()
+    ]
+
+
 model_implementations = {
     'MODEL000': _impl_MODEL000,
-    'MODEL003': _impl_MODEL003
+    'MODEL003': _impl_MODEL003,
+    'MODEL005': _impl_MODEL005
 }
 method_implementation = 'CPM'
 
@@ -336,7 +343,9 @@ def create_specs(dim_1,
         )
     else:
         result.append(
-            pcs.SurfacePlugin(pcs.SurfaceEnergyParameter(cell_type_name, cell_perim_target, cell_perim_lm))
+            pcs.SurfacePlugin(None,
+                              None,
+                              pcs.SurfaceEnergyParameter(cell_type_name, cell_perim_target, cell_perim_lm))
         )
     result.extend(model_implementations[model_label](**model_args))
     return result

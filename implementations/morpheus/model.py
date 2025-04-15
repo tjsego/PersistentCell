@@ -18,10 +18,10 @@ class morpheus_model:
     def xpath4param(self):
         params = {
             # "cpm_area_v" : "./CellTypes/CellType/Constant[@symbol='a_cpm']/@value",
-            "cpm_area_v" : "./Global/Constant[@symbol='a_cpm']/@value",
-            "cpm_area_c" : "./CellTypes/CellType/Constant[@symbol='λ_a_cpm']/@value",
-            "cpm_perim_v" : "./CellTypes/CellType/Constant[@symbol='p_cpm']/@value",
-            "cpm_perim_c" : "./CellTypes/CellType/Constant[@symbol='λ_p_cpm']/@value",
+            "cpm_area_c" : "./Global/Constant[@symbol='a_cpm']/@value",
+            "cpm_area_v" : "./CellTypes/CellType/Constant[@symbol='λ_a_cpm']/@value",
+            "cpm_perim_c" : "./CellTypes/CellType/Constant[@symbol='p_cpm']/@value",
+            "cpm_perim_v" : "./CellTypes/CellType/Constant[@symbol='λ_p_cpm']/@value",
             "len_1" : "./Global/Constant[@symbol='len_x']/@value",
             "len_2" : "./Global/Constant[@symbol='len_y']/@value",
             "max_time" : "./Time/StopTime/@value",
@@ -31,7 +31,7 @@ class morpheus_model:
             "cpm_mu" : "./CellTypes/CellType/Constant[@symbol='mu_cpm']/@value",
             "orientation" :  "./CellTypes/CellType/Property[@symbol='α']/@value",
             "orientation_noise" : "./Global/Constant[@symbol='ω']/@value",
-            "reenf_rate" : "./CellTypes/CellType/Constant[@symbol='reenf_rate']/@value"
+            "reenf_rate" : "./CellTypes/CellType/Constant[@symbol='reenf_rate_cpm']/@value"
         }
         return params;
     
@@ -39,17 +39,20 @@ class morpheus_model:
         model_xml = ET.parse(os.path.join(self.input_dir, self.model_file()))
          # ET.dump(model_xml)
         
-        ## unpack annonymous model args
+        ## flatten additional model args
         if "model_args" in spec_data :
             xtra_args = spec_data["model_args"]
-            for i in range(len(xtra_args)) :
-                spec_data[f'model_args[{i}]'] = xtra_args[i]
+            for k,v in xtra_args.items() :            
+                print(k,v)
+                spec_data[k] = v
             del spec_data["model_args"]
         
         spec_data.update(self.addon_spec())
         
         x4p = self.xpath4param();
         for p, value in spec_data.items() : 
+            if p == "method":
+                continue
             if not p in x4p :
                 raise ValueError("Unknown paramater " + p + " in mode spec")
             
@@ -104,8 +107,8 @@ class morpheus_model_3(morpheus_model) :
     
     def xpath4param(self) :
         base = super().xpath4param()
-        base["model_args[0]"] = base["orientation"]
-        base["model_args[1]"] = base["cpm_mu"]
+        base["target_angle"] = base["orientation"]
+        base["lambda_dir"] = base["cpm_mu"]
         return base;
     
     def addon_spec(self) :
@@ -126,8 +129,8 @@ class morpheus_model_6(morpheus_model) :
     
     def xpath4param(self) :
         base = super().xpath4param()
-        base["model_args[0]"] = base["cpm_mu"]
-        base["model_args[1]"] = base["orientation_noise"]
+        base["lampda_dir"] = base["cpm_mu"]
+        base["orientation_noise"] = base["orientation_noise"]
         return base;
     
     def addon_spec(self) :

@@ -12,5 +12,7 @@ Organization of this repository is as follows:
 * analyses/: routines to analyse standardized data. 
   * comparison/: routines to test for reproducibility, and to compare two samples of results for equality in distribution
   * derived/: routines to generate standardized derived data from standardized raw simulation outputs
+* experiments/: workflow outputs comparing results from multiple implementations of the same model specification
 * implementations/: framework implementations of repository schemas
 * schemas/: specifications for models, simulations, and data formats targeting JSON format
+* workflow/: main workflow routine

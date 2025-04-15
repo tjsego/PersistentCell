@@ -35,13 +35,16 @@
 -->
         <Logger time-step="log_freq">
             <Input>
-		    <Symbol symbol-ref="cell.center.x"/>
-		    <Symbol symbol-ref="cell.center.y"/>
+                <Symbol symbol-ref="cell.center.x"/>
+                <Symbol symbol-ref="cell.center.y"/>
                 <Symbol symbol-ref="msd"/>
+                <Symbol symbol-ref="cell.volume"/>
+                <Symbol symbol-ref="cell.surface"/>
             </Input>
             <Output>
                 <TextOutput/>
             </Output>
+<!--    <Disabled> 
             <Plots>
                 <Plot time-step="-1">
                     <Style style="points"/>
@@ -54,6 +57,7 @@
                     </Y-axis>
                 </Plot>
             </Plots>
+            </Disabled>  -->
             <Restriction>
                 <Celltype celltype="cell"/>
             </Restriction>

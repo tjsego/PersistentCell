@@ -3,13 +3,15 @@ import json
 from model import from_json_data
 import os
 from simulate import simulate
+from typing import Any, Dict, Optional
 
 DEF_NUM_SIMS = 1
 DEF_SCREENSHOT_NAME = 'screenshot.json'
 
 
 def run(fp: str,
-        output_dir: str = None):
+        output_dir: str = None,
+        output_frequency=0):
     with open(fp, 'r') as f:
         config_data = json.load(f)
 
@@ -32,11 +34,14 @@ def run(fp: str,
     simulate(output_dir=output_dir,
              num_sims=num_sims,
              output_per=output_per,
+             model_name=model_data['model'],
+             model_args=model_data['model_args'],
              screenshot_name=screenshot_name,
              specs=specs,
              cell_type_name=cell_type_name,
              cell_length_target=cell_length_target,
-             max_time=int(model_data['max_time']))
+             max_time=int(model_data['max_time']),
+             output_frequency=output_frequency)
 
 
 class ArgParser(argparse.ArgumentParser):
@@ -50,12 +55,40 @@ class ArgParser(argparse.ArgumentParser):
                           dest='spec_path',
                           help='Absolute path to specification with implementation specification for CompuCell3D')
 
+        self.add_argument('-o', '--output',
+                          type=str,
+                          default=None,
+                          dest='output_dir',
+                          help='Output directory. Default is "results" next to this file')
+
+        self.add_argument('-dp', '--data-period',
+                          type=int,
+                          default=0,
+                          dest='output_frequency',
+                          help='Period between simulation data dumps. Default is no data dumps.')
+
         self.parsed_args = self.parse_args()
 
     @property
     def spec_path(self):
         return self.parsed_args.spec_path
 
+    @property
+    def output_dir(self) -> Optional[str]:
+        return self.parsed_args.output_dir
+
+    @property
+    def output_frequency(self) -> int:
+        return self.parsed_args.output_frequency
+
+    @property
+    def kwargs(self) -> Dict[str, Any]:
+        return dict(
+            fp=self.spec_path,
+            output_dir=self.output_dir,
+            output_frequency=self.output_frequency
+        )
+
 
 if __name__ == '__main__':
-    run(fp=ArgParser().spec_path)
+    run(**ArgParser().kwargs)
