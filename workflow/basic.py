@@ -1,4 +1,5 @@
 import os
+from typing import List
 
 dir_here = os.path.dirname(os.path.abspath(__file__))
 dir_root = os.path.dirname(dir_here)
@@ -11,6 +12,7 @@ output_subdir_derived = 'derived'
 output_subdir_efect = 'efect'
 output_subdir_results_appended = 'results_appended'
 output_subdir_results_raw = 'results_raw'
+output_subdir_post = 'post'
 
 prefix_appended = 'appended_'
 
@@ -22,6 +24,7 @@ comparison_output_name = 'comparison.json'
 comparison_key_modeler = 'modeler'
 comparison_key_curator = 'curator'
 comparison_key_efect_error = 'efect_error'
+comparison_key_granular_efect_error = 'granular_efect_errors'
 comparison_key_named_efect_error = 'named_efect_errors'
 comparison_key_rej_pval = 'rejection_p_value'
 
@@ -35,6 +38,12 @@ output_dir_structure = [
 output_dir_structure_prereq = [
     output_subdir_results_raw
 ]
+
+post_dpi = 300
+supported_img_fexts = ['png', 'jpg', 'svg']
+post_rcparams = {
+    'font.family': 'arial'
+}
 
 
 def start_output_structure(_exp_dir: str):
@@ -70,3 +79,18 @@ def get_results_appended(_exp_dir):
             continue
         result[subdir] = os.path.join(_exp_dir, output_subdir_results_appended, subdir, csv_data[0])
     return result
+
+
+def check_fexts(fexts: List[str] = None):
+    if fexts is None:
+        fexts = ['png']
+    output_fexts = [f for f in fexts]
+    for i, v in enumerate(output_fexts):
+        if v.startswith('.'):
+            output_fexts[i] = v[1:]
+
+    bad_fexts = [f for f in output_fexts if f not in supported_img_fexts]
+    if bad_fexts:
+        raise ValueError(f'Bad output format(s) requested: {bad_fexts}')
+
+    return output_fexts

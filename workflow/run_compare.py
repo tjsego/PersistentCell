@@ -5,14 +5,19 @@ from itertools import product
 import json
 import libssr
 import logging
+import matplotlib as mpl
+from matplotlib import pyplot as plt
 import numpy as np
 import os
 import pandas as pd
-from typing import List, Type
+from typing import Any, Dict, List, Type
 
 from workflow import basic
 
 logger = logging.getLogger(__name__)
+
+for k, v in basic.post_rcparams.items():
+    mpl.rcParams[k] = v
 
 
 def _log_error(msg: str, err_type: Type[BaseException]):
@@ -23,22 +28,136 @@ def _log_error(msg: str, err_type: Type[BaseException]):
 def _compare_reports(_modeler_rep: libssr.EFECTReport,
                      _curator_rep: libssr.EFECTReport,
                      _curator_smp: List[float]):
-    err_names = {}
+    err_granular = {name: [] for name in _curator_rep.variable_names}
     for i, name in enumerate(_curator_rep.variable_names):
-        err = 0.0
         for j in range(_curator_rep.simulation_times.shape[0]):
-            err = max(err, libssr.ecf_compare(_modeler_rep.ecf_evals[j, i, :, :], _curator_rep.ecf_evals[j, i, :, :]))
-        err_names[name] = err
+            err_granular[name].append(libssr.ecf_compare(_modeler_rep.ecf_evals[j, i, :, :],
+                                                         _curator_rep.ecf_evals[j, i, :, :]))
+    err_names = {n: max(v) for n, v in err_granular.items()}
     err_res = max(err_names.values())
     return {
-        basic.comparison_key_named_efect_error: err_names,
         basic.comparison_key_efect_error: err_res,
-        basic.comparison_key_rej_pval: libssr.pval(_curator_smp, err_res)
+        basic.comparison_key_rej_pval: libssr.pval(_curator_smp, err_res),
+        basic.comparison_key_named_efect_error: err_names,
+        basic.comparison_key_granular_efect_error: err_granular
     }
 
 
+def _post_summary_name(_data: Dict[str, float],
+                       _output_dir: str,
+                       _output_fexts: List[str],
+                       _dpi: int):
+
+    names = list(_data.keys())
+    values = [_data[n] for n in names]
+    efect_error = max(values)
+    df = pd.DataFrame({'EFECT Error': values}, index=names)
+
+    fig, ax = plt.subplots(1, 1, layout='compressed', figsize=(3, 3))
+
+    df.plot.bar(
+        ax=ax,
+        color='black'
+    )
+    ax.legend().set_visible(False)
+    ax.set_ylabel('EFECT Error')
+    ax.set_ylim(0, 2)
+    ax.axhline(y=efect_error, color='black', linestyle='--')
+    ax.annotate(f'EFECT Error={efect_error}', xy=(0, efect_error), xytext=(0, efect_error + 0.25),
+                arrowprops=dict(facecolor='black', shrink=0.05))
+
+    output_name = 'summary'
+    for fext in _output_fexts:
+        fig.savefig(os.path.join(_output_dir, output_name + '.' + fext),
+                    dpi=_dpi)
+
+
+def _post_summary_granular(_data: Dict[str, List[float]],
+                           _output_dir: str,
+                           _output_fexts: List[str],
+                           _dpi: int):
+
+    names = _data.keys()
+
+    fig, axs = plt.subplots(len(names), 1,
+                            layout='compressed',
+                            figsize=(3, 3 * len(names)))
+
+    for n, ax in zip(names, axs):
+        values = _data[n]
+
+        ax.plot(list(range(len(values))), values, color='black')
+        ax.axhline(max(values), color='black', linestyle='--')
+
+        ax.set_ylim(0, 2)
+        ax.set_title(n)
+        ax.set_xlabel('Step')
+        ax.set_ylabel('EFECT Error')
+
+    output_name = 'granular'
+    for fext in _output_fexts:
+        fig.savefig(os.path.join(_output_dir, output_name + '.' + fext),
+                    dpi=_dpi)
+
+
+def _post(_experiment_dir: str,
+          do_appended=False,
+          fig_dpi=basic.post_dpi,
+          output_fexts: List[str] = None):
+    logger.info(f'Doing compare post: {_experiment_dir}')
+    logger.info(f'Appended     : {do_appended}')
+
+    if do_appended:
+        target_prefix = basic.prefix_appended
+    else:
+        target_prefix = ''
+
+    output_dir = os.path.join(_experiment_dir, basic.output_subdir_compare)
+    logger.debug(f'Output directory: {output_dir}')
+
+    output_fp = os.path.join(output_dir, target_prefix + basic.comparison_output_name)
+    logger.debug(f'Output file: {output_fp}')
+
+    if not os.path.isfile(output_fp):
+        logger.debug('No output to process')
+        return
+
+    try:
+        _output_fexts = basic.check_fexts(output_fexts)
+    except Exception as e:
+        _output_fexts = []
+        _log_error(str(e), type(e))
+
+    with open(output_fp, 'r') as f:
+        output_data = json.load(f)
+
+    num_outputs = len(output_data)
+    post_dir_root = os.path.join(_experiment_dir, basic.output_subdir_post, basic.output_subdir_compare)
+    post_dirs = [os.path.join(post_dir_root, str(i)) for i in range(num_outputs)]
+    jobs_to_do = [i for i, d in enumerate(post_dirs) if not os.path.isdir(d) or not os.listdir(d)]
+
+    for job in jobs_to_do:
+        output_dir_job = post_dirs[job]
+
+        logger.debug(f'Doing job: {output_dir_job}')
+
+        if not os.path.isdir(output_dir_job):
+            os.makedirs(output_dir_job)
+
+        output_data_job = output_data[job]
+        _post_summary_name(output_data_job[basic.comparison_key_named_efect_error],
+                           output_dir_job,
+                           _output_fexts,
+                           fig_dpi)
+        _post_summary_granular(output_data_job[basic.comparison_key_granular_efect_error],
+                               output_dir_job,
+                               _output_fexts,
+                               fig_dpi)
+
+
 def do_compare(_experiment_dir: str,
-               do_appended=False):
+               do_appended=False,
+               post_kwargs: Dict[str, Any] = None):
     logger.info(f'Doing compare: {_experiment_dir}')
     logger.info(f'Appended     : {do_appended}')
 
@@ -143,5 +262,10 @@ def do_compare(_experiment_dir: str,
         # Fin
         with open(output_fp, 'w') as f:
             json.dump(output_data, f, indent=4)
+
+    # Do post
+    if post_kwargs is None:
+        post_kwargs = {}
+    _post(_experiment_dir, do_appended=do_appended, **post_kwargs)
 
     return output_data
