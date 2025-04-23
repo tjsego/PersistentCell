@@ -62,9 +62,12 @@ class TrackingSteppable(SteppableBasePy):
 
         cell = self.new_cell(getattr(self.cell_type, self.cell_type_name))
         self.cell_id = cell.id
-        for x in range(start_pos_x - self.cell_length_target // 2, start_pos_x + self.cell_length_target // 2):
-            for y in range(start_pos_y - self.cell_length_target // 2, start_pos_y + self.cell_length_target // 2):
-                self.cell_field[x, y, 0] = cell
+        # Square initialization
+        # for x in range(start_pos_x - self.cell_length_target // 2, start_pos_x + self.cell_length_target // 2):
+        #     for y in range(start_pos_y - self.cell_length_target // 2, start_pos_y + self.cell_length_target // 2):
+        #         self.cell_field[x, y, 0] = cell
+        # Single-pixel initialization
+        self.cell_field[start_pos_x, start_pos_y, 0] = cell
 
         # Mitigating a rare, strange bug
         if cell.volume == 0:
