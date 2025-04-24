@@ -1,5 +1,6 @@
 library( celltrackR ) 
 library( jsonlite )
+library( dplyr, warn.conflicts = FALSE )
 
 # command line input
 argv <- commandArgs( trailingOnly = TRUE )
@@ -57,7 +58,10 @@ correctTorus <- function( tracks, fieldsize, coordinate.cols = 2:3 ){
 
 tr <- correctTorus( tr, fieldsize = c( json$model$len_1, json$model$len_2 ) )
 
-dout <- as.data.frame( tr ) 
-colnames(dout) <- colnames(d)
+dout <- as.data.frame( tr ) %>%
+	setNames( c( "id", "time", "com_1", "com_2", "area", "surface" ) ) %>%
+	select( time, id, com_1, com_2, area, surface )
+
+
 
 write.csv( dout, file = outFile, quote = FALSE, row.names = FALSE )

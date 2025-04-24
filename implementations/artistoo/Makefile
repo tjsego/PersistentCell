@@ -42,6 +42,22 @@ results/MODEL000/combined-tracks.csv : $(foreach s, $(REPS), results/MODEL000/tr
 results/MODEL000/analysis.pdf : analysis.R results/MODEL000/combined-tracks.csv 
 	Rscript $^ model000.json $@
 
+# MODEL000B with Math.random() RNG
+# ===============================
+model000b : results/MODEL000B/analysis.pdf
+
+results/MODEL000B/tracks/track%.csv : persistent-cell-RNG.js model000.json | results/MODEL000B/tracks \
+	results/MODEL000B/img node_modules
+	node $^ $* > $@
+
+# combine tracks of independently simulated cells	
+results/MODEL000B/combined-tracks.csv : $(foreach s, $(REPS), results/MODEL000B/tracks/track$(s).csv)
+	cat $< | head -n 1 > $@ && cat $^ | grep -v time >> $@
+
+# Analysis summary
+results/MODEL000B/analysis.pdf : analysis.R results/MODEL000B/combined-tracks.csv 
+	Rscript $^ model000.json $@
+
 
 # MODEL003
 # ===============================
