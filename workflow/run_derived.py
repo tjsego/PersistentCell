@@ -202,6 +202,7 @@ def do_derived(_experiment_dir: str):
         spec_path = derived_spec_path(impl_subdir)
         if not os.path.isfile(spec_path):
             logger.debug(f'Generating spec: {spec_path}')
+            logger.debug(f'Targeting data : {impl_data_raw[name]}')
 
             generate_json(field_size, impl_data_raw[name], impl_subdir)
 

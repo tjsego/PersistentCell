@@ -70,6 +70,7 @@ def _post_summary_name(_data: Dict[str, float],
     for fext in _output_fexts:
         fig.savefig(os.path.join(_output_dir, output_name + '.' + fext),
                     dpi=_dpi)
+    plt.close(fig)
 
 
 def _post_summary_granular(_data: Dict[str, List[float]],
@@ -98,6 +99,7 @@ def _post_summary_granular(_data: Dict[str, List[float]],
     for fext in _output_fexts:
         fig.savefig(os.path.join(_output_dir, output_name + '.' + fext),
                     dpi=_dpi)
+    plt.close(fig)
 
 
 def _post(_experiment_dir: str,
