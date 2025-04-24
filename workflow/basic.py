@@ -67,7 +67,15 @@ def get_results_raw(_exp_dir):
         csv_data = [f for f in os.listdir(os.path.join(_exp_dir, output_subdir_results_raw, subdir)) if f.endswith('.csv')]
         if not csv_data:
             continue
-        result[subdir] = os.path.join(_exp_dir, output_subdir_results_raw, subdir, csv_data[0])
+        # Prefer data is name suffix "-patched", if any
+        patched_found = False
+        for fn in csv_data:
+            if os.path.splitext(fn)[0].endswith('-patched'):
+                result[subdir] = os.path.join(_exp_dir, output_subdir_results_raw, subdir, fn)
+                patched_found = True
+                break
+        if not patched_found:
+            result[subdir] = os.path.join(_exp_dir, output_subdir_results_raw, subdir, csv_data[0])
     return result
 
 
