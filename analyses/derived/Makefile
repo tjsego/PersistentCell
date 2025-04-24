@@ -1,6 +1,7 @@
 .SECONDARY:
 .DELETE_ON_ERROR:
 
+all : plots/example-comp.pdf plots/example-msd.pdf plots/example-acov.pdf
 
 data : 
 	mkdir -p $@
