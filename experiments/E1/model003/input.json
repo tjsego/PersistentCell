@@ -20,7 +20,7 @@
     "sim": {
         "num_sims": 1000,
         "output_name": "model003",
-        "output_per": 10
+        "output_per": 100
     },
     "cc3d": {
         "output_name": "model003_cc3d"
