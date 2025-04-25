@@ -16,7 +16,9 @@ Persistent random walk models
 
 The model is a Langevin PRW from extension of MODEL003 with the following term:
 
-$$\Delta H_{PRW} = \vec{\lambda}_{\text{dir}} \cdot \vec{a}$$
+```math
+\Delta H_{PRW} = \vec{\lambda}_{\text{dir}} \cdot \vec{a}
+```
 
 where $\vec{\lambda}_{\text{dir}}$ is a vector of coefficients and 
 $\vec{a}$ is the direction from source $\rightarrow$ target of the copy attempt. 
@@ -25,7 +27,9 @@ $\vec{a}$ is the direction from source $\rightarrow$ target of the copy attempt.
 
 The model is a Langevin PRW with particle migration velocity $\vec{v}_{\text{mot}}$, 
 
-$$ \vec{v}_{\text{mot}} = s_{\text{mot}} \frac{(1-b) \vec{\xi} + b \vec{d}_{\text{bias}}}{\| (1-b) \vec{\xi} + b \vec{d}_{\text{bias}} \|} $$
+```math
+\vec{v}_{\text{mot}} = s_{\text{mot}} \frac{(1-b) \vec{\xi} + b \vec{d}_{\text{bias}}}{\| (1-b) \vec{\xi} + b \vec{d}_{\text{bias}} \|}
+```
 
 where $s_{\text{mot}}$ is a migration speed, 
 $b$ is a migration bias, 
@@ -33,10 +37,11 @@ $\vec{\xi}$ is a random unit vector, and
 $\vec{d}_{\text{bias}}$ is a migration bias direction. 
 The migration velocity changes with a probability,
 
-$$ \P{\text{change} \vec{v}_{\text{mot}}} = \frac{\delta t}{T_{\text{per}}} $$
+```math
+\Pr \left(\text{change} \vec{v}_{\text{mot}} \right) = \frac{\Delta t}{T_{\text{per}}}
+```
 
-where $\delta t$ is the time step and 
-$T_{\text{per}}$ is a persistence time. 
+where $\Delta t$ is the time step and $T_{\text{per}}$ is a persistence time.
 
 ## MODEL005
 
