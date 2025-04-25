@@ -73,23 +73,28 @@ As such, this model has the following motility parameters on top of CPM MODEL000
 
 ## MODEL006
 
-We define a simple Langevin PRW based on cell orientation α under continuous white noise of intensity ω. Cell velocity is controlled by Lagrange multiplyer µ.
+We define a simple Langevin PRW based on cell orientation α under continuous white noise of intensity ω. 
+Cell velocity is controlled by Lagrange multiplier µ.
 
-$$ dα/dt = ω ζ $$
+$$ d\alpha/dt = \omega \xi $$
 
-$$\Delta H_{PRW} = - µ a_{\sigma} ( \vec{\delta C} · \vec{e(α)} )
+$$\Delta H_{PRW} = - \mu a_{\sigma} ( \vec{\delta C} · \vec{e(\alpha)} ) $$
 
-where  \vec{\delta C} is the cell center displacement due to the update and \vec{e(α)}, a unit vector in direction of α.
+where $\vec{\delta C}$ is the cell center displacement due to the update and $\vec{e(α)}$, 
+a unit vector in direction of α.
 
 
 ## MODEL007
 
-We define a simple Langevin PRW based on cell orientation α under continuous white noise of intensity ω. In addition, the observed cell velocity $\vec{v}$ gradually (reenf_rate) self-reenforces the actual movement, allowing the cell to adopt to external constraints (obstacles, collisions). 
+We define a simple Langevin PRW based on cell orientation α under continuous white noise of intensity ω. 
+In addition, the observed cell velocity $\vec{v}$ gradually ($R$) self-reinforces the actual movement, 
+allowing the cell to adapt to external constraints (obstacles, collisions). 
 
-Cell velocity is controlled by Lagrange multiplyer µ.
+Cell velocity is controlled by Lagrange multiplier µ.
 
-$$ dα/dt = ω ζ $$
+$$ d\alpha/dt = \omega \xi $$
 
-$$\Delta H_{PRW} = - µ a_{\sigma}  ( \vec{\delta C} · \vec{e(α)} )  + reenf_rate sin( \angle{ $\vec{v} } - α) 
+$$\Delta H_{PRW} = - \mu a_{\sigma}  ( \vec{\delta C} · \vec{e(\alpha)} )  + R \sin( \angle{ \vec{v} } - \alpha) $$
 
-where  \vec{\delta C} is the cell center displacement due to the update, \vec{e(α)} a unit vector in direction of α and \angle{ $\vec{v} } the angular direction of motion.
+where $\vec{\delta C}$ is the cell center displacement due to the update, 
+$\vec{e(α)}$ a unit vector in direction of α and $\angle{ \vec{v} }$ the angular direction of motion.
