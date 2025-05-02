@@ -21,6 +21,7 @@
         <StartTime value="0"/>
         <StopTime value="10000"/>
         <TimeSymbol symbol="time"/>
+        <RandomSeed value="0"/>
     </Time>
     <Analysis>
 		<!--    <Disabled> 

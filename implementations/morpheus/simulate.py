@@ -1,10 +1,13 @@
 import json
+from model import from_json_data
+
 import multiprocessing as mp
 from time import sleep
 import os
 import subprocess
 import csv
-import math 
+import math
+import random
 import numpy as np
 import xml.etree.ElementTree as ET
 import matplotlib as mpl
@@ -69,11 +72,13 @@ def _simulate(model, sim_label, sim_output_dir, output_freq):
             indent=4
         )
 
-def simulate(model,
+def simulate(model_data,
+             input_dir: str,
              output_dir: str, 
              num_sims: int,
              output_freq: float,
              plot: bool):
+    
     
     output_data_dir = os.path.join(output_dir, 'data')
 
@@ -88,25 +93,31 @@ def simulate(model,
         sim_output_dir, sim_label = unique_data_dir(output_data_dir, sim_label)
         ensure_output_dir(sim_output_dir)
         
-        input_args.append((model, sim_label, sim_output_dir, output_freq ))
+        
+        my_data= model_data.copy()
+        my_data["seed"] = random.randint(0, 2147483647)
+        model = from_json_data(my_data, input_dir=input_dir )
+        
         model.write(os.path.join(sim_output_dir,'model.xml'), encoding='utf-8');
+        input_args.append((model, sim_label, sim_output_dir, output_freq ))
         
         scheduled_labels.append(sim_label)
         sim_label = sim_label+1
     
     with mp.Pool() as p:
         p.starmap(_simulate, input_args)
+        
     
+    writer = csv.writer(open(os.path.join(sim_output_dir,"..", f'sim.csv'), 'a'))
+    writer.writerow(['time','id','com_1','com_2','area','surface'])
     for spec in input_args :
         sim_label = spec[1]
         sim_output_dir = spec[2]
         sim_data = csv.reader(open(os.path.join(sim_output_dir,'logger.csv'),"r"), delimiter="\t",quoting=csv.QUOTE_NONNUMERIC)
         next(sim_data, None)  # Skip header row
-        with open(os.path.join(sim_output_dir,"..", f'sim.csv'), 'a') as f:
-            writer = csv.writer(f)
-            for row in sim_data:
-                row[1] = sim_label
-                writer.writerow(row)
+        for row in sim_data:
+            row[1] = sim_label
+            writer.writerow(row)
     
     if (plot):
         plot_DAC_MSD(output_data_dir, [ sim[1] for sim in input_args])
