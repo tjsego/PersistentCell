@@ -82532,7 +82532,7 @@
         }
     },
     "ecfNumberOfEvaluations": 100,
-    "errorMetricMean": 0.6413905274795246,
-    "errorMetricStDev": 0.05035684863879872,
+    "errorMetricMean": 0.6354627141507888,
+    "errorMetricStDev": 0.04907643150862125,
     "numberOfSigFigs": 16
 }
