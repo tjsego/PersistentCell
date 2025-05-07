@@ -80,15 +80,28 @@ $$ d\alpha/dt = \omega \xi $$
 
 $$\Delta H_{PRW} = - \mu a_{\sigma} ( \vec{\delta C} · \vec{e(\alpha)} ) $$
 
-where $\vec{\delta C}$ is the cell center displacement due to the update and $\vec{e(α)}$, 
-a unit vector in direction of α.
+where $a_{\sigma}$ is the cell size, $\vec{\delta C}$ is the cell center displacement due to the update and $\vec{e(α)}$, a unit vector in direction of α.
+
+Alternatively, the cell mass displacement  $a_{\sigma}  \vec{\delta C}$ can also be estimated using the local copy attempt direction. It will be on the same scale, but obviously is not exacltly the same. Would be very interesting to compare both and find the approximate factor.
+
+**Implementation**: 
+Temporal evolution of $\alpha$ shall be performed using a discretized forward Euler scheme with a time step set to 1 MCS (or less). We use $\xi$ for the amplitude for the random noise.
+
+$$ \alpha(t+dt) = \alpha(t) + random_norm(0,\xi) * \sqrt{dt} $$
+
+where random_norm draws a random number from the Gaussian distribution $(0,\xi)$.
+
+Before logging, $\alhpa$ shall be mapped within the range ${0,2\pi}$ .
+
+
+
 
 
 ## MODEL007
 
 We define a simple Langevin PRW based on cell orientation α under continuous white noise of intensity ω. 
 In addition, the observed cell velocity $\vec{v}$ gradually ($R$) self-reinforces the actual movement, 
-allowing the cell to adapt to external constraints (obstacles, collisions). 
+allowing the cell to adapt to external constraints (obstacles, collisions).
 
 Cell velocity is controlled by Lagrange multiplier µ.
 
@@ -96,5 +109,5 @@ $$ d\alpha/dt = \omega \xi $$
 
 $$\Delta H_{PRW} = - \mu a_{\sigma}  ( \vec{\delta C} · \vec{e(\alpha)} )  + R \sin( \angle{ \vec{v} } - \alpha) $$
 
-where $\vec{\delta C}$ is the cell center displacement due to the update, 
+where $a_{\sigma} is the cell size, $\vec{\delta C}$ is the cell center displacement due to the update, 
 $\vec{e(α)}$ a unit vector in direction of α and $\angle{ \vec{v} }$ the angular direction of motion.
