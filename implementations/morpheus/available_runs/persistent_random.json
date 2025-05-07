@@ -15,7 +15,7 @@
     },
     "sim": {
         "num_sims": 50,
-        "output_name": "persistent_random",
+        "output_name": "persistent_random_100",
         "output_per": 10
     }
 }

@@ -1,6 +1,6 @@
 import argparse
 import json
-from model import from_json_data
+
 import os
 from simulate import simulate
 
@@ -14,9 +14,9 @@ def run(fp: str, plot : bool, output_dir: str = None):
     if output_dir is None:
         output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'results', sim_data['output_name'])
     
-    model = from_json_data(model_data, input_dir=os.path.dirname(os.path.abspath(fp)) )
-    
-    simulate(model, output_dir=output_dir,
+    simulate(model_data,
+             input_dir=os.path.dirname(os.path.abspath(fp)),
+             output_dir=output_dir,
              num_sims=int(sim_data['num_sims']),
              output_freq = int(sim_data['output_per']),
              plot=plot)
@@ -25,7 +25,7 @@ def run(fp: str, plot : bool, output_dir: str = None):
 class ArgParser(argparse.ArgumentParser):
     
     def __init__(self):
-        super().__init__(description='Execute specification with Morpheus')
+        super().__init__(description='Execute specification with Morpheus\n (minimum supported version is 2.3.9)')
 
         self.add_argument('-f', '--file',
                           type=str,

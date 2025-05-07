@@ -3,7 +3,7 @@
     "len_1": 100,
     "len_2": 100,
     "max_time": 10000,
-    "method": "CP",
+    "method": "CM",
     "model": "MODEL004",
     "model_args": {
       "ptime": 0.0,

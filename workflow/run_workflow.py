@@ -66,6 +66,7 @@ def _post_raw(_post_dir: str,
         for fext in _output_fexts:
             fig.savefig(os.path.join(_post_dir, output_name + '.' + fext),
                         dpi=_dpi)
+        plt.close(fig)
 
 
 def _post_dists(_post_dir: str,
@@ -108,6 +109,7 @@ def _post_dists(_post_dir: str,
         for fext in _output_fexts:
             fig.savefig(os.path.join(_post_dir, output_name + '.' + fext),
                         dpi=_dpi)
+        plt.close(fig)
 
 
 def _post_summary(_post_dir: str,
@@ -186,6 +188,7 @@ def _post_summary(_post_dir: str,
     for fext in _output_fexts:
         fig.savefig(os.path.join(_post_dir, output_name + '.' + fext),
                     dpi=_dpi)
+    plt.close(fig)
 
 
 def _post(_experiment_dir: str,

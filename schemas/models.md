@@ -12,6 +12,37 @@ Persistent random walk models
 | MODEL006 | CPM    | Persistent motion controlled by cell-intrinsic orientation under effect of continuous time noise |
 | MODEL007 | CPM    | Persistent motion controlled by cell-intrinsic orientation under effect of continuous time noise and self-reenforcement of direction of motion |
 
+## MODEL003
+
+The model is a Langevin PRW from extension of MODEL003 with the following term:
+
+```math
+\Delta H_{PRW} = \vec{\lambda}_{\text{dir}} \cdot \vec{a}
+```
+
+where $\vec{\lambda}_{\text{dir}}$ is a vector of coefficients and 
+$\vec{a}$ is the direction from source $\rightarrow$ target of the copy attempt. 
+
+## MODEL004
+
+The model is a Langevin PRW with particle migration velocity $\vec{v}_{\text{mot}}$, 
+
+```math
+\vec{v}_{\text{mot}} = s_{\text{mot}} \frac{(1-b) \vec{\xi} + b \vec{d}_{\text{bias}}}{\| (1-b) \vec{\xi} + b \vec{d}_{\text{bias}} \|}
+```
+
+where $s_{\text{mot}}$ is a migration speed, 
+$b$ is a migration bias, 
+$\vec{\xi}$ is a random unit vector, and 
+$\vec{d}_{\text{bias}}$ is a migration bias direction. 
+The migration velocity changes with a probability,
+
+```math
+\Pr \left(\text{change} \vec{v}_{\text{mot}} \right) = \frac{\Delta t}{T_{\text{per}}}
+```
+
+where $\Delta t$ is the time step and $T_{\text{per}}$ is a persistence time.
+
 ## MODEL005
 
 We define a simple self-reinforcing P-RW by extending MODEL000 with the following
@@ -42,23 +73,41 @@ As such, this model has the following motility parameters on top of CPM MODEL000
 
 ## MODEL006
 
-We define a simple Langevin PRW based on cell orientation α under continuous white noise of intensity ω. Cell velocity is controlled by Lagrange multiplyer µ.
+We define a simple Langevin PRW based on cell orientation α under continuous white noise of intensity ω. 
+Cell velocity is controlled by Lagrange multiplier µ.
 
-$$ dα/dt = ω ζ $$
+$$ d\alpha/dt = \omega \xi $$
 
-$$\Delta H_{PRW} = - µ a_{\sigma} ( \vec{\delta C} · \vec{e(α)} )
+$$\Delta H_{PRW} = - \mu a_{\sigma} ( \vec{\delta C} · \vec{e(\alpha)} ) $$
 
-where  \vec{\delta C} is the cell center displacement due to the update and \vec{e(α)}, a unit vector in direction of α.
+where $a_{\sigma}$ is the cell size, $\vec{\delta C}$ is the cell center displacement due to the update and $\vec{e(α)}$, a unit vector in direction of α.
+
+Alternatively, the cell mass displacement  $a_{\sigma}  \vec{\delta C}$ can also be estimated using the local copy attempt direction. It will be on the same scale, but obviously is not exacltly the same. Would be very interesting to compare both and find the approximate factor.
+
+**Implementation**: 
+Temporal evolution of $\alpha$ shall be performed using a discretized forward Euler scheme with a time step set to 1 MCS (or less). We use $\xi$ for the amplitude for the random noise.
+
+$$ \alpha(t+dt) = \alpha(t) + random_norm(0,\xi) * \sqrt{dt} $$
+
+where random_norm draws a random number from the Gaussian distribution $(0,\xi)$.
+
+Before logging, $\alhpa$ shall be mapped within the range ${0,2\pi}$ .
+
+
+
 
 
 ## MODEL007
 
-We define a simple Langevin PRW based on cell orientation α under continuous white noise of intensity ω. In addition, the observed cell velocity $\vec{v}$ gradually (reenf_rate) self-reenforces the actual movement, allowing the cell to adopt to external constraints (obstacles, collisions). 
+We define a simple Langevin PRW based on cell orientation α under continuous white noise of intensity ω. 
+In addition, the observed cell velocity $\vec{v}$ gradually ($R$) self-reinforces the actual movement, 
+allowing the cell to adapt to external constraints (obstacles, collisions).
 
-Cell velocity is controlled by Lagrange multiplyer µ.
+Cell velocity is controlled by Lagrange multiplier µ.
 
-$$ dα/dt = ω ζ $$
+$$ d\alpha/dt = \omega \xi $$
 
-$$\Delta H_{PRW} = - µ a_{\sigma}  ( \vec{\delta C} · \vec{e(α)} )  + reenf_rate sin( \angle{ $\vec{v} } - α) 
+$$\Delta H_{PRW} = - \mu a_{\sigma}  ( \vec{\delta C} · \vec{e(\alpha)} )  + R \sin( \angle{ \vec{v} } - \alpha) $$
 
-where  \vec{\delta C} is the cell center displacement due to the update, \vec{e(α)} a unit vector in direction of α and \angle{ $\vec{v} } the angular direction of motion.
+where $a_{\sigma} is the cell size, $\vec{\delta C}$ is the cell center displacement due to the update, 
+$\vec{e(α)}$ a unit vector in direction of α and $\angle{ \vec{v} }$ the angular direction of motion.

@@ -4,10 +4,6 @@ import xml.etree.ElementTree as ET
 import os
 
 
-def params2args() :
-    return {
-        cpm_area_c : cpm_
-        }
 
 class morpheus_model:
     """ Template for any morpheus model """
@@ -17,7 +13,6 @@ class morpheus_model:
     
     def xpath4param(self):
         params = {
-            # "cpm_area_v" : "./CellTypes/CellType/Constant[@symbol='a_cpm']/@value",
             "cpm_area_c" : "./Global/Constant[@symbol='a_cpm']/@value",
             "cpm_area_v" : "./CellTypes/CellType/Constant[@symbol='λ_a_cpm']/@value",
             "cpm_perim_c" : "./CellTypes/CellType/Constant[@symbol='p_cpm']/@value",
@@ -31,7 +26,8 @@ class morpheus_model:
             "cpm_mu" : "./CellTypes/CellType/Constant[@symbol='mu_cpm']/@value",
             "orientation" :  "./CellTypes/CellType/Property[@symbol='α']/@value",
             "orientation_noise" : "./Global/Constant[@symbol='ω']/@value",
-            "reenf_rate" : "./CellTypes/CellType/Constant[@symbol='reenf_rate_cpm']/@value"
+            "reenf_rate" : "./CellTypes/CellType/Constant[@symbol='reenf_rate_cpm']/@value",
+            "seed" : "./Time/RandomSeed/@value"
         }
         return params;
     
