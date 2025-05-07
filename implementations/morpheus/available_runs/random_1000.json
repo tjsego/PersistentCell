@@ -15,7 +15,7 @@
     },
     "sim": {
         "num_sims": 1000,
-        "output_name": "model000_morpheus",
+        "output_name": "model000_1000",
         "output_per": 100
     }
 }

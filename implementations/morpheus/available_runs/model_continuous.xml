@@ -24,46 +24,49 @@
         <RandomSeed value="0"/>
     </Time>
     <Analysis>
-		<!--    <Disabled> 
+        <!--    <Disabled>
         <Gnuplotter time-step="100">
             <Plot>
                 <Cells value="dir.phi"/>
-                <CellArrows center="origin" orientation="dir*10"/>
+                <CellArrows orientation="dir*10" center="origin"/>
             </Plot>
             <Terminal name="png" size="1200,1200,0"/>
         </Gnuplotter>
-	    </Disabled>
+    </Disabled>
 -->
         <Logger time-step="log_freq">
             <Input>
                 <Symbol symbol-ref="cell.center.x"/>
                 <Symbol symbol-ref="cell.center.y"/>
-                <Symbol symbol-ref="msd"/>
                 <Symbol symbol-ref="cell.volume"/>
                 <Symbol symbol-ref="cell.surface"/>
             </Input>
             <Output>
                 <TextOutput/>
             </Output>
-<!--    <Disabled> 
-            <Plots>
-                <Plot time-step="-1">
-                    <Style style="points"/>
-                    <Terminal terminal="png"/>
-                    <X-axis logarithmic="true">
-                        <Symbol symbol-ref="time"/>
-                    </X-axis>
-                    <Y-axis logarithmic="true">
-                        <Symbol symbol-ref="msd"/>
-                    </Y-axis>
-                </Plot>
-            </Plots>
-            </Disabled>  -->
+            <!--    <Disabled>
+        <Plots>
+            <Plot time-step="-1">
+                <Style style="points"/>
+                <Terminal terminal="png"/>
+                <X-axis logarithmic="true">
+                    <Symbol symbol-ref="time"/>
+                </X-axis>
+                <Y-axis logarithmic="true">
+                    <Symbol symbol-ref="msd"/>
+                </Y-axis>
+            </Plot>
+        </Plots>
+    </Disabled>
+-->
             <Restriction>
                 <Celltype celltype="cell"/>
             </Restriction>
         </Logger>
-        <ModelGraph include-tags="#untagged" format="dot" reduced="false"/>
+        <!--    <Disabled>
+        <ModelGraph format="dot" reduced="false" include-tags="#untagged"/>
+    </Disabled>
+-->
     </Analysis>
     <Global>
         <Constant symbol="cpm_time_scale" value="1"/>
@@ -94,13 +97,13 @@
         <Constant symbol="log_freq" value="5"/>
     </Global>
     <CellTypes>
-        <CellType name="cell" class="biological">
+        <CellType class="biological" name="cell">
             <!-- <Constant symbol="a_cpm" name="area in nodes" value="a/l_n^2"/> -->
             <Constant symbol="λ_a_cpm" value="λ_a*l_n^4"/>
-            <VolumeConstraint target="a_cpm" strength="λ_a_cpm"/>
+            <VolumeConstraint strength="λ_a_cpm" target="a_cpm"/>
             <Constant symbol="p_cpm" value="p / l_n * xi_p"/>
             <Constant symbol="λ_p_cpm" value="λ_p * (l_n/xi_p)^2"/>
-            <SurfaceConstraint target="p_cpm" strength="λ_p_cpm" mode="surface"/>
+            <SurfaceConstraint strength="λ_p_cpm" target="p_cpm" mode="surface"/>
             <Constant symbol="mu_cpm" value="mu * mcs_d * l_n"/>
             <Constant symbol="reenf_rate_cpm" value="reenf_rate * mcs_d"/>
             <DirectedMotion strength="mu_cpm" direction="dir"/>
@@ -113,7 +116,7 @@
             </MotilityReporter>
             <System time-step="mcs_d" solver="Euler [fixed, O(1)]">
                 <DiffEqn symbol-ref="α" name="orientation">
-			<Expression>rand_norm(0,ω / sqrt(mcs_d) ) + reenf_rate_cpm * sin(α-vel.phi) </Expression>
+                    <Expression>rand_norm(0,ω / sqrt(mcs_d) ) + reenf_rate_cpm * sin(α-vel.phi) </Expression>
                 </DiffEqn>
                 <VectorRule symbol-ref="dir" notation="r,φ,θ">
                     <Expression>1, α, 0.0</Expression>
@@ -132,8 +135,8 @@
     <CellPopulations>
         <Population type="cell" size="1">
             <InitCellObjects mode="distance">
-                <Arrangement repetitions="array_size, array_size, 1" displacements="cell_spacing, cell_spacing, 1">
-                    <Sphere center="cell_spacing*3, cell_spacing*3, 0" radius="r/l_n"/>
+                <Arrangement displacements="cell_spacing, cell_spacing, 1" repetitions="array_size, array_size, 1">
+                    <Sphere radius="r/l_n" center="cell_spacing*3, cell_spacing*3, 0"/>
                 </Arrangement>
             </InitCellObjects>
         </Population>
