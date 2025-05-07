@@ -25,3 +25,9 @@ plots/example-msd.pdf : scripts/msd.R data/example-comp.rds  | plots
 # autocovariance up to time lag 100 min
 plots/example-acov.pdf : scripts/acov.R data/example-comp.rds  | plots
 	Rscript $^ 100 $@
+	
+
+# raw data: square displacements and DAC for all subtracks.
+# this won't work very well with the current sampling rate of every 100 MCS though.
+data/example-processed.csv : scripts/data-msd-acov.R ../../implementations/artistoo/E0/results/model000-corrected-tracks.csv | data
+	Rscript $^ $@
