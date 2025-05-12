@@ -323,7 +323,7 @@ function initialize(){
 					{
 						LAMBDA_DIR: [0,0.000001], 
 						PERSIST: [0,0],
-						DELTA_T : [0,5]
+						DELTA_T : [0,50]
 					} )
 				simi.C.add( pconstraint )
 				break
@@ -344,7 +344,7 @@ function initialize(){
 					{
 						LAMBDA_DIR: [0,0.000001], 
 						PERSIST: [0,0],
-						DELTA_T : [0,5]
+						DELTA_T : [0,50]
 					} )
 				simi.C.add( pconstraint )
 				break
@@ -402,22 +402,22 @@ all models, whereas others can be controlled for each model individually.<br><br
 	<td style="width:5%">0</td>
 	<td style="width:70%"> 
 		<div class="range-wrap">
-		  <input type="range" class="range" min="0" max="1000" id="T" oninput="sliderInput()" >
+		  <input type="range" class="range" min="0" max="20000" id="T" oninput="sliderInput()" >
 		  <output class="bubble"></output>
 		</div>
 	</td>
-	<td style="width:5%">10</td>
+	<td style="width:5%">20</td>
 </tr>
 <tr>
 	<td style="width:20%">&lambda;<sub>area</sub></td>
 	<td style="width:5%">0</td>
 	<td style="width:70%"> 
 		<div class="range-wrap">
-		  <input type="range" class="range" min="0" max="100" id="larea" oninput="sliderInput()">
+		  <input type="range" class="range" min="0" max="10000" id="larea" oninput="sliderInput()">
 		  <output class="bubble"></output>
 		</div>
 	</td>
-	<td style="width:5%">0.1</td>
+	<td style="width:5%">10</td>
 </tr>
 <tr>
 	<td style="width:20%">A<sub>target</sub></td>
@@ -435,11 +435,11 @@ all models, whereas others can be controlled for each model individually.<br><br
 	<td style="width:5%">0</td>
 	<td style="width:70%"> 
 		<div class="range-wrap">
-		  <input type="range" class="range" min="0" max="100" id="lper" oninput="sliderInput()">
+		  <input type="range" class="range" min="0" max="3000" id="lper" oninput="sliderInput()">
 		  <output class="bubble"></output>
 		</div>
 	</td>
-	<td style="width:5%">0.1</td>
+	<td style="width:5%">3</td>
 </tr>
 <tr>
 	<td style="width:20%">P<sub>target</sub></td>
@@ -511,11 +511,11 @@ all models, whereas others can be controlled for each model individually.<br><br
 					<td style="width:5%">0</td>
 					<td style="width:70%"> 
 						<div class="range-wrap">
-						  <input type="range" class="range" min="0" max="10000" step="100" id="ldir003" oninput="sliderInput()">
+						  <input type="range" class="range" min="0" max="20000" step="100" id="ldir003" oninput="sliderInput()">
 						  <output class="bubble"></output>
 						</div>
 					</td>
-					<td style="width:5%">10</td>
+					<td style="width:5%">20</td>
 				</tr>
 				<tr>
 					<td style="width:20%"> $\alpha$</td>
@@ -566,11 +566,11 @@ all models, whereas others can be controlled for each model individually.<br><br
 					<td style="width:5%">0</td>
 					<td style="width:70%"> 
 						<div class="range-wrap">
-						  <input type="range" class="range" min="0" max="10000" step="100" id="ldir" oninput="sliderInput()">
+						  <input type="range" class="range" min="0" max="20000" step="100" id="ldir" oninput="sliderInput()">
 						  <output class="bubble"></output>
 						</div>
 					</td>
-					<td style="width:5%">10</td>
+					<td style="width:5%">20</td>
 				</tr>
 				<tr>
 					<td style="width:20%">&Delta;t</td>
