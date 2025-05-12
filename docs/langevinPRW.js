@@ -3,7 +3,7 @@ class LangevinPRW extends CPM.PersistenceConstraint {
 	confChecker(){
 		let checker = new CPM.ParameterChecker( this.conf, this.C )
 		checker.confCheckParameter( "MU", "KindArray", "NonNegative" )
-		checker.confCheckParameter( "KSI", "KindArray", "NonNegative" )
+		checker.confCheckParameter( "XI", "KindArray", "NonNegative" )
 		checker.confCheckParameter( "PROTRUDE", "KindArray", "Boolean" )
 		checker.confCheckParameter( "RETRACT", "KindArray", "Boolean" )
 	}
@@ -65,7 +65,7 @@ class LangevinPRW extends CPM.PersistenceConstraint {
 			let cenOld = this.currentCentroid( src_type )
 			let pixAdded = this.correctTorus( this.C.grid.i2p( targeti ), cenOld )
 			
-			let cenNew = cenOld.map( (x,i) => x * N / (N+1) + pixAdded[i]/(N+1) ) 
+			let cenNew = cenOld.map( (x,i) => (x * N + pixAdded[i]) / (N+1)  ) 
 			this.dC.src = cenNew.map( (x,i) => x - cenOld[i] )
 			
 		}
@@ -77,20 +77,29 @@ class LangevinPRW extends CPM.PersistenceConstraint {
 			let cenOld = this.currentCentroid( tgt_type )
 			let pixRemoved = this.correctTorus( this.C.grid.i2p( targeti ), cenOld )
 			
-			let cenNew = cenOld.map( (x,i) => x * N / (N-1) - pixRemoved[i]/(N-1) ) 
+			let cenNew = cenOld.map( (x,i) => (x * N - pixRemoved[i]) / (N-1) ) 
 			this.dC.tgt = cenNew.map( (x,i) => x - cenOld[i] )
 		
 		}
 		
 	}
 	
+	correctPosition( p ){
+		if( p[0] < 0 ) p[0] += this.C.grid.extents[0]
+		if( p[1] < 0 ) p[1] += this.C.grid.extents[1]
+		if( p[0] >= this.C.grid.extents[0] ) p[0] -= this.C.grid.extents[0]
+		if( p[1] >= this.C.grid.extents[1] ) p[1] -= this.C.grid.extents[1]
+	}
+	
 	postSetpixListener( i, t_old, t_new ){
 		if( t_old > 0 ){
 			let cen = this.currentCentroid( t_old ).map( (x,i) => x + this.dC.tgt[i] )
+			this.correctPosition(cen)
 			this.cellcentroidlists[t_old] = cen
 		}
 		if( t_new > 0 ){
 			let cen = this.currentCentroid( t_new ).map( (x,i) => x + this.dC.src[i] )
+			this.correctPosition(cen)
 			this.cellcentroidlists[t_new] = cen
 		}
 	}
@@ -104,19 +113,17 @@ class LangevinPRW extends CPM.PersistenceConstraint {
 		// protrusion force:
 		if( this.conf.PROTRUDE && src_type > 0 ){
 			let b = this.celldirections[src_type]
-			let p1 = this.C.grid.i2p(sourcei), p2 = this.C.grid.i2p(targeti)
-			let a = this.dC.src //this.vec( p1, p2 )
+			let a = this.dC.src
 			dH -= this.dot( a, b )
 		}
 		
 		// retraction force:
 		if( this.conf.RETRACT && tgt_type > 0 ){
 			let b = this.celldirections[tgt_type]
-			let p1 = this.C.grid.i2p(sourcei), p2 = this.C.grid.i2p(targeti)
-			let a = this.dC.tgt //this.vec( p1, p2 )
+			let a = this.dC.tgt
 			dH -= this.dot( a, b )
 		}
-
+		//if( Math.random() < 0.01 ) console.log(dH)
 		return dH
 	}
 	
@@ -124,14 +131,14 @@ class LangevinPRW extends CPM.PersistenceConstraint {
 	postMCSListener(){
 		for( let cid of this.C.cellIDs() ){
 			let mu = this.cellParameter( "MU", cid )
-			let ksi = this.cellParameter( "KSI", cid )
+			let xi = this.cellParameter( "XI", cid )
 			if( !(cid in this.celldirections ) ){
 				this.celldirections[cid] = this.randDir(this.C.ndim)
 			}
 			this.normalize( this.celldirections[cid] )
 			let alpha = Math.atan2( this.celldirections[cid][1], this.celldirections[cid][0])
-			alpha += this.sampleNorm( 0, ksi )
-			this.celldirections[cid] = [Math.cos(alpha), Math.sin(alpha)].map( x => x * mu * this.C.cellvolume[cid] )
+			alpha += this.sampleNorm( 0, xi )
+			this.celldirections[cid] = [Math.cos(alpha), Math.sin(alpha)].map( x => x * mu * this.C.getVolume(cid) )
 		}
 	}
 }

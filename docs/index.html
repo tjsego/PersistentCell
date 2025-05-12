@@ -117,11 +117,8 @@ let rangeMap = {
 			return v 
 		},
 		modelToRange : function(v){ 
-			console.log( v )
 			let ang = Math.atan2( v[1], v[0] )
 			ang = Math.round( 180 * ang / Math.PI )
-			console.log( ang )
-			
 			return ang
 		}
 	},
@@ -157,10 +154,10 @@ let rangeMap = {
 		rangeToModel : function(v){ return v/1000 },
 		modelToRange : function(v){ return v*1000 }
 	},
-	"ksi" : {
+	"xi" : {
 		model : "MODEL006",
 		constraint :  "LangevinPRW",
-		key : 'KSI',
+		key : 'XI',
 		position : 1,
 		rangeToModel : function(v){ return v/1000 },
 		modelToRange : function(v){ return v*1000 }
@@ -337,7 +334,7 @@ function initialize(){
 				let prefdir = new LangevinPRW( 
 					{
 						MU: [0,configJSON["model_args"][modelName]["mu"]], 
-						KSI: [0,configJSON["model_args"][modelName]["ksi"]], 
+						XI: [0,configJSON["model_args"][modelName]["xi"]], 
 						PROTRUDE: [false,true],
 						RETRACT : [false,true]
 					} )
@@ -606,7 +603,7 @@ all models, whereas others can be controlled for each model individually.<br><br
 					<td style="width:5%">0</td>
 					<td style="width:70%"> 
 						<div class="range-wrap">
-						  <input type="range" class="range" min="0" max="1000" step = "10" id="ksi" oninput="sliderInput()" >
+						  <input type="range" class="range" min="0" max="1000" step = "10" id="xi" oninput="sliderInput()" >
 						  <output class="bubble"></output>
 						</div>
 					</td>

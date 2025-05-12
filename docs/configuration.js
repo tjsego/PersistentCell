@@ -27,7 +27,7 @@ let configJSON = {
 		},
 		"MODEL006" : {
 			"mu" : .1,
-			"ksi" : .3,
+			"xi" : .3,
 			"retract_force" : true,
 			"protrude_force" : true
 		}
