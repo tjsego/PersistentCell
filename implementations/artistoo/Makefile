@@ -46,7 +46,7 @@ results/MODEL000/analysis.pdf : analysis.R results/MODEL000/combined-tracks.csv
 # ===============================
 model000b : results/MODEL000B/analysis.pdf
 
-results/MODEL000B/tracks/track%.csv : persistent-cell-RNG.js model000.json | results/MODEL000B/tracks \
+results/MODEL000B/tracks/track%.csv : persistent-cell.js model000.json | results/MODEL000B/tracks \
 	results/MODEL000B/img node_modules
 	node $^ $* > $@
 
@@ -99,3 +99,24 @@ results/MODEL005/combined-tracks.csv : $(foreach s, $(REPS), results/MODEL005/tr
 # Analysis summary
 results/MODEL005/analysis.pdf : analysis.R results/MODEL005/combined-tracks.csv 
 	Rscript $^ model005.json $@
+
+
+# MODEL006
+# ===============================
+model006 : results/MODEL006/example.mp4 results/MODEL006/analysis.pdf
+
+
+results/MODEL006/tracks/track%.csv : persistent-cell.js model006.json | results/MODEL006/tracks \
+	results/MODEL006/img node_modules
+	node $^ $* > $@
+
+results/MODEL006/example.mp4 : results/MODEL006/tracks/track1.csv
+	ffmpeg -r 10 -i results/MODEL006/img/sim1/MODEL006-seed1-t%01d0.png -vcodec libx264 -pix_fmt yuv420p -y $@
+
+# combine tracks of independently simulated cells	
+results/MODEL006/combined-tracks.csv : $(foreach s, $(REPS), results/MODEL006/tracks/track$(s).csv)
+	@cat $< | head -n 1 > $@ && cat $^ | grep -v time >> $@
+
+# Analysis summary
+results/MODEL006/analysis.pdf : analysis.R results/MODEL006/combined-tracks.csv 
+	Rscript $^ model006.json $@
