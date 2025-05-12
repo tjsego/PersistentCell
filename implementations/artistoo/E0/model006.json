@@ -1,4 +1,4 @@
-   {
+{
     "model": {
         "cpm_temperature": 10,
         "cpm_area_c": 36,
@@ -11,19 +11,18 @@
         "cpm_surface_nbs_n": 2,
         "max_time": 10000,
         "method": "CPM",
-        "model": "MODEL003",
+        "model": "MODEL006",
         "model_args": {
-            "lambda_dir": 10.0,
-            "target_angle": 0.0
+        	"mu" : 5,
+			"xi" : 0.2,
+			"retract_force" : true,
+			"protrude_force" : true
         }
     },
     "sim": {
         "num_sims": 100,
-        "output_name": "model003",
+        "output_name": "model005",
         "output_per": 100
-    },
-    "cc3d": {
-        "output_name": "model003_cc3d"
     },
     "artistoo": {
         "prng": "MersenneTwister"

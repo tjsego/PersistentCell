@@ -22,5 +22,8 @@
         "num_sims": 100,
         "output_name": "model005",
         "output_per": 100
+    },
+    "artistoo": {
+        "prng": "MersenneTwister"
     }
 }

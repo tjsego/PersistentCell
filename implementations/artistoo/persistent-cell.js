@@ -282,6 +282,7 @@ switch( modelName ){
 				RETRACT : [false,true]
 			} )
 		sim.C.add( prefdir )
+		
 		// non-active persistence just for the visualization
 		let pconstraint = new CPM.PersistenceConstraint( 
 			{
