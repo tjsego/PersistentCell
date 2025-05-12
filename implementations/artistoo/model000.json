@@ -21,5 +21,8 @@
     },
     "cc3d": {
         "output_name": "model000_cc3d"
+    },
+    "artistoo": {
+        "prng": "MersenneTwister"
     }
 } 
