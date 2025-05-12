@@ -12,6 +12,7 @@ if (seed > 1 ) img = false
 
 const modelName = configJSON["model"]
 const lograte = outputJSON["output_per"] || 2
+const prng = require( jsonFile )["artistoo"]["prng"]
 
 const surfN = configJSON["cpm_surface_nbs_n"]
 if( surfN != 2 ){
@@ -56,15 +57,31 @@ let config = {
 /* ============ Extend persistenceconstraint for MODEL006 dynamics */
 class LangevinPRW extends CPM.PersistenceConstraint {
 	
-	confChecker(){}
+	confChecker(){
+		let checker = new CPM.ParameterChecker( this.conf, this.C )
+		checker.confCheckParameter( "MU", "KindArray", "NonNegative" )
+		checker.confCheckParameter( "XI", "KindArray", "NonNegative" )
+		checker.confCheckParameter( "PROTRUDE", "KindArray", "Boolean" )
+		checker.confCheckParameter( "RETRACT", "KindArray", "Boolean" )
+	}
 	
-	deltaH ( sourcei, targeti, src_type, tgt_type ) {
-		if( src_type == 0 || !(src_type in this.celldirections) ) return 0
-		let b = this.celldirections[src_type]
-		let p1 = this.C.grid.i2p(sourcei), p2 = this.C.grid.i2p(targeti)
+	correctTorusDim( p, dx, i ){
+		if( dx > this.halfsize[i] ) return p - this.C.extents[i]
+		if( dx < -this.halfsize[i] ) return p + this.C.extents[i]
+		return p
+	}
+	
+	correctTorus( pos, reference ){
+		let dx = pos.map( (x, i) => pos[i] - reference[i] )
+		pos = dx.map( (x,i) => this.correctTorusDim( pos[i], x, i ))
+		return pos
+	}
+	
+	
+	vec( fromP, toP, normalize = true ){
 		let a = []
-		for( let i = 0 ; i < p1.length ; i ++ ){
-			a[i] = p2[i]-p1[i]
+		for( let i = 0 ; i < fromP.length ; i ++ ){
+			a[i] = toP[i]-fromP[i]
 			// Correct for torus if necessary
 			if( this.C.grid.torus[i] ){
 				if( a[i] > this.halfsize[i] ){
@@ -74,22 +91,143 @@ class LangevinPRW extends CPM.PersistenceConstraint {
 				}
 			}
 		}
-		let dp = 0
-		for( let i = 0 ; i < a.length ; i ++ ){
-			dp += a[i]*b[i]
+		if( normalize ) this.normalize(a)
+		return a
+	}
+	
+	dot( v1, v2 ) {
+		let dot = v1.reduce((acc, n, i) => acc + (n * v2[i]), 0)
+		return(dot)
+	}
+	
+	currentCentroid( cid ){
+		if( !( cid in this.cellcentroidlists ) ){
+			this.C.stat_values = {}
+			let centroids = this.C.getStat( CPM.CentroidsWithTorusCorrection )
+			this.cellcentroidlists = centroids
 		}
-		return - dp
+		return this.cellcentroidlists[cid]
+		
+	}
+	
+	currentDirection( cid ){
+		if( !(cid in this.celldirections ) ){
+			this.celldirections[cid] = this.randDir(this.C.ndim)
+		}
+		return this.celldirections[cid]
 	}
 	
 	
+	centroidUpdate( sourcei, targeti, src_type, tgt_type ) {
+	
+		this.dC = { "src" : [0,0], "tgt" : [0,0] }
+		
+		// update src cell centroid because cell expands with one pix
+		if( src_type > 0 ){
+		
+			let N = this.C.getVolume( src_type )
+			let cenOld = this.currentCentroid( src_type )
+			let pixAdded = this.correctTorus( this.C.grid.i2p( targeti ), cenOld )
+			
+			let cenNew = cenOld.map( (x,i) => (x * N + pixAdded[i]) / (N+1)  ) 
+			this.dC.src = cenNew.map( (x,i) => x - cenOld[i] )
+			
+		}
+		
+		// update tgt cell centroid because cell loses one pix
+		if( tgt_type > 0 ){
+		
+			let N = this.C.getVolume(tgt_type )
+			let cenOld = this.currentCentroid( tgt_type )
+			let pixRemoved = this.correctTorus( this.C.grid.i2p( targeti ), cenOld )
+			
+			let cenNew = cenOld.map( (x,i) => (x * N - pixRemoved[i]) / (N-1) ) 
+			this.dC.tgt = cenNew.map( (x,i) => x - cenOld[i] )
+		
+		}
+		
+	}
+	
+	correctPosition( p ){
+		if( p[0] < 0 ) p[0] += this.C.grid.extents[0]
+		if( p[1] < 0 ) p[1] += this.C.grid.extents[1]
+		if( p[0] >= this.C.grid.extents[0] ) p[0] -= this.C.grid.extents[0]
+		if( p[1] >= this.C.grid.extents[1] ) p[1] -= this.C.grid.extents[1]
+	}
+	
+	postSetpixListener( i, t_old, t_new ){
+		if( t_old > 0 ){
+			let cen = this.currentCentroid( t_old ).map( (x,i) => x + this.dC.tgt[i] )
+			this.correctPosition(cen)
+			this.cellcentroidlists[t_old] = cen
+		}
+		if( t_new > 0 ){
+			let cen = this.currentCentroid( t_new ).map( (x,i) => x + this.dC.src[i] )
+			this.correctPosition(cen)
+			this.cellcentroidlists[t_new] = cen
+		}
+	}
+	
+	
+	deltaH ( sourcei, targeti, src_type, tgt_type ) {
+		
+		let dH = 0 
+		this.centroidUpdate( sourcei, targeti, src_type, tgt_type )
+		
+		// protrusion force:
+		if( this.conf.PROTRUDE && src_type > 0 ){
+			let b = this.currentDirection( src_type )
+			let a = this.dC.src
+			dH -= this.dot( a, b )
+		}
+		
+		// retraction force:
+		if( this.conf.RETRACT && tgt_type > 0 ){
+			let b = this.currentDirection( tgt_type )
+			let a = this.dC.tgt
+			dH -= this.dot( a, b )
+		}
+		//if( Math.random() < 0.01 ) console.log(dH)
+		return dH
+	}
+	
+	// after each MCS, update the target direction with Gaussian angular noise.
+	postMCSListener(){
+		for( let cid of this.C.cellIDs() ){
+			let mu = this.cellParameter( "MU", cid )
+			let xi = this.cellParameter( "XI", cid )
+			if( !(cid in this.celldirections ) ){
+				this.celldirections[cid] = this.randDir(this.C.ndim)
+			}
+			this.normalize( this.celldirections[cid] )
+			let alpha = Math.atan2( this.celldirections[cid][1], this.celldirections[cid][0])
+			alpha += this.sampleNorm( 0, xi )
+			this.celldirections[cid] = [Math.cos(alpha), Math.sin(alpha)].map( x => x * mu * this.C.getVolume(cid) )
+		}
+	}
 }
 
-// add a drawOnTop method
+
 let custommethods = {
 	drawOnTop : drawOnTop,
 	logStats : logStats
 }
 let sim = new CPM.Simulation( config, custommethods )
+switch( prng ){
+	case "MersenneTwister" : {
+		// do nothing, this is the artistoo default
+		break
+	}
+	case 'MathRandom' : {
+		// replace the prng
+		sim.C.random = function() { return Math.random() }
+		break
+	}
+	default : {
+		throw( "Unsupported random number generator " + prng  )
+	}
+	
+}
 
 // print header
 console.log( "time,id,com_1,com_2,area,surface" )	
@@ -136,7 +274,23 @@ switch( modelName ){
 		break
 	}
 	case 'MODEL006' : {
-		const omega = configJSON["model_args"]["omega"]
+		let prefdir = new LangevinPRW( 
+			{
+				MU: [0,configJSON["model_args"]["mu"]], 
+				XI: [0,configJSON["model_args"]["xi"]], 
+				PROTRUDE: [false,true],
+				RETRACT : [false,true]
+			} )
+		sim.C.add( prefdir )
+		// non-active persistence just for the visualization
+		let pconstraint = new CPM.PersistenceConstraint( 
+			{
+				LAMBDA_DIR: [0,0.000001], 
+				PERSIST: [0,0],
+				DELTA_T : [0,5]
+			} )
+		sim.C.add( pconstraint )
+		break
 	}
 	default : {
 		throw( "Unsupported model " + modelName  )
