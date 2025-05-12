@@ -6,8 +6,8 @@ let configJSON = {
 	"cpm_nbs_n" : 2,
 	"cpm_perim_v" : 0.0222,
 	"cpm_perim_c" : 94,
-	"len_1" : 100,
-	"len_2" : 100,
+	"len_1" : 80,
+	"len_2" : 80,
 	"max_time" : 4000,
 	"method" : "CPM",
 	"model_args" : {
@@ -24,6 +24,12 @@ let configJSON = {
 			"persist" : 0.13862943611198905,
 			"lambda_dir" : 0.4,
 			"dt" : 10
+		},
+		"MODEL006" : {
+			"mu" : .1,
+			"ksi" : .3,
+			"retract_force" : true,
+			"protrude_force" : true
 		}
 	}
 }
