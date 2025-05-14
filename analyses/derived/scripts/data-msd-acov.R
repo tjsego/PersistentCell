@@ -14,24 +14,20 @@ tr <- as.tracks( d, time.column = 1, id.column = 2, pos.columns= 3:4 )
 
 dd <- bind_rows( lapply( 1:length(tr) , function(i) {
 	tt <- tr[i]
-	trdt <- timeStep(tt)
-	tvec <- timePoints( tt ) 
-	sub.lens <- 1:(length(tvec)-1)
-	dtt <- bind_rows( lapply( sub.lens, function(k) {
-		st <- subtracks( tt, k )
-		out <- data.frame(
-			steps = k,
-			track.id = names(tt),
-			sqDisp = sapply( st, squareDisplacement),
-			acov = sapply( st, overallDot )
-		) %>% mutate(
-			subtrack.id = 1:n(),
-			dt = steps * trdt
-		) %>%
-		select( track.id, subtrack.id, dt, sqDisp, acov )
-		return(out)
-	}))
-	return( dtt )
+	
+	msd <- aggregate( tt, squareDisplacement, count.subtracks = TRUE )
+	angle <- aggregate( tt, overallAngle, count.subtracks = TRUE ) 
+	
+	out <- data.frame( 
+		dt_nsteps = msd$i,
+		dt_MCS = msd$i * timeStep( tt ),
+		id = i,
+		nsubtracks = msd$ntracks,
+		msd = msd$value,
+		acor = cos( angle$value ) 
+	)
+	
+	return(out)
 	
 }))
 	
