@@ -28,6 +28,9 @@ results/MODEL%/img :
 # ===============================
 model000 : results/model000-corrected-tracks.csv
 
+model000.json : ../model000.json
+	cp $< $@
+
 results/MODEL000/tracks/track%.csv : ../persistent-cell.js model000.json | results/MODEL000/tracks \
 	results/MODEL000/img
 	node $< E0/model000.json $* > $@
@@ -43,6 +46,9 @@ results/model000-corrected-tracks.csv : correct-torus.R results/MODEL000/combine
 # MODEL000B with Math.random() RNG
 # ===============================
 model000b : results/model000b-corrected-tracks.csv
+
+model000b.json : ../model000.json
+	cat $< | sed 's/MersenneTwister/MathRandom/g' > $@
 
 results/MODEL000B/tracks/track%.csv : ../persistent-cell.js model000b.json | results/MODEL000B/tracks \
 	results/MODEL000B/img
@@ -76,6 +82,9 @@ results/model000c-corrected-tracks.csv : correct-torus.R results/MODEL000C/combi
 # ===============================
 model003 : results/model003-corrected-tracks.csv
 
+model003.json : ../model003.json
+	cp $< $@
+
 results/MODEL003/tracks/track%.csv : ../persistent-cell.js model003.json | results/MODEL003/tracks results/MODEL003/img
 	node $< E0/model003.json $* > $@
 
@@ -90,6 +99,10 @@ results/model003-corrected-tracks.csv : correct-torus.R results/MODEL003/combine
 # MODEL003B with Math.random() RNG
 # ===============================
 model003b : results/model003b-corrected-tracks.csv
+
+model003b.json : ../model003.json
+	cat $< | sed 's/MersenneTwister/MathRandom/g' > $@
+
 
 results/MODEL003B/tracks/track%.csv : ../persistent-cell.js model003b.json | results/MODEL003B/tracks \
 	results/MODEL003B/img
@@ -116,10 +129,29 @@ results/MODEL003C/combined-tracks.csv : $(foreach s, $(REPS2), results/MODEL003C
 
 results/model003c-corrected-tracks.csv : correct-torus.R results/MODEL003C/combined-tracks.csv model003.json
 	Rscript $^ $@
+	
+# MODEL003D test
+# ===============================
+model003d : results/model003d-corrected-tracks.csv
+
+results/MODEL003D/tracks/track%.csv : ../persistent-cell-test.js model003.json | results/MODEL003D/tracks \
+	results/MODEL003D/img
+	node $< E0/model003.json $* > $@
+
+# combine tracks of independently simulated cells	
+results/MODEL003D/combined-tracks.csv : $(foreach s, $(REPS), results/MODEL003D/tracks/track$(s).csv)
+	cat $< | head -n 1 > $@ && cat $^ | grep -v time >> $@
+
+results/model003d-corrected-tracks.csv : correct-torus.R results/MODEL003D/combined-tracks.csv model003.json
+	Rscript $^ $@
 
 # MODEL005
 # ===============================
 model005 : results/model005-corrected-tracks.csv
+
+model005.json : ../model005.json
+	cp $< $@
+
 
 results/MODEL005/tracks/track%.csv : ../persistent-cell.js model005.json | results/MODEL005/tracks results/MODEL005/img
 	node $< E0/model005.json $* > $@
@@ -134,6 +166,10 @@ results/model005-corrected-tracks.csv : correct-torus.R results/MODEL005/combine
 # MODEL005B with Math.random() RNG
 # ===============================
 model005b : results/model005b-corrected-tracks.csv
+
+model005b.json : ../model005.json
+	cat $< | sed 's/MersenneTwister/MathRandom/g' > $@
+
 
 results/MODEL005B/tracks/track%.csv : ../persistent-cell.js model005b.json | results/MODEL005B/tracks \
 	results/MODEL005B/img
@@ -165,6 +201,9 @@ results/model005c-corrected-tracks.csv : correct-torus.R results/MODEL005C/combi
 # ===============================
 model006 : results/model006-corrected-tracks.csv
 
+model006.json : ../model006.json
+	cp $< $@
+
 results/MODEL006/tracks/track%.csv : ../persistent-cell.js model006.json | results/MODEL006/tracks results/MODEL006/img
 	node $< E0/model006.json $* > $@
 
@@ -178,6 +217,10 @@ results/model006-corrected-tracks.csv : correct-torus.R results/MODEL006/combine
 # MODEL006B with Math.random() RNG
 # ===============================
 model006b : results/model006b-corrected-tracks.csv
+
+model006b.json : ../model006.json
+	cat $< | sed 's/MersenneTwister/MathRandom/g' > $@
+
 
 results/MODEL006B/tracks/track%.csv : ../persistent-cell.js model006b.json | results/MODEL006B/tracks \
 	results/MODEL006B/img
