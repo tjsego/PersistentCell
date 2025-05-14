@@ -121,8 +121,8 @@ switch( modelName ){
 	
 		let prefdir = new CPM.PreferredDirectionConstraint( 
 			{
-				LAMBDA_DIR: [0,configJSON["model_args"]["lambda_dir"]], 
-				DIR: [[0,0], [Math.cos(alpha),Math.sin(alpha)]]
+				LAMBDA_DIR: [configJSON["model_args"]["lambda_dir"],configJSON["model_args"]["lambda_dir"]], 
+				DIR: [[Math.cos(alpha),Math.sin(alpha)], [Math.cos(alpha),Math.sin(alpha)]]
 			} )
 		sim.C.add( prefdir )
 		// non-active persistence just for the visualization
