@@ -65,7 +65,8 @@ let config = {
 
 
 let custommethods = {
-	logStats : logStats
+	logStats : logStats,
+	initializeGrid : initializeGrid
 }
 let sim = new CPM.Simulation( config, custommethods )
 switch( prng ){
@@ -136,5 +137,17 @@ function logStats(){
 	let perim = this.C.getConstraint("PerimeterConstraint").cellperimeters[1]
 	console.log( this.time + "," + seed + "," + centroid.join(",") + "," + area + "," + perim )		
 }
+
+function initializeGrid(){
+	let pixList = outputJSON["init"]
+	const newID = this.C.makeNewCellID( 1 )
+	for( let p of pixList ){
+		this.C.setpix( p, newID )
+	}
+	
+}
+
+sim.drawCanvas()
+sim.Cim.writePNG( "./results/"+ modelName + "/init.png" )
 
 sim.run()
