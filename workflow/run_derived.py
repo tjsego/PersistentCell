@@ -8,6 +8,7 @@ Runs the derived step of the workflow
 import json
 import logging
 import os
+import pandas as pd
 import subprocess
 import sys
 from typing import Tuple, Type
@@ -56,6 +57,35 @@ def impl_derived_dir(_experiment_dir: str, _impl_name: str):
     return os.path.join(os.path.abspath(_experiment_dir), basic.output_subdir_derived, _impl_name)
 
 
+def impl_derived_data_fp(_experiment_dir: str, _impl_name: str):
+    return os.path.join(_experiment_dir, basic.output_subdir_derived, _impl_name, f'{basic.derived_data_basename}.csv')
+
+
+def impl_derived_std_data_dir(_experiment_dir: str, _impl_name: str):
+    return os.path.join(_experiment_dir, basic.output_subdir_results_appended, _impl_name)
+
+
+def impl_derived_std_data_fp(_experiment_dir: str, _impl_name: str):
+    return os.path.join(impl_derived_std_data_dir(_experiment_dir, _impl_name), f'{basic.derived_data_basename}.csv')
+
+
+def generate_derived_std(_experiment_dir: str, _impl_name: str):
+    target_data_fp = impl_derived_data_fp(_experiment_dir, _impl_name)
+    if not os.path.isfile(target_data_fp):
+        raise FileNotFoundError(target_data_fp)
+    output_data_dir = impl_derived_std_data_dir(_experiment_dir, _impl_name)
+    output_data_fp = impl_derived_std_data_fp(_experiment_dir, _impl_name)
+    if not os.path.isdir(output_data_dir):
+        os.makedirs(output_data_dir)
+
+    target_data = pd.read_csv(target_data_fp)
+    target_data.rename(columns={'subtrack.id': 'id'}, inplace=True)
+    target_data['id'] += (target_data['track.id'] - 1) * len(target_data['id'].unique()) - 1
+    target_data.drop(columns=['track.id', 'dt'], inplace=True)
+    target_data['time'] = 0.0
+    target_data.to_csv(output_data_fp, index=False, columns=['id', 'time', 'sqDisp', 'acov'])
+
+
 def exec_script_fp_unix(_experiment_dir: str, _impl_name: str):
     return os.path.join(impl_derived_dir(_experiment_dir, _impl_name), 'derived.sh')
 
@@ -73,6 +103,8 @@ def exec_script_win(_experiment_dir: str,
     edir = impl_derived_dir(_experiment_dir, _impl_name)
     this_dir_rel = os.path.relpath(basic.dir_here, edir)
     derived_dir_rel = os.path.relpath(basic.dir_derived, edir)
+    impl_data_rel = os.path.relpath(basic.get_results_raw(_experiment_dir)[_impl_name], edir)
+    impl_derived_data_rel = f'{basic.derived_data_basename}.csv'
 
     script_str = f'''
 @echo off
@@ -89,6 +121,7 @@ Rscript {derived_dir_rel}/scripts/load-and-preprocess-tracks.R derived.json data
 Rscript {derived_dir_rel}/scripts/simple-speeds.R data/comp.rds plots/comp.pdf
 Rscript {derived_dir_rel}/scripts/msd.R data/comp.rds plots/msd.pdf
 Rscript {derived_dir_rel}/scripts/acov.R data/comp.rds 100 plots/acov.pdf
+Rscript {derived_dir_rel}/scripts/data-msd-acov.R {impl_data_rel} {impl_derived_data_rel}
 '''
 
     logger.debug(f'Execution script: {script_fp}')
@@ -109,6 +142,8 @@ def exec_script_unix(_experiment_dir: str,
     edir = impl_derived_dir(_experiment_dir, _impl_name)
     this_dir_rel = os.path.relpath(basic.dir_here, edir)
     derived_dir_rel = os.path.relpath(basic.dir_derived, edir)
+    impl_data_rel = os.path.relpath(basic.get_results_raw(_experiment_dir)[_impl_name], edir)
+    impl_derived_data_rel = f'{basic.derived_data_basename}.csv'
 
     script_str = f'''
 #!/bin/bash
@@ -126,6 +161,7 @@ Rscript {derived_dir_rel}/scripts/load-and-preprocess-tracks.R derived.json data
 Rscript {derived_dir_rel}/scripts/simple-speeds.R data/comp.rds plots/comp.pdf
 Rscript {derived_dir_rel}/scripts/msd.R data/comp.rds plots/msd.pdf
 Rscript {derived_dir_rel}/scripts/acov.R data/comp.rds 100 plots/acov.pdf
+Rscript {derived_dir_rel}/scripts/data-msd-acov.R {impl_data_rel} {impl_derived_data_rel}
 '''
 
     logger.debug(f'Execution script: {script_fp}')
@@ -221,5 +257,10 @@ def do_derived(_experiment_dir: str):
         if os.path.isfile(ex_fp):
             logger.debug(f'Cleaning execution script: {ex_fp}')
             os.remove(ex_fp)
+
+    # Generate appended data
+    for name in impl_names:
+        if not os.path.isfile(impl_derived_std_data_dir(_experiment_dir, name)):
+            generate_derived_std(_experiment_dir, name)
 
     return result

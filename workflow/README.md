@@ -41,3 +41,13 @@ The rejection p-value corresponds to the null hypothesis that the modeler data i
 * `efect/`: Contains a subdirectory per participating implementation of the same name as in `results_raw/` containing the following outputs:
   * `efect_report.json`: The EFECT Report encoding all necessary data for testing reproducibility. 
   * `efect_sampling.csv`: The EFECT Error sample from the test for reproducibility, in comma-separated format.
+* `post/`: Post-processing from each workflow stage
+
+Additionally, if the workflow is performed on additional data, then the following structure will also be populated 
+by the workflow:
+
+* `appended_compare`: Similar to `compare/` but from targeting appended results.
+* `efect/`:
+  * `appended_efect_report.json`: Like `efect/efect_report.json` but targeting appended results.
+  * `appended_efect_sampling.csv`: Like `efect/efec_sampling.csv` but targeting appended results.
+* `results_appended`: Appended results; like `results_raw` but with generated data from `derived` in standard format.
