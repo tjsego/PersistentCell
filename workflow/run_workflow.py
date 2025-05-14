@@ -192,7 +192,6 @@ def _post_summary(_post_dir: str,
 
 
 def _post(_experiment_dir: str,
-          appended=False,
           output_fexts: List[str] = None,
           dpi: int = basic.post_dpi,
           ci_int: float = 0.95,
@@ -223,6 +222,60 @@ def _post(_experiment_dir: str,
     _post_dists(post_dir, impl_data_raw, _output_fexts, dpi)
 
 
+def _post_appended(_experiment_dir: str,
+                   output_fexts: List[str] = None,
+                   dpi: int = basic.post_dpi):
+    logger.info(f'Doing starting appended post: {_experiment_dir}')
+
+    try:
+        _output_fexts = basic.check_fexts(output_fexts)
+    except Exception as e:
+        _output_fexts = []
+        _log_error(str(e), type(e))
+
+    results_dir = os.path.join(_experiment_dir, basic.output_subdir_results_appended)
+    impl_data_raw: Dict[str, Dict[str, np.ndarray]] = {n: load_results(fp)
+                                                       for n, fp in basic.get_results_appended(_experiment_dir).items()}
+    if not os.path.isdir(results_dir) or not impl_data_raw:
+        logger.debug('No results found')
+        return
+
+    post_dir = os.path.join(_experiment_dir, basic.output_subdir_post, basic.output_subdir_results_appended)
+    if not os.path.isdir(post_dir):
+        os.makedirs(post_dir)
+
+    impl_names = list(impl_data_raw.keys())
+    var_names: List[str] = list(impl_data_raw[impl_names[0]].keys())
+    if VAR_TIME in var_names:
+        var_names.remove(VAR_TIME)
+
+    cs = plt.color_sequences['tab10']
+
+    # Plot distributions
+    fig, axs = plt.subplots(len(var_names), 1,
+                            layout='compressed',
+                            figsize=(3, 3 * len(var_names)))
+    for var_name, ax in zip(var_names, axs):
+        for i, impl_name in enumerate(impl_names):
+            try:
+                data = impl_data_raw[impl_name][var_name][:, 0]
+            except KeyError:
+                logger.error(f'Missing variable {var_name} for implementation {impl_name}')
+                continue
+
+            ax.hist(data, density=True, alpha=0.25, color=cs[i], label=impl_name)
+
+        ax.set_title(var_name)
+        ax.legend()
+
+    # Save
+    output_name = f'dist'
+    for fext in _output_fexts:
+        fig.savefig(os.path.join(post_dir, output_name + '.' + fext),
+                    dpi=dpi)
+    plt.close(fig)
+
+
 def main(_exp_dir: str,
          appended=False):
     logger.info('*****************')
@@ -230,9 +283,6 @@ def main(_exp_dir: str,
     logger.info(f'\tExperiment directory: {_exp_dir}')
     logger.info(f'\tAppended            : {appended}')
     logger.info('*****************')
-
-    if appended:
-        _log_error('Appended results are currently not supported.', ValueError)
 
     # Ensure experiment directory exists
     if not os.path.isdir(_exp_dir):
@@ -244,17 +294,23 @@ def main(_exp_dir: str,
         _log_error(ip, FileNotFoundError)
 
     # todo: add support for rendering options
-    _post(_exp_dir,
-          appended=appended)
+    _post(_exp_dir)
 
     # run derived step
     logger.info('Running derived step')
     run_derived.do_derived(_exp_dir)
 
+    if appended:
+        _post_appended(_exp_dir)
+
     # run ssr step
     logger.info('Running ssr step')
-    run_ssr.do_ssr(_exp_dir, do_appended=appended)
+    run_ssr.do_ssr(_exp_dir)
+    if appended:
+        run_ssr.do_ssr(_exp_dir, do_appended=True)
 
     # run compare step
     logger.info('Running compare step')
-    run_compare.do_compare(_exp_dir, do_appended=appended)
+    run_compare.do_compare(_exp_dir)
+    if appended:
+        run_compare.do_compare(_exp_dir, do_appended=True)

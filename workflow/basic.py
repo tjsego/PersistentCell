@@ -19,6 +19,8 @@ prefix_appended = 'appended_'
 efect_report_name = 'efect_report.json'
 efect_sampling_name = 'efect_sampling.csv'
 
+derived_data_basename = 'derived-data'
+
 comparison_output_name = 'comparison.json'
 
 comparison_key_modeler = 'modeler'

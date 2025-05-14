@@ -160,10 +160,10 @@ def _post(_experiment_dir: str,
     else:
         target_prefix = ''
 
-    output_dir = os.path.join(_experiment_dir, basic.output_subdir_compare)
+    output_dir = os.path.join(_experiment_dir, target_prefix + basic.output_subdir_compare)
     logger.debug(f'Output directory: {output_dir}')
 
-    output_fp = os.path.join(output_dir, target_prefix + basic.comparison_output_name)
+    output_fp = os.path.join(output_dir, basic.comparison_output_name)
     logger.debug(f'Output file: {output_fp}')
 
     if not os.path.isfile(output_fp):
@@ -180,7 +180,7 @@ def _post(_experiment_dir: str,
         output_data = json.load(f)
 
     num_outputs = len(output_data)
-    post_dir_root = os.path.join(_experiment_dir, basic.output_subdir_post, basic.output_subdir_compare)
+    post_dir_root = os.path.join(_experiment_dir, basic.output_subdir_post, target_prefix + basic.output_subdir_compare)
     post_dirs = [os.path.join(post_dir_root, str(i)) for i in range(num_outputs)]
     jobs_to_do = [i for i, d in enumerate(post_dirs) if not os.path.isdir(d) or not os.listdir(d)]
 
@@ -217,13 +217,12 @@ def _post(_experiment_dir: str,
             except KeyError:
                 post_all_data[impl_modeler] = {impl_curator: pval}
         for impl_name in post_all_data:
-            efect_fp = os.path.join(_experiment_dir, basic.output_subdir_efect, impl_name, basic.efect_report_name)
+            efect_fp = os.path.join(
+                _experiment_dir, basic.output_subdir_efect, impl_name, target_prefix + basic.efect_report_name
+            )
             with open(efect_fp, 'r') as f:
                 post_all_data[impl_name][impl_name] = json.load(f)["errorMetricMean"]
-        _post_all(post_all_data,
-                  os.path.join(_experiment_dir, basic.output_subdir_post, basic.output_subdir_compare),
-                  _output_fexts,
-                  fig_dpi)
+        _post_all(post_all_data, post_dir_root, _output_fexts, fig_dpi)
 
 
 def do_compare(_experiment_dir: str,
@@ -234,14 +233,22 @@ def do_compare(_experiment_dir: str,
 
     if do_appended:
         target_prefix = basic.prefix_appended
+
+        def _results_get(_n: str):
+            return load_results(basic.get_results_appended(_experiment_dir)[_n])
+
     else:
         target_prefix = ''
+
+        def _results_get(_n: str):
+            return load_results(basic.get_results_raw(_experiment_dir)[_n])
+
     target_dir = os.path.join(_experiment_dir, basic.output_subdir_efect)
 
     logger.debug(f'Target directory: {target_dir}')
 
     # Confirm existence of output directory
-    output_dir = os.path.join(_experiment_dir, basic.output_subdir_compare)
+    output_dir = os.path.join(_experiment_dir, target_prefix + basic.output_subdir_compare)
     logger.debug(f'Output directory: {output_dir}')
 
     if not os.path.isdir(output_dir):
@@ -249,7 +256,7 @@ def do_compare(_experiment_dir: str,
         os.makedirs(output_dir)
 
     # Confirm existence of output file
-    output_fp = os.path.join(output_dir, target_prefix + basic.comparison_output_name)
+    output_fp = os.path.join(output_dir, basic.comparison_output_name)
     logger.debug(f'Output file: {output_fp}')
 
     if not os.path.isfile(output_fp):
@@ -299,7 +306,7 @@ def do_compare(_experiment_dir: str,
     for modeler_impl, curator_impl in jobs:
         logger.info(f'Working: {modeler_impl}, {curator_impl}')
 
-        modeler_res = load_results(basic.get_results_raw(_experiment_dir)[modeler_impl])
+        modeler_res = _results_get(modeler_impl)
 
         curator_rep_fp = os.path.join(target_dir, curator_impl, target_prefix + basic.efect_report_name)
         curator_smp_fp = os.path.join(target_dir, curator_impl, target_prefix + basic.efect_sampling_name)
