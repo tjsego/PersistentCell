@@ -165,16 +165,24 @@ if( !is.na( coefs[["M"]] ) ){
 }
 
 # Autocovariance
-acov <- aggregate( tr, overallDot, FUN = "mean.se" )
+if( timeStep( tr ) < 5 ){
+	 k <- round( 5 / timeStep(tr) )
+	 message(k)
+	 tr <- subsample( tr, k = k )
+}
+
+acov <- aggregate( tr, overallAngle, FUN = "mean.se", na.rm = TRUE )
 acov$dt <- (acov$i -1)* timeStep( tr ) 
+
+print(head(acov))
 
 pAcov <- ggplot( acov, aes( x = dt ) ) + 
 	geom_hline( yintercept = 0, linewidth = 0.2 ) +
-	geom_ribbon( aes( ymin = lower, ymax = upper ), color = NA, fill = "black", alpha = 0.1 ) +
-	geom_line( aes( y = mean ) ) +
+	geom_ribbon( aes( ymin =  cos(lower ), ymax = cos(upper)  ), color = NA, fill = "black", alpha = 0.1 ) +
+	geom_line( aes( y =  cos(mean)  ) ) +
 	scale_x_continuous( limits = c(0,100) ) +
-	scale_y_continuous( limits = c(-1.1 * max(abs(acov$mean)),1.1*max(abs(acov$mean)))) +
-	labs( x = expression(Delta*"t (MCS)"), y = "autocovariance" ) +
+	scale_y_continuous( limits = c(-1,1) ) + #c(-1.1 * max(abs(acov$mean)),1.1*max(abs(acov$mean)))) +
+	labs( x = expression(Delta*"t (MCS)"), y = "autocorrelation (cosine)" ) +
 	plotTheme
 
 

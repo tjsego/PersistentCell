@@ -9,19 +9,21 @@
         "len_2": 100,
         "cpm_nbs_n": 2,
         "cpm_surface_nbs_n": 2,
-        "max_time": 10000,
+        "max_time": 1000,
         "method": "CPM",
         "model": "MODEL005",
         "model_args": {
+         	"lambda_dir": [0,20],
+            "cpm_force_mode" : "extension",
+            "cpm_update_direction" : "source-to-target",
         	"persist" : 0,
-			"mu" : 20,
 			"dt" : 50
         }
     },
     "sim": {
         "num_sims": 100,
         "output_name": "model005",
-        "output_per": 10
+        "output_per": 1
     },
     "artistoo": {
         "prng": "MersenneTwister"

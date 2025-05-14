@@ -1,9 +1,9 @@
 .SECONDARY:
 .DELETE_ON_ERROR:
 
-all : model000 model003 model005
+all : model000 model003 model005 model006
 
-REPS=$(shell seq 1 100)
+REPS=$(shell seq 1 10)
 
 # Install node
 node_modules : 

@@ -9,20 +9,20 @@
         "len_2": 100,
         "cpm_nbs_n": 2,
         "cpm_surface_nbs_n": 2,
-        "max_time": 10000,
+        "max_time": 1000,
         "method": "CPM",
         "model": "MODEL006",
         "model_args": {
-        	"mu" : 5,
-			"xi" : 0.2,
-			"retract_force" : true,
-			"protrude_force" : true
+        	"lambda_dir" : [0,20],
+			"xi" : 0.3,
+			"cpm_force_mode" : "extension",
+            "cpm_update_direction" : "cell-mass-displacement"
         }
     },
     "sim": {
         "num_sims": 100,
         "output_name": "model006",
-        "output_per": 10
+        "output_per": 1
     },
     "artistoo": {
         "prng": "MersenneTwister"
