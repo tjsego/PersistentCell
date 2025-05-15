@@ -290,16 +290,6 @@ __supported_specs__ = [
     FloatConstraint('cpm_temperature', non_negative=True),
     FloatConstraint('cpm_perim_c', non_negative=True),
     FloatConstraint('cpm_perim_v'),
-    ListConstraint(
-        'init_domain',
-        ListConstraint(
-            'items',
-            IntegerConstraint(
-                'item'
-            ),
-            list_size=2
-        )
-    ),
     IntegerConstraint('len_1', positive=True),
     IntegerConstraint('len_2', positive=True),
     IntegerConstraint('max_time', positive=True),

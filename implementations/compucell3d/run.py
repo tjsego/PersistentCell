@@ -31,8 +31,7 @@ def run(fp: str,
     
     specs, cell_type_name, cell_length_target = from_json_data(model_data)
 
-    spec_data_formatted = verify_spec(model_data)
-    init_domain: List[Tuple[int, int]] = [(x[0], x[1]) for x in spec_data_formatted['init_domain']]
+    init_domain: List[Tuple[int, int]] = [(int(x[0]), int(x[1])) for x in config_data['sim']['init_domain']]
     
     simulate(output_dir=output_dir,
              num_sims=num_sims,
