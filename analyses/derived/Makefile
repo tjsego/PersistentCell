@@ -29,5 +29,8 @@ plots/example-acov.pdf : scripts/acov.R data/example-comp.rds  | plots
 
 # raw data: square displacements and DAC for all subtracks.
 # this won't work very well with the current sampling rate of every 100 MCS though.
-data/example-processed.csv : scripts/data-msd-acov.R ../../implementations/artistoo/E0/results/model000-corrected-tracks.csv | data
+data/example-processed.csv : scripts/data-msd-acov.R ../../implementations/artistoo/E0/results/model006-corrected-tracks.csv | data
+	Rscript $^ $@
+	
+plots/example-processed.pdf : scripts/plot-msd-acov.R data/example-processed.csv | plots
 	Rscript $^ $@
