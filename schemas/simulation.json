@@ -27,6 +27,16 @@
     "description": "Cellular Potts model temperature of Metropolis kinetics.",
     "type": "number"
   },
+  "init_domain": {
+    "description": "Positions initially occupied by the cell",
+    "type": "array",
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    }
+  },
   "len_1": {
     "description": "Spatial domain length along the first spatial dimension. A cell is initialized with a centroid halfway along this length in the first dimension.",
     "type": "number"

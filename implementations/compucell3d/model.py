@@ -240,6 +240,49 @@ class StringConstraint(SpecConstraint):
         super().__init__(_key, str, **kwargs)
 
 
+class ListConstraint(SpecConstraint):
+
+    def __init__(self, _key: str, item_constraint: SpecConstraint, list_size: int = None, **kwargs):
+        super().__init__(_key, list, **kwargs)
+
+        self.item_constraint = item_constraint
+        self.list_size = list_size
+
+    def constraint(self, _x):
+        if not super().constraint(_x):
+            return False
+        elif self.list_size is not None:
+            return len(_x) == self.list_size
+
+        for x in _x:
+            if not self.item_constraint.constraint(x):
+                return False
+        return True
+
+    def check_type(self, _x):
+        if not super().check_type(_x):
+            return False
+        for x in _x:
+            if not self.item_constraint.check_type(x):
+                return False
+        return True
+
+    def check(self, _x):
+        if not super().check(_x):
+            return False
+        for x in _x:
+            if not self.item_constraint.check(x):
+                return False
+        return True
+
+    def verify(self, _x):
+        super().verify(_x)
+        [self.item_constraint.verify(x) for x in _x]
+
+    def cast(self, _x):
+        return [self.item_constraint.cast(x) for x in super().cast(_x)]
+
+
 __supported_specs__ = [
     FloatConstraint('cpm_area_c', non_negative=True),
     FloatConstraint('cpm_area_v'),
@@ -247,6 +290,16 @@ __supported_specs__ = [
     FloatConstraint('cpm_temperature', non_negative=True),
     FloatConstraint('cpm_perim_c', non_negative=True),
     FloatConstraint('cpm_perim_v'),
+    ListConstraint(
+        'init_domain',
+        ListConstraint(
+            'items',
+            IntegerConstraint(
+                'item'
+            ),
+            list_size=2
+        )
+    ),
     IntegerConstraint('len_1', positive=True),
     IntegerConstraint('len_2', positive=True),
     IntegerConstraint('max_time', positive=True),

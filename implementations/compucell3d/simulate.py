@@ -29,12 +29,19 @@ Result = Tuple[int, float, float, float, float]
 
 class TrackingSteppable(SteppableBasePy):
 
-    def __init__(self, cell_type_name: str, cell_length_target: int, output_per: int, model_name: str, model_args: Dict[str, Any] = None):
+    def __init__(self,
+                 cell_type_name: str,
+                 cell_length_target: int,
+                 init_domain: List[Tuple[int, int]],
+                 output_per: int,
+                 model_name: str,
+                 model_args: Dict[str, Any] = None):
         
         super().__init__(frequency=1)
 
         self.cell_type_name = cell_type_name
         self.cell_length_target = cell_length_target
+        self.init_domain = init_domain
         self.output_per = output_per
         self.model_name = model_name
         self.model_args = model_args if model_args is not None else {}
@@ -57,21 +64,16 @@ class TrackingSteppable(SteppableBasePy):
         return self.xcom_prev + self.xcom_adjust, self.ycom_prev + self.ycom_adjust
 
     def start(self):
-        start_pos_x = self.dim.x // 2
-        start_pos_y = self.dim.y // 2
-
         cell = self.new_cell(getattr(self.cell_type, self.cell_type_name))
         self.cell_id = cell.id
-        # Square initialization
-        # for x in range(start_pos_x - self.cell_length_target // 2, start_pos_x + self.cell_length_target // 2):
-        #     for y in range(start_pos_y - self.cell_length_target // 2, start_pos_y + self.cell_length_target // 2):
-        #         self.cell_field[x, y, 0] = cell
-        # Single-pixel initialization
-        self.cell_field[start_pos_x, start_pos_y, 0] = cell
+        for x, y in self.init_domain:
+            self.cell_field[x, y, 0] = cell
 
         # Mitigating a rare, strange bug
         if cell.volume == 0:
-            raise RuntimeError(f'Found zero volume cell ({self.cell_id, self.cell_length_target, start_pos_x, start_pos_y, self.dim.x, self.dim.y, cell.xCOM, cell.yCOM})')
+            msg = 'Found zero volume cell'
+            msg += f' ({self.cell_id, self.cell_length_target, self.dim.x, self.dim.y, cell.xCOM, cell.yCOM})'
+            raise RuntimeError(msg)
 
         self.xcom_prev = cell.xCOM
         self.ycom_prev = cell.yCOM
@@ -196,8 +198,8 @@ class Model005SteppableImplementation(ModelSteppableImplementation):
         self.record_pos(_parent, mcs)
 
 
-def create_sim(specs, cell_type_name: str, cell_length_target: int, output_per: int, model_name: str, model_args: Dict[str, Any], *args, **kwargs):
-    steppable = TrackingSteppable(cell_type_name, cell_length_target, output_per, model_name, model_args=model_args)
+def create_sim(specs, cell_type_name: str, cell_length_target: int, init_domain: List[Tuple[int, int]], output_per: int, model_name: str, model_args: Dict[str, Any], *args, **kwargs):
+    steppable = TrackingSteppable(cell_type_name, cell_length_target, init_domain, output_per, model_name, model_args=model_args)
     cc3d_sim = CC3DSimService(*args, **kwargs)
     cc3d_sim.register_specs(specs)
     cc3d_sim.register_steppable(steppable)
@@ -207,10 +209,10 @@ def create_sim(specs, cell_type_name: str, cell_length_target: int, output_per: 
     return cc3d_sim, steppable
 
 
-def generate_screenshot_data(specs, cell_type_name: str, cell_length_target: int, output_per: int, model_name: str, model_args: Dict[str, Any], field_names: List[str] = None):
+def generate_screenshot_data(specs, cell_type_name: str, cell_length_target: int, init_domain: List[Tuple[int, int]], output_per: int, model_name: str, model_args: Dict[str, Any], field_names: List[str] = None):
     cc3d_sim = CC3DSimService()
     cc3d_sim.register_specs(specs)
-    cc3d_sim.register_steppable(TrackingSteppable(cell_type_name, cell_length_target, output_per, model_name, model_args=model_args))
+    cc3d_sim.register_steppable(TrackingSteppable(cell_type_name, cell_length_target, init_domain, output_per, model_name, model_args=model_args))
     cc3d_sim.run()
     cc3d_sim.init()
     cc3d_sim.start()
@@ -238,6 +240,7 @@ def generate_screenshot_data(specs, cell_type_name: str, cell_length_target: int
 def _simulate(specs,
               cell_type_name: str,
               cell_length_target: int,
+              init_domain: List[Tuple[int, int]],
               output_dir,
               sim_output_dir,
               output_per,
@@ -252,7 +255,13 @@ def _simulate(specs,
     if output_frequency > 0:
         kwargs['output_dir'] = sim_output_dir
         kwargs['output_frequency'] = output_frequency
-    cc3d_sim, steppable = create_sim(specs, cell_type_name, cell_length_target, output_per, model_name, model_args,
+    cc3d_sim, steppable = create_sim(specs,
+                                     cell_type_name,
+                                     cell_length_target,
+                                     init_domain,
+                                     output_per,
+                                     model_name,
+                                     model_args,
                                      **kwargs)
     while cc3d_sim.current_step <= max_time:
         cc3d_sim.step()
@@ -281,6 +290,7 @@ def simulate(output_dir: str,
              specs,
              cell_type_name: str,
              cell_length_target: int,
+             init_domain: List[Tuple[int, int]],
              max_time: int,
              field_names: List[str] = None,
              output_frequency=0):
@@ -294,7 +304,7 @@ def simulate(output_dir: str,
     for i in range(num_sims):
 
         sim_output_dir, sim_label = unique_data_dir(output_data_dir, scheduled_labels)
-        input_args.append((specs, cell_type_name, cell_length_target, output_dir, sim_output_dir, output_per, model_name, model_args, max_time, sim_label, output_frequency))
+        input_args.append((specs, cell_type_name, cell_length_target, init_domain, output_dir, sim_output_dir, output_per, model_name, model_args, max_time, sim_label, output_frequency))
         scheduled_labels.append(sim_label)
 
     # Ensure clean memory space per batch. This is analogous to simservice features but with reduced overhead.
@@ -306,4 +316,4 @@ def simulate(output_dir: str,
     
     if not os.path.isfile(os.path.join(output_dir, screenshot_name)):
         with open(os.path.join(output_dir, screenshot_name), 'w') as f:
-            json.dump(generate_screenshot_data(specs, cell_type_name, cell_length_target, output_per, model_name, model_args, field_names=field_names), f, indent=4)
+            json.dump(generate_screenshot_data(specs, cell_type_name, cell_length_target, init_domain, output_per, model_name, model_args, field_names=field_names), f, indent=4)

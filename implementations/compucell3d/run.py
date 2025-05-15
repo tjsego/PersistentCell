@@ -1,9 +1,9 @@
 import argparse
 import json
-from model import from_json_data
+from model import from_json_data, verify_spec
 import os
 from simulate import simulate
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 DEF_NUM_SIMS = 1
 DEF_SCREENSHOT_NAME = 'screenshot.json'
@@ -30,10 +30,14 @@ def run(fp: str,
     screenshot_name = cc3d_data.get('screenshot_name', DEF_SCREENSHOT_NAME)
     
     specs, cell_type_name, cell_length_target = from_json_data(model_data)
+
+    spec_data_formatted = verify_spec(model_data)
+    init_domain: List[Tuple[int, int]] = [(x[0], x[1]) for x in spec_data_formatted['init_domain']]
     
     simulate(output_dir=output_dir,
              num_sims=num_sims,
              output_per=output_per,
+             init_domain=init_domain,
              model_name=model_data['model'],
              model_args=model_data['model_args'],
              screenshot_name=screenshot_name,
