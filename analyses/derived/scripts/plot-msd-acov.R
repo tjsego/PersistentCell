@@ -23,7 +23,7 @@ p1 <- ggplot( d, aes( x = dt_MCS, y = acor ) ) +
 	geom_line( data = dsum, color = "dodgerblue2" ) +
 	labs(
 		x = expression( Delta *"t (MCS)"),
-		y = expression( symbol("\xe1")~"cos ("*phi["t-"*Delta*"t"]-phi["t"]*")"~symbol("\xf1")  ),
+		y = expression( symbol("\xe1")~"cos ("*phi["t+"*Delta*"t"]-phi["t"]*")"~symbol("\xf1")  ),
 		title = "directional autocorrelation (DAC)"
 	) +
 	scale_x_continuous( expand=c(0,0)) +
