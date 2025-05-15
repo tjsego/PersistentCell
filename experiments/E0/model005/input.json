@@ -15,7 +15,9 @@
         "model_args": {
             "persist": 0.1,
             "mu": 20,
-            "dt": 50
+            "dt": 50,
+            "cpm_force_mode": "reciprocal",
+            "cpm_update_direction": "source-to-target"
         }
     },
     "sim": {
