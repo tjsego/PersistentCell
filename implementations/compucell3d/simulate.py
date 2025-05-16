@@ -5,6 +5,7 @@ from math import cos, pi, sin
 import multiprocessing as mp
 import os
 from random import random, seed
+import traceback
 from typing import Any, Dict, List, Optional, Tuple, Type
 
 
@@ -311,7 +312,7 @@ def simulate(output_dir: str,
     while input_args:
         num_jobs = min(mp.cpu_count(), len(input_args))
         jobs = [input_args.pop(0) for _ in range(num_jobs)]
-        with mp.Pool(num_jobs) as p:
+        with mp.Pool(num_jobs, maxtasksperchild=1) as p:
             p.starmap(_simulate, jobs)
     
     if not os.path.isfile(os.path.join(output_dir, screenshot_name)):
