@@ -25,7 +25,7 @@ if( configJSON["model"] == "MODEL003" |  configJSON["model"] == "MODEL005" ){
 	if( configJSON["model_args"]["cpm_force_mode"] != "extension" ){ 	throw( "only cpm_force_mode 'extension' is currently supported in MODEL003/MODEL005. Please change to continue.") }
 }
 if( configJSON["model"] == "MODEL003" |  configJSON["model"] == "MODEL005" ){
-	if( configJSON["model_args"]["cpm_update_direction"] != "source-to-target" ){ throw( "only cpm_update_direction 'source-to-target' is currently supported in MODEL003/MODEL005. Please change to continue.") }
+	if( configJSON["model_args"]["cpm_update_direction"] != "source-to-target-unnorm" ){ throw( "only cpm_update_direction 'source-to-target-unnorm' is currently supported in MODEL003/MODEL005. Please change to continue.") }
 }
 
 let outPath = "./results/"+ modelName + "/img/sim" + seed
@@ -97,7 +97,7 @@ switch( modelName ){
 	case 'MODEL005' : {
 		sim.C.add( new CPM.PersistenceConstraint( 
 			{
-				LAMBDA_DIR: configJSON["model_args"]["lambda_dir"], 
+				LAMBDA_DIR: [0,configJSON["model_args"]["lambda_dir"]], 
 				PERSIST: [0,configJSON["model_args"]["persist"]],
 				DELTA_T : [0,configJSON["model_args"]["dt"]]
 			} ) )
@@ -107,7 +107,7 @@ switch( modelName ){
 		const alpha = configJSON["model_args"]["target_angle"]
 		sim.C.add( new CPM.PreferredDirectionConstraint( 
 			{
-				LAMBDA_DIR: configJSON["model_args"]["lambda_dir"], 
+				LAMBDA_DIR: [0,configJSON["model_args"]["lambda_dir"]], 
 				DIR: [[Math.cos(alpha),Math.sin(alpha)], [Math.cos(alpha),Math.sin(alpha)]]
 			} ) )
 		break
@@ -118,7 +118,7 @@ switch( modelName ){
 		const propdir = dir_map[ configJSON["model_args"]["cpm_update_direction"] ]		
 		sim.C.add( new PRW.LangevinPRW( 
 			{
-				LAMBDA_DIR:  configJSON["model_args"]["lambda_dir"], 
+				LAMBDA_DIR:  [0,configJSON["model_args"]["lambda_dir"]], 
 				XI: [0,configJSON["model_args"]["xi"]], 
 				FORCE_MODE : configJSON["model_args"]["cpm_force_mode"],
 				PROPOSAL_DIR: propdir
