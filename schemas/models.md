@@ -15,7 +15,7 @@ Persistent random walk models
 ## CPM-based models
 
 ### Definition of time
-In all CPM models, we interpret MCS as continuous time and specify 1 MCS = 1 a.t.u (arbitrary time unit).
+In all CPM models, we relate the time discrete Monte Carlo Step to continuous simulation time such that 1 MCS corresponds to 1 a.t.u.
 
 ### MODEL000
 
