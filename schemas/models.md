@@ -14,6 +14,9 @@ Persistent random walk models
 
 ## CPM-based models
 
+### Definition of time
+In all CPM models, we interpret MCS as continuous time and specify 1 MCS = 1 a.t.u (arbitrary time unit).
+
 ### MODEL000
 
 A standard, single-cell CPM with only area and perimeter terms (diffusive motion without persistence).
@@ -54,7 +57,7 @@ $$\Delta H_\text{work} (\sigma) = \Delta H_\text{dir} (\sigma) = \lambda_\text{d
 
 where:
 - we rename $\Delta H_\text{work} (\sigma) = \Delta H_\text{dir} (\sigma)$ to indicate the type of work term
-- $\vec{dx}(\sigma)$ is the movement of cell $\sigma$ that would be induced by the proposed copy attempt. This can be defined in several ways (`cpm_update_direction`): `"source-to-target"` (the unnormalized vector from $s \rightarrow t$), `"source-to-target-norm"` (idem, but normalized to unit length), or `"cell-mass-displacement"` (induced movement of cell $\sigma$'s center of mass, multiplied by its current number of pixels)
+- $\vec{dx}(\sigma)$ is the movement of cell $\sigma$ that would be induced by the proposed copy attempt. This can be defined in several ways (`cpm_update_direction`): `"source-to-target-unnorm"` (the unnormalized vector from $s \rightarrow t$), `"source-to-target-norm"` (idem, but normalized to unit length), or `"cell-mass-displacement"` (induced movement of cell $\sigma$'s center of mass, multiplied by its current number of pixels)
 - $\vec{b}(\sigma)$ is the target direction along which some extrinsic/intrinsic force acts. This and its temporal dynamics are specified in the individual models below.
 - $\lambda_\text{dir}(\sigma)$ defines the magnitude of the acting force and can be cell-dependent. For the case $\sigma = 0$ (the "background" rather than a cell), we assume $\lambda_\text{dir}(\sigma=0) = 0$.
 
@@ -70,7 +73,7 @@ $$\Delta H_\text{dir} (\sigma) = \lambda_\text{dir}(\sigma) \left( \vec{v} _ { \
 
 i.e. we define:
 
-- $\vec{dx}(\sigma) = \vec{v}_\text{copy}$ as the **unnormalized** vector from source pixel $s$ to target pixel $t$; i.e. `cpm_update_direction` = `source-to-target`
+- $\vec{dx}(\sigma) = \vec{v}_\text{copy}$ as the **unnormalized** vector from source pixel $s$ to target pixel $t$; i.e. `cpm_update_direction` = `source-to-target-unnorm`
 - $\vec{b}(\sigma) = \vec{e}_\alpha = ( \cos \alpha, \sin \alpha )$, a unit vector in a (fixed) reference direction $\alpha$.
 
 | Parameter | Description                                                                 |
@@ -83,7 +86,7 @@ i.e. we define:
 | $\lambda_\text{dir}$ | Lagrange multiplier of the work term, controls the cell speed.	              |
 | $\alpha$ | Angle (to the positive x-axis) of the fixed target direction              |
 | `cpm_force_mode` | "extension", i.e. $\delta_s = 1, \delta_t = 0$ (see "work term")              |
-| `cpm_update_direction` | "source-to-target", i.e.  $\vec{dx}(\sigma)$ is the unnormalized vector $s\rightarrow t$    |
+| `cpm_update_direction` | "source-to-target-unnorm", i.e.  $\vec{dx}(\sigma)$ is the unnormalized vector $s\rightarrow t$    |
 
 ### MODEL005
 
@@ -97,7 +100,7 @@ $$\Delta H_\text{dir} (\sigma) = \lambda_\text{dir}(\sigma) \left( \vec{v}_{\tex
 
 
 i.e. we define:
-- update direction as MODEL003: $\vec{dx}(\sigma) = \vec{v}_\text{copy}$ as the **unnormalized** vector from source pixel $s$ to target pixel $t$; i.e. `cpm_update_direction` = `source-to-target`
+- update direction as MODEL003: $\vec{dx}(\sigma) = \vec{v}_\text{copy}$ as the **unnormalized** vector from source pixel $s$ to target pixel $t$; i.e. `cpm_update_direction` = `source-to-target-unnorm`
 - target direction $\vec{b}(\sigma) = \tfrac{\vec{u}(t)}{ \Vert \vec{u}(t) \Vert }$
 
 which now also gets a temporal update:
@@ -117,7 +120,7 @@ where $\vec{\Delta c}(\Delta t)$ is the (normalized) observed displacement vecto
 | $\lambda_\text{dir}$ | As Model003, the Lagrange multiplier controls the cell speed.     |
 | $\Delta t$   | Time interval (in MCS) over which we evaluate the cell's recent displacement; this determines persistence time of the random walk.      |
 | `cpm_force_mode` | "extension", i.e. $\delta_s = 1, \delta_t = 0$ (see "work term")              |
-| `cpm_update_direction` | "source-to-target", i.e.  $\vec{dx}(\sigma)$ is the unnormalized vector $s\rightarrow t$         |
+| `cpm_update_direction` | "source-to-target-unnorm", i.e.  $\vec{dx}(\sigma)$ is the unnormalized vector $s\rightarrow t$         |
 
 
 
