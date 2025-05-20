@@ -21,11 +21,11 @@ if( configJSON["cpm_nbs_n"] != 2 ){
 if( configJSON["cpm_surface_nbs_n"] != 2 ){
 	throw( "cpm_surface_nbs_n is set to a value different from 2, which is not (yet) supported. Please change value to 2 to continue.")
 }
-if( configJSON["model"] == "MODEL003" |  configJSON["model"] == "MODEL005" ){
-	if( configJSON["model_args"]["cpm_force_mode"] != "extension" ){ 	throw( "only cpm_force_mode 'extension' is currently supported in MODEL003/MODEL005. Please change to continue.") }
+if(  configJSON["model"] == "MODEL005" ){
+	if( configJSON["model_args"]["cpm_force_mode"] != "extension" ){ 	throw( "only cpm_force_mode 'extension' is currently supported in MODEL005. Please change to continue.") }
 }
-if( configJSON["model"] == "MODEL003" |  configJSON["model"] == "MODEL005" ){
-	if( configJSON["model_args"]["cpm_update_direction"] != "source-to-target-unnorm" ){ throw( "only cpm_update_direction 'source-to-target-unnorm' is currently supported in MODEL003/MODEL005. Please change to continue.") }
+if(  configJSON["model"] == "MODEL005" ){
+	if( configJSON["model_args"]["cpm_update_direction"] != "source-to-target-unnorm" ){ throw( "only cpm_update_direction 'source-to-target-unnorm' is currently supported in MODEL005. Please change to continue.") }
 }
 
 let outPath = "./results/"+ modelName + "/img/sim" + seed
@@ -105,16 +105,20 @@ switch( modelName ){
 	}
 	case 'MODEL003' : {
 		const alpha = configJSON["model_args"]["target_angle"]
-		sim.C.add( new CPM.PreferredDirectionConstraint( 
+		let dir_map = { 'source-to-target-unnorm' : "copyVector", 'source-to-target-norm' : "normCopyVector", 'cell-mass-displacement' : "COM" }
+		const propdir = dir_map[ configJSON["model_args"]["cpm_update_direction"] ]		
+		sim.C.add( new PRW.TargetDirection( 
 			{
 				LAMBDA_DIR: [0,configJSON["model_args"]["lambda_dir"]], 
-				DIR: [[Math.cos(alpha),Math.sin(alpha)], [Math.cos(alpha),Math.sin(alpha)]]
+				DIR: [[0,0], [Math.cos(alpha),Math.sin(alpha)]],
+				FORCE_MODE : configJSON["model_args"]["cpm_force_mode"],
+				PROPOSAL_DIR: propdir
 			} ) )
 		break
 	}
 	case 'MODEL006' : {
 		
-		let dir_map = { 'source-to-target' : "copyVector", 'source-to-target-norm' : "normCopyVector", 'cell-mass-displacement' : "COM" }
+		let dir_map = { 'source-to-target-unnorm' : "copyVector", 'source-to-target-norm' : "normCopyVector", 'cell-mass-displacement' : "COM" }
 		const propdir = dir_map[ configJSON["model_args"]["cpm_update_direction"] ]		
 		sim.C.add( new PRW.LangevinPRW( 
 			{

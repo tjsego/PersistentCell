@@ -33,8 +33,8 @@ if nProcessors > maxProcessors:
 def run_node(seed) :
 
 	argString = parms + " " + str(seed) + " > results/" + expName + "/tracks/track" + str(seed) +".csv" 
-	print(argString)
-	success = execute_js( "../persistent-cell.js", argString )
+	print("../persistent-cell.js" + argString)
+	success = execute_js( "../persistent-cell.js ", argString )
 	if success:
 		pass
 	else:

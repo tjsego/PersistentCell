@@ -100,27 +100,54 @@ class WorkTerm extends CPM.SoftConstraint {
 		if( !( cid in this.cellcentroids ) ){
 			this.C.stat_values = {}
 			let centroids = this.C.getStat( CPM.CentroidsWithTorusCorrection )
-			this.cellcentroids = centroids
+			if( this.pixelSum ){
+				for( let cid of this.C.cellIDs() ){
+					this.cellcentroids[cid] = centroids[cid].map( x => Math.round( x * this.C.getVolume(cid) ) )
+				}
+			} else {
+				this.cellcentroids = centroids
+			}
 		}
-		return this.cellcentroids[cid]
+		
+		if( this.pixelSum ){
+			return this.cellcentroids[cid]
+			
+		}	
+		
 	}
 	
 	/* TO DO specifically if COM-based, we cache updated centroids after each event.*/
-	postSetpixListener( i, t_old, t_new ){
+	postSetpixListener( pix_i, t_old, t_new ){
+			
+		let targetPixel = this.C.grid.i2p( pix_i ) 
 		
 		if( t_old > 0 ){
-			//console.log( "listening A" )
-			let dC = this.centroidMovementVector( t_old, i,  "loss" )
-			let cen = this.currentCentroid( t_old ).map( (x,i) => x + dC[i] )
-			this.correctPosition(cen)
-			this.cellcentroids[t_old] = cen
+		
+			const N = this.C.getVolume( t_old )
+			let cen = this.currentCentroid( t_old )
+			this.cellcentroids[t_old] = cen.map( (x,i) => {
+				let targeti = this.correctTorusDim( targetPixel[i], targetPixel[i]-(x/N) , i )
+				let xnew = ( x - targeti )
+				let grid_dim = this.C.grid.extents[i]
+				if( xnew/N < 0 ) xnew += N*grid_dim
+				if( xnew/N >= grid_dim ) xnew -= N*grid_dim
+				return  xnew
+			})
+			
 		}
 		if(  t_new > 0 ){
-			//console.log( "listening B" )
-			let dC = this.centroidMovementVector( t_new, i, "gain" )
-			let cen = this.currentCentroid( t_new ).map( (x,i) => x + dC[i] )
-			this.correctPosition(cen)
-			this.cellcentroids[t_new] = cen
+		
+			
+			let N = this.C.getVolume( t_new )
+			let cen = this.currentCentroid( t_new )
+			this.cellcentroids[t_new] = cen.map( (x,i) => {
+				let targeti = this.correctTorusDim( targetPixel[i], targetPixel[i]-(x/N) , i )
+				let xnew = ( x + targeti )
+				let grid_dim = this.C.grid.extents[i]
+				if( xnew/N < 0 ) xnew += N*grid_dim
+				if( xnew/N >= grid_dim ) xnew -= N*grid_dim
+				return  xnew
+			})
 		}
 	}
 	
@@ -191,9 +218,17 @@ class WorkTerm extends CPM.SoftConstraint {
 	* @return {ArrayCoordinate} - the point shifted along the indicated dimension.
 	*/
 	correctTorusDim( p, dx, i ){
-		if( dx > this.halfsize[i] ) return p - this.C.extents[i]
-		if( dx < -this.halfsize[i] ) return p + this.C.extents[i]
-		return p
+		let corr = 0
+		while( dx > this.halfsize[i] ){ 
+			dx -= this.C.extents[i]
+			corr -= 1
+		}
+		while( dx < -this.halfsize[i] ){ 
+			dx += this.C.extents[i]
+			corr += 1
+		}
+		
+		return p + corr * this.C.extents[i]
 	}
 	
 	/** Helper function to shift a point along the periodic boundary to minimize distance to a reference point. 
@@ -215,10 +250,15 @@ class WorkTerm extends CPM.SoftConstraint {
 	* @return {ArrayCoordinate} - shifted to lie within grid dimensions.
 	*/
 	correctPosition( p ){
-		if( p[0] < 0 ) p[0] += this.C.grid.extents[0]
-		if( p[1] < 0 ) p[1] += this.C.grid.extents[1]
-		if( p[0] >= this.C.grid.extents[0] ) p[0] -= this.C.grid.extents[0]
-		if( p[1] >= this.C.grid.extents[1] ) p[1] -= this.C.grid.extents[1]
+		
+		for( let dim = 0; dim < this.C.grid.extents.length; dim++ ){
+			
+			let grid_dim = this.C.grid.extents[dim]
+		
+			while( p[dim] < 0 ) p[dim] += grid_dim
+			while( p[dim] >= grid_dim ) p[dim] -= grid_dim
+		}
+		return p
 	}
 
 
@@ -230,7 +270,8 @@ class WorkTerm extends CPM.SoftConstraint {
 	vec( fromP, toP ){
 		let a = toP.map( (x,i) => { 
 			let dx = x - fromP[i]
-			this.correctTorusDim( dx, dx, i ) 
+			let out = this.correctTorusDim( dx, dx, i ) 
+			return out
 		} )		
 		return a
 	}
@@ -270,7 +311,7 @@ class WorkTerm extends CPM.SoftConstraint {
 	*/
 	copyMovementVector( sourcei, targeti, normalize = false ){
 		let a = this.vec( this.C.grid.i2p( sourcei) , this.C.grid.i2p( targeti ) ) 
-		if( normalize ) a = this.normalize(a)
+		if( normalize ){ a = this.normalize(a) }
 		return a
 	}
 	
@@ -282,29 +323,25 @@ class WorkTerm extends CPM.SoftConstraint {
 	* @param {string} [mode="gain"] - does this copy attempt imply "gain" or "loss" of a pixel for cell cid?
 	* @return {ArrayCoordinate} - displacement vector of the cell centroid associated with the copy attempt.
 	*/
-	centroidMovementVector( cid, targeti, mode = "gain" ){
+	centroidMovementVector( cid, targeti, N, mode = "gain" ){
+
+		if( cid == 0 ){ return new Array(this.C.grid.extents.length).fill(0) }
 	
-		if( cid == 0 ){
-			let out
-			(out = []).length = this.C.grid.extents.length; out.fill(0)
-			return out
-		}
-	
-		let N = this.C.getVolume( cid )
-		let cenOld = this.currentCentroid( cid )
-		let targetPixel = this.correctTorus( this.C.grid.i2p( targeti ), cenOld )
+		let cenOld = this.currentCentroid( cid ).map( x => x / N )
+		cenOld = this.correctPosition( cenOld )
 		
-		if( this.C.cellKind(cid) == 0 ) return [0,0]
-		
+		let targetPixelRelPos = this.C.grid.i2p( targeti ).map( (x,i) => { 
+			let dx = x - cenOld[i] 
+			return this.correctTorusDim( dx, dx, i )
+		} )
+			
 		// check if we're looking at a cell that is gaining a pixel or losing one.
 		switch( mode ) {
 		case "gain" : {
-			let cenNew = cenOld.map( (x,i) => (x * N + targetPixel[i]) / (N+1)  )
-			return cenNew.map( (x,i) => x - cenOld[i] )
+			return targetPixelRelPos
 		}
 		case "loss" : {
-			let cenNew = cenOld.map( (x,i) => (x * N - targetPixel[i]) / (N-1)  )
-			return cenNew.map( (x,i) => x - cenOld[i] )
+			return targetPixelRelPos.map( x => -x )
 		}
 		default : {
 			throw( "unknown mode " + mode + "; should be either 'gain' or 'loss'.")
@@ -324,7 +361,6 @@ class WorkTerm extends CPM.SoftConstraint {
 	*/
 	proposalVector( sourcei, targeti, cid, mode = "gain" ){
 		
-
 		switch( this.conf.PROPOSAL_DIR ){
 		case "copyVector": {
 			return this.copyMovementVector( sourcei, targeti )
@@ -333,9 +369,8 @@ class WorkTerm extends CPM.SoftConstraint {
 			return this.copyMovementVector( sourcei, targeti , true )
 		}
 		case "COM" : {
-			let dcom = this.centroidMovementVector( cid, targeti, mode )
-			if( cid > 0 ) dcom = this.multiplyBy( dcom, this.C.getVolume(cid) )
-			return dcom
+			if( cid == 0 ) return [0,0]
+			return this.centroidMovementVector( cid, targeti, this.C.getVolume(cid), mode )
 		}
 		}
 		
@@ -362,9 +397,12 @@ class WorkTerm extends CPM.SoftConstraint {
 	* @return {number} the change in Hamiltonian ("work") for this copy attempt and this constraint.*/ 
 	deltaHCell( sourcei, targeti, cid, mode ) {
 		let l = this.cellParameter("LAMBDA_DIR", cid)
+		if( l == 0 )  return 0
 		let target = this.targetVector( sourcei, targeti, cid )
 		let proposal = this.proposalVector( sourcei, targeti, cid, mode )
-		return - l *  this.dotProduct( target, proposal )
+		let dH = - l *  this.dotProduct( target, proposal )
+		//console.log(dH)
+		return dH
 	}
 	
 	/** Method to compute the work $\Delta H$ for this term.
@@ -425,14 +463,15 @@ class TargetDirection extends WorkTerm {
 	confChecker(){
 
 		// Custom check for the attractionpoint
-		this.checker.confCheckPresenceOf( "DIR" )
+		let checker = new CPM.ParameterChecker( this.conf, this.C )
+		checker.confCheckPresenceOf( "DIR" )
 		let pt = this.conf["DIR"]
 		if( !( pt instanceof Array ) ){
 			throw( "DIR must be an array with the start and end coordinate of the preferred direction vector!" )
 		}
 		for( let p of pt ){
 		
-			if( !this.checker.isCoordinate(p) ){
+			if( !checker.isCoordinate(p) ){
 				throw("DIR elements must be coordinate arrays with the same dimensions as the grid!")
 			}
 		}
@@ -455,7 +494,7 @@ class TargetDirection extends WorkTerm {
 
 
 
-class AttractionPoint extends WorkTerm {
+/*class AttractionPoint extends WorkTerm {
 
 	confChecker(){
 
@@ -475,7 +514,7 @@ class AttractionPoint extends WorkTerm {
 		return this.normalize(v)
 	}
 
-}
+}*/
 
 class LangevinPRW extends WorkTerm {
 	
@@ -589,6 +628,6 @@ class PersistenceConstraint extends WorkTerm {
 
 exports.WorkTerm = WorkTerm
 exports.TargetDirection = TargetDirection
-exports.AttractionPoint = AttractionPoint
+//exports.AttractionPoint = AttractionPoint
 exports.PersistenceConstraint = PersistenceConstraint
 exports.LangevinPRW = LangevinPRW
