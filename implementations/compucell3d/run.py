@@ -31,12 +31,12 @@ def run(fp: str,
     
     specs, cell_type_name, cell_length_target = from_json_data(model_data)
 
-    init_domain: List[Tuple[int, int]] = [(int(x[0]), int(x[1])) for x in config_data['sim']['init_domain']]
+    init_voxels: List[Tuple[int, int]] = [(int(x[0]), int(x[1])) for x in config_data['sim']['init_voxels']]
     
     simulate(output_dir=output_dir,
              num_sims=num_sims,
              output_per=output_per,
-             init_domain=init_domain,
+             init_voxels=init_voxels,
              model_name=model_data['model'],
              model_args=model_data['model_args'],
              screenshot_name=screenshot_name,

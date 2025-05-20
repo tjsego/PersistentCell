@@ -27,7 +27,7 @@
     "description": "Cellular Potts model temperature of Metropolis kinetics.",
     "type": "number"
   },
-  "init_domain": {
+  "init_voxels": {
     "description": "Positions initially occupied by the cell",
     "type": "array",
     "items": {

@@ -9,7 +9,7 @@
         "len_2": 100,
         "cpm_nbs_n": 2,
         "cpm_surface_nbs_n": 2,
-        "max_time": 10000,
+        "max_time": 1000,
         "method": "CPM",
         "model": "MODEL005",
         "model_args": {
@@ -23,8 +23,8 @@
     "sim": {
         "num_sims": 1000,
         "output_name": "model005",
-        "output_per": 100,
-        "init_domain": [
+        "output_per": 1,
+        "init_voxels": [
             [
                 47,
                 47

@@ -79,11 +79,9 @@ def generate_derived_std(_experiment_dir: str, _impl_name: str):
         os.makedirs(output_data_dir)
 
     target_data = pd.read_csv(target_data_fp)
-    target_data.rename(columns={'subtrack.id': 'id'}, inplace=True)
-    target_data['id'] += (target_data['track.id'] - 1) * len(target_data['id'].unique()) - 1
-    target_data.drop(columns=['track.id', 'dt'], inplace=True)
-    target_data['time'] = 0.0
-    target_data.to_csv(output_data_fp, index=False, columns=['id', 'time', 'sqDisp', 'acov'])
+    target_data.rename(columns={'dt_MCS': 'time'}, inplace=True)
+    target_data.drop(columns=['dt_nsteps', 'nsubtracks'], inplace=True)
+    target_data.to_csv(output_data_fp, index=False, columns=['time', 'id', 'msd', 'acor'])
 
 
 def exec_script_fp_unix(_experiment_dir: str, _impl_name: str):
