@@ -12,6 +12,13 @@ cell_type_name = 'Cell'
 HAS_SURFACE_NBS = 'neighbor_order' in pcs.SurfacePlugin.check_dict
 
 
+force_mapping = {
+    'extension': pcs.EXTERNALPOTENTIAL_FORCETYPEEXTENSION,
+    'retraction': pcs.EXTERNALPOTENTIAL_FORCETYPERETRACTION,
+    'reciprocal': pcs.EXTERNALPOTENTIAL_FORCETYPERECIPROCAL
+}
+
+
 def _impl_MODEL000(**kwargs):
     return []
 
@@ -22,15 +29,12 @@ def _impl_MODEL003(**kwargs):
     cpm_force_mode = kwargs['cpm_force_mode']
     cpm_update_direction = kwargs['cpm_update_direction']
 
-    if cpm_force_mode in ['extension', 'retraction']:
-        raise ValueError(f'CC3D does not support the specified force mode: {cpm_force_mode}')
-    if cpm_update_direction == 'source-to-target-norm':
-        raise ValueError(f'CC3D does not support the specified movement term: {cpm_update_direction}')
-
     return [
         pcs.ExternalPotentialPlugin(lambda_x=lambda_dir * cos(target_angle),
                                     lambda_y=lambda_dir * sin(target_angle),
-                                    com_based=cpm_update_direction == 'cell-mass-displacement')
+                                    com_based=cpm_update_direction == 'cell-mass-displacement',
+                                    force_type=force_mapping[cpm_force_mode],
+                                    normalized=cpm_update_direction == 'source-to-target-norm')
     ]
 
 
@@ -38,13 +42,10 @@ def _impl_MODEL005(**kwargs):
     cpm_force_mode = kwargs['cpm_force_mode']
     cpm_update_direction = kwargs['cpm_update_direction']
 
-    if cpm_force_mode in ['extension', 'retraction']:
-        raise ValueError(f'CC3D does not support the specified force mode: {cpm_force_mode}')
-    if cpm_update_direction == 'source-to-target-norm':
-        raise ValueError(f'CC3D does not support the specified movement term: {cpm_update_direction}')
-
     return [
-        pcs.ExternalPotentialPlugin(com_based=cpm_update_direction == 'cell-mass-displacement')
+        pcs.ExternalPotentialPlugin(com_based=cpm_update_direction == 'cell-mass-displacement',
+                                    force_type=force_mapping[cpm_force_mode],
+                                    normalized=cpm_update_direction == 'source-to-target-norm')
     ]
 
 
