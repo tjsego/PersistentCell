@@ -33,7 +33,7 @@ class TrackingSteppable(SteppableBasePy):
     def __init__(self,
                  cell_type_name: str,
                  cell_length_target: int,
-                 init_domain: List[Tuple[int, int]],
+                 init_voxels: List[Tuple[int, int]],
                  output_per: int,
                  model_name: str,
                  model_args: Dict[str, Any] = None):
@@ -42,7 +42,7 @@ class TrackingSteppable(SteppableBasePy):
 
         self.cell_type_name = cell_type_name
         self.cell_length_target = cell_length_target
-        self.init_domain = init_domain
+        self.init_voxels = init_voxels
         self.output_per = output_per
         self.model_name = model_name
         self.model_args = model_args if model_args is not None else {}
@@ -67,7 +67,7 @@ class TrackingSteppable(SteppableBasePy):
     def start(self):
         cell = self.new_cell(getattr(self.cell_type, self.cell_type_name))
         self.cell_id = cell.id
-        for x, y in self.init_domain:
+        for x, y in self.init_voxels:
             self.cell_field[x, y, 0] = cell
 
         # Mitigating a rare, strange bug
@@ -199,8 +199,8 @@ class Model005SteppableImplementation(ModelSteppableImplementation):
         self.record_pos(_parent, mcs)
 
 
-def create_sim(specs, cell_type_name: str, cell_length_target: int, init_domain: List[Tuple[int, int]], output_per: int, model_name: str, model_args: Dict[str, Any], *args, **kwargs):
-    steppable = TrackingSteppable(cell_type_name, cell_length_target, init_domain, output_per, model_name, model_args=model_args)
+def create_sim(specs, cell_type_name: str, cell_length_target: int, init_voxels: List[Tuple[int, int]], output_per: int, model_name: str, model_args: Dict[str, Any], *args, **kwargs):
+    steppable = TrackingSteppable(cell_type_name, cell_length_target, init_voxels, output_per, model_name, model_args=model_args)
     cc3d_sim = CC3DSimService(*args, **kwargs)
     cc3d_sim.register_specs(specs)
     cc3d_sim.register_steppable(steppable)
@@ -210,10 +210,10 @@ def create_sim(specs, cell_type_name: str, cell_length_target: int, init_domain:
     return cc3d_sim, steppable
 
 
-def generate_screenshot_data(specs, cell_type_name: str, cell_length_target: int, init_domain: List[Tuple[int, int]], output_per: int, model_name: str, model_args: Dict[str, Any], field_names: List[str] = None):
+def generate_screenshot_data(specs, cell_type_name: str, cell_length_target: int, init_voxels: List[Tuple[int, int]], output_per: int, model_name: str, model_args: Dict[str, Any], field_names: List[str] = None):
     cc3d_sim = CC3DSimService()
     cc3d_sim.register_specs(specs)
-    cc3d_sim.register_steppable(TrackingSteppable(cell_type_name, cell_length_target, init_domain, output_per, model_name, model_args=model_args))
+    cc3d_sim.register_steppable(TrackingSteppable(cell_type_name, cell_length_target, init_voxels, output_per, model_name, model_args=model_args))
     cc3d_sim.run()
     cc3d_sim.init()
     cc3d_sim.start()
@@ -241,7 +241,7 @@ def generate_screenshot_data(specs, cell_type_name: str, cell_length_target: int
 def _simulate(specs,
               cell_type_name: str,
               cell_length_target: int,
-              init_domain: List[Tuple[int, int]],
+              init_voxels: List[Tuple[int, int]],
               output_dir,
               sim_output_dir,
               output_per,
@@ -259,7 +259,7 @@ def _simulate(specs,
     cc3d_sim, steppable = create_sim(specs,
                                      cell_type_name,
                                      cell_length_target,
-                                     init_domain,
+                                     init_voxels,
                                      output_per,
                                      model_name,
                                      model_args,
@@ -291,7 +291,7 @@ def simulate(output_dir: str,
              specs,
              cell_type_name: str,
              cell_length_target: int,
-             init_domain: List[Tuple[int, int]],
+             init_voxels: List[Tuple[int, int]],
              max_time: int,
              field_names: List[str] = None,
              output_frequency=0):
@@ -305,7 +305,7 @@ def simulate(output_dir: str,
     for i in range(num_sims):
 
         sim_output_dir, sim_label = unique_data_dir(output_data_dir, scheduled_labels)
-        input_args.append((specs, cell_type_name, cell_length_target, init_domain, output_dir, sim_output_dir, output_per, model_name, model_args, max_time, sim_label, output_frequency))
+        input_args.append((specs, cell_type_name, cell_length_target, init_voxels, output_dir, sim_output_dir, output_per, model_name, model_args, max_time, sim_label, output_frequency))
         scheduled_labels.append(sim_label)
 
     # Ensure clean memory space per batch. This is analogous to simservice features but with reduced overhead.
@@ -317,4 +317,4 @@ def simulate(output_dir: str,
     
     if not os.path.isfile(os.path.join(output_dir, screenshot_name)):
         with open(os.path.join(output_dir, screenshot_name), 'w') as f:
-            json.dump(generate_screenshot_data(specs, cell_type_name, cell_length_target, init_domain, output_per, model_name, model_args, field_names=field_names), f, indent=4)
+            json.dump(generate_screenshot_data(specs, cell_type_name, cell_length_target, init_voxels, output_per, model_name, model_args, field_names=field_names), f, indent=4)

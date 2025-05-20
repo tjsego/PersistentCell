@@ -22,7 +22,7 @@
         "num_sims": 100,
         "output_name": "model005",
         "output_per": 1,
-        "init_domain": [
+        "init_voxels": [
             [
                 47,
                 47

@@ -10,7 +10,7 @@ Simulation specification schema
 | cpm_temperature   | number | Cellular Potts model temperature of Metropolis kinetics.                                                                                           |
 | cpm_perim_c       | number | Cellular Potts model perimeter constraint coefficient; required for CPM methods.                                                                   |
 | cpm_perim_v       | number | Cellular Potts model perimeter constraint value; required for CPM methods.                                                                         |
-| init_domain       | array  | Positions initially occupied by the cell                                                                                                           |
+| init_voxels       | array  | Positions initially occupied by the cell                                                                                                           |
 | len_1             | number | Spatial domain length along the first spatial dimension. A cell is initialized with a centroid halfway along this length in the first dimension.   |
 | len_2             | number | Spatial domain length along the second spatial dimension. A cell is initialized with a centroid halfway along this length in the second dimension. |
 | max_time          | number | Maximum simulation time.                                                                                                                           |
