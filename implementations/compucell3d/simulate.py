@@ -3,6 +3,7 @@ from cc3d.core.PySteppables import SteppableBasePy
 import json
 from math import cos, pi, sin
 import multiprocessing as mp
+import numpy as np
 import os
 from random import random, seed
 import traceback
@@ -197,6 +198,46 @@ class Model005SteppableImplementation(ModelSteppableImplementation):
         cell.lambdaVecY -= self.persist * (cell.lambdaVecY + self.mu * disp[1])
 
         self.record_pos(_parent, mcs)
+
+
+@register_implementation
+class Model006SteppableImplementation(ModelSteppableImplementation):
+
+    def __init__(self, _parent: TrackingSteppable):
+
+        super().__init__(_parent)
+
+        seed()
+
+        self.ang_hist = 0
+
+        self.xi2 = _parent.model_args['xi'] ** 2
+        self.dt = _parent.model_args['dt']
+        self.sqrt_dt = np.sqrt(self.dt)
+        lambda_dir = _parent.model_args['lambda_dir']
+        self.ang = np.arctan2(lambda_dir[1], lambda_dir[0])
+        self.mu = np.sqrt(lambda_dir[0] ** 2 + lambda_dir[1] ** 2)
+
+    @classmethod
+    def model_name(cls) -> str:
+        return 'MODEL006'
+
+    def update_cell(self, _parent, _mcs):
+
+        cell = _parent.cell
+        cell.lambdaVecX = - self.mu * cos(self.ang)
+        cell.lambdaVecY = - self.mu * sin(self.ang)
+        self.ang_hist = _mcs
+
+    def start(self, _parent: TrackingSteppable):
+
+        self.update_cell(_parent, 0)
+
+    def step(self, _parent: TrackingSteppable, mcs):
+
+        if mcs - self.ang_hist >= self.dt:
+            self.ang += np.random.normal(scale=self.xi2) * self.sqrt_dt
+            self.update_cell(_parent, mcs)
 
 
 def create_sim(specs, cell_type_name: str, cell_length_target: int, init_voxels: List[Tuple[int, int]], output_per: int, model_name: str, model_args: Dict[str, Any], *args, **kwargs):
