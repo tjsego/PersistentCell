@@ -109,10 +109,9 @@ class WorkTerm extends CPM.SoftConstraint {
 			}
 		}
 		
-		if( this.pixelSum ){
+		
 			return this.cellcentroids[cid]
 			
-		}	
 		
 	}
 	
@@ -125,6 +124,7 @@ class WorkTerm extends CPM.SoftConstraint {
 		
 			const N = this.C.getVolume( t_old )
 			let cen = this.currentCentroid( t_old )
+
 			this.cellcentroids[t_old] = cen.map( (x,i) => {
 				let targeti = this.correctTorusDim( targetPixel[i], targetPixel[i]-(x/N) , i )
 				let xnew = ( x - targeti )
@@ -138,8 +138,9 @@ class WorkTerm extends CPM.SoftConstraint {
 		if(  t_new > 0 ){
 		
 			
-			let N = this.C.getVolume( t_new )
+			let N = this.C.getVolume( t_new )			
 			let cen = this.currentCentroid( t_new )
+			
 			this.cellcentroids[t_new] = cen.map( (x,i) => {
 				let targeti = this.correctTorusDim( targetPixel[i], targetPixel[i]-(x/N) , i )
 				let xnew = ( x + targeti )

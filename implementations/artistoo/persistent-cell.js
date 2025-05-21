@@ -143,7 +143,8 @@ function logStats(){
 }
 
 function initializeGrid(){
-	let pixList = outputJSON["init"]
+	let pixList = outputJSON["init_voxels"]
+	//console.log(pixList)
 	const newID = this.C.makeNewCellID( 1 )
 	for( let p of pixList ){
 		this.C.setpix( p, newID )
