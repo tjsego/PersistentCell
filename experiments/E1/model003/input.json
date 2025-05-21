@@ -21,7 +21,7 @@
         "num_sims": 1000,
         "output_name": "model003",
         "output_per": 1,
-        "init_domain": [
+        "init_voxels": [
             [
                 49,
                 47

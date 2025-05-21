@@ -107,31 +107,38 @@ def _post(_experiment_dir: str,
           output_fexts: List[str] = None):
     logger.info(f'Doing ssr post: {_experiment_dir}')
 
+    if do_appended:
+        get_results = basic.get_results_appended
+        output_subdir_efect = basic.prefix_appended + basic.output_subdir_efect
+    else:
+        get_results = basic.get_results_raw
+        output_subdir_efect = basic.output_subdir_efect
+
     try:
         _output_fexts = basic.check_fexts(output_fexts)
     except Exception as e:
         _output_fexts = []
         _log_error(str(e), type(e))
 
-    impl_data_raw: Dict[str, Dict[str, np.ndarray]] = {n: load_results(fp)
-                                                       for n, fp in basic.get_results_raw(_experiment_dir).items()}
+    impl_data: Dict[str, Dict[str, np.ndarray]] = {n: load_results(fp)
+                                                   for n, fp in get_results(_experiment_dir).items()}
     efect_reports = {}
-    for n in impl_data_raw:
-        fp = os.path.join(_experiment_dir, basic.output_subdir_efect, n, basic.efect_report_name)
+    for n in impl_data:
+        fp = os.path.join(_experiment_dir, output_subdir_efect, n, basic.efect_report_name)
         if os.path.isfile(fp):
             with open(fp, 'r') as f:
                 efect_reports[n] = libssr.EFECTReport.from_json(json.load(f))
-    impl_names = list(set(efect_reports.keys()).intersection(impl_data_raw.keys()))
+    impl_names = list(set(efect_reports.keys()).intersection(impl_data.keys()))
     if not impl_names:
         logger.debug('No results found')
         return
 
-    post_dir = os.path.join(_experiment_dir, basic.output_subdir_post, basic.output_subdir_efect)
+    post_dir = os.path.join(_experiment_dir, basic.output_subdir_post, output_subdir_efect)
     if not os.path.isdir(post_dir):
         os.makedirs(post_dir)
 
     _post_ecfs(post_dir,
-               {n: impl_data_raw[n] for n in impl_names},
+               {n: impl_data[n] for n in impl_names},
                _output_fexts,
                fig_dpi)
     _post_summary(post_dir,
@@ -151,13 +158,13 @@ def do_ssr(_experiment_dir: str,
     logger.info(f'Error threshold    : {err_thresh}')
 
     if do_appended:
-        impl_data_raw = basic.get_results_appended(_experiment_dir)
-        output_prefix = basic.prefix_appended
+        impl_data = basic.get_results_appended(_experiment_dir)
+        output_subdir_efect = basic.prefix_appended + basic.output_subdir_efect
     else:
-        impl_data_raw = basic.get_results_raw(_experiment_dir)
-        output_prefix = ''
+        impl_data = basic.get_results_raw(_experiment_dir)
+        output_subdir_efect = basic.output_subdir_efect
 
-    impl_names = list(impl_data_raw.keys())
+    impl_names = list(impl_data.keys())
     if not impl_names:
         return
 
@@ -165,7 +172,7 @@ def do_ssr(_experiment_dir: str,
 
     # Ensure output directories exist
     for name in impl_names:
-        impl_subdir = os.path.join(_experiment_dir, basic.output_subdir_efect, name)
+        impl_subdir = os.path.join(_experiment_dir, output_subdir_efect, name)
         if not os.path.isdir(impl_subdir):
             logger.debug(f'Making subdirectory: {impl_subdir}')
 
@@ -176,9 +183,9 @@ def do_ssr(_experiment_dir: str,
     for name in impl_names:
         logger.info(f'Working: {name}')
 
-        impl_subdir = os.path.join(_experiment_dir, basic.output_subdir_efect, name)
-        sdata_output_fp = os.path.join(impl_subdir, output_prefix + basic.efect_report_name)
-        esamp_output_fp = os.path.join(impl_subdir, output_prefix + basic.efect_sampling_name)
+        impl_subdir = os.path.join(_experiment_dir, output_subdir_efect, name)
+        sdata_output_fp = os.path.join(impl_subdir, basic.efect_report_name)
+        esamp_output_fp = os.path.join(impl_subdir, basic.efect_sampling_name)
 
         # Check whether this step needs executed
         if os.path.isfile(sdata_output_fp) and os.path.isfile(esamp_output_fp):
@@ -187,7 +194,7 @@ def do_ssr(_experiment_dir: str,
 
         # Execute the module
         sdata, err_sampling = efect_report(
-            load_results(impl_data_raw[name]),
+            load_results(impl_data[name]),
             sig_figs,
             err_thresh=err_thresh,
             return_sampling=True,
