@@ -1,8 +1,8 @@
-let CPM = require("./src/artistoo-cjs.js")
-let PRW = require( "./src/PRWextensions.js")
+let CPM = require("./artistoo-cjs.js")
+let PRW = require( "./PRWextensions.js")
 let fs = require('fs')
 
-let jsonFile = "./" + process.argv[2] 
+let jsonFile = process.argv[2] 
 let seed = process.argv[3]
 let configJSON = require( jsonFile )["model"]
 let outputJSON = require( jsonFile )["sim"]
@@ -28,10 +28,8 @@ if(  configJSON["model"] == "MODEL005" ){
 	if( configJSON["model_args"]["cpm_update_direction"] != "source-to-target-unnorm" ){ throw( "only cpm_update_direction 'source-to-target-unnorm' is currently supported in MODEL005. Please change to continue.") }
 }
 
-let outPath = "./results/"+ modelName + "/img/sim" + seed
-if (!fs.existsSync(outPath)){
-    fs.mkdirSync(outPath)
-}
+let outPath = "./results/"+ outputJSON["output_name"] + "_artistoo/img"
+
 
 let config = {
 
@@ -153,6 +151,6 @@ function initializeGrid(){
 }
 
 sim.drawCanvas()
-sim.Cim.writePNG( "./results/"+ modelName + "/init.png" )
+sim.Cim.writePNG( "./results/"+ outputJSON["output_name"] + "_artistoo/init.png" )
 
 sim.run()

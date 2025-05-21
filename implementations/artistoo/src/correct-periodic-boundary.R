@@ -5,9 +5,12 @@ library( dplyr, warn.conflicts = FALSE )
 # command line input
 argv <- commandArgs( trailingOnly = TRUE )
 d <- read.csv( argv[1] )
-json <- read_json( argv[2] )
-outFile <- argv[3]
+w <- argv[2]
+h <- argv[3]
+outFile <- argv[4]
 
+
+fs <- as.numeric( c(w,h) )
 
 tr <- as.tracks( d, time.column = 1, id.column = 2, pos.columns = 3:6 )
 
@@ -56,7 +59,7 @@ correctTorus <- function( tracks, fieldsize, coordinate.cols = 2:3 ){
 
 }
 
-tr <- correctTorus( tr, fieldsize = c( json$model$len_1, json$model$len_2 ) )
+tr <- correctTorus( tr, fieldsize = fs )
 
 dout <- as.data.frame( tr ) %>%
 	setNames( c( "id", "time", "com_1", "com_2", "area", "surface" ) ) %>%
