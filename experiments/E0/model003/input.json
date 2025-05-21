@@ -14,7 +14,9 @@
         "model": "MODEL003",
         "model_args": {
             "lambda_dir": 10.0,
-            "target_angle": 0.0
+            "target_angle": 0.0,
+            "cpm_force_mode": "extension",
+            "cpm_update_direction": "source-to-target-unnorm"
         }
     },
     "sim": {
