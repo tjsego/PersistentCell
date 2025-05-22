@@ -156,11 +156,15 @@ def _post(_experiment_dir: str,
     logger.info(f'Appended     : {do_appended}')
 
     if do_appended:
-        target_prefix = basic.prefix_appended
+        output_dir = os.path.join(_experiment_dir, basic.prefix_appended + basic.output_subdir_compare)
+        efect_dir_root = os.path.join(_experiment_dir, basic.prefix_appended + basic.output_subdir_efect)
+        post_dir_root = os.path.join(_experiment_dir, basic.output_subdir_post,
+                                     basic.prefix_appended + basic.output_subdir_compare)
     else:
-        target_prefix = ''
+        output_dir = os.path.join(_experiment_dir, basic.output_subdir_compare)
+        efect_dir_root = os.path.join(_experiment_dir, basic.output_subdir_efect)
+        post_dir_root = os.path.join(_experiment_dir, basic.output_subdir_post, basic.output_subdir_compare)
 
-    output_dir = os.path.join(_experiment_dir, target_prefix + basic.output_subdir_compare)
     logger.debug(f'Output directory: {output_dir}')
 
     output_fp = os.path.join(output_dir, basic.comparison_output_name)
@@ -180,7 +184,6 @@ def _post(_experiment_dir: str,
         output_data = json.load(f)
 
     num_outputs = len(output_data)
-    post_dir_root = os.path.join(_experiment_dir, basic.output_subdir_post, target_prefix + basic.output_subdir_compare)
     post_dirs = [os.path.join(post_dir_root, str(i)) for i in range(num_outputs)]
     jobs_to_do = [i for i, d in enumerate(post_dirs) if not os.path.isdir(d) or not os.listdir(d)]
 
@@ -217,9 +220,7 @@ def _post(_experiment_dir: str,
             except KeyError:
                 post_all_data[impl_modeler] = {impl_curator: pval}
         for impl_name in post_all_data:
-            efect_fp = os.path.join(
-                _experiment_dir, basic.output_subdir_efect, impl_name, target_prefix + basic.efect_report_name
-            )
+            efect_fp = os.path.join(efect_dir_root, impl_name, basic.efect_report_name)
             with open(efect_fp, 'r') as f:
                 post_all_data[impl_name][impl_name] = json.load(f)["errorMetricMean"]
         _post_all(post_all_data, post_dir_root, _output_fexts, fig_dpi)
@@ -232,23 +233,22 @@ def do_compare(_experiment_dir: str,
     logger.info(f'Appended     : {do_appended}')
 
     if do_appended:
-        target_prefix = basic.prefix_appended
+        target_dir = os.path.join(_experiment_dir, basic.prefix_appended + basic.output_subdir_efect)
+        output_dir = os.path.join(_experiment_dir, basic.prefix_appended + basic.output_subdir_compare)
 
         def _results_get(_n: str):
             return load_results(basic.get_results_appended(_experiment_dir)[_n])
 
     else:
-        target_prefix = ''
+        target_dir = os.path.join(_experiment_dir, basic.output_subdir_efect)
+        output_dir = os.path.join(_experiment_dir, basic.output_subdir_compare)
 
         def _results_get(_n: str):
             return load_results(basic.get_results_raw(_experiment_dir)[_n])
 
-    target_dir = os.path.join(_experiment_dir, basic.output_subdir_efect)
-
     logger.debug(f'Target directory: {target_dir}')
 
     # Confirm existence of output directory
-    output_dir = os.path.join(_experiment_dir, target_prefix + basic.output_subdir_compare)
     logger.debug(f'Output directory: {output_dir}')
 
     if not os.path.isdir(output_dir):
@@ -282,9 +282,9 @@ def do_compare(_experiment_dir: str,
     for impl_name in os.listdir(target_dir):
         impl_dir = os.path.join(target_dir, impl_name)
         if os.path.isfile(
-                os.path.join(impl_dir, target_prefix + basic.efect_report_name)
+                os.path.join(impl_dir, basic.efect_report_name)
         ) and os.path.isfile(
-            os.path.join(impl_dir, target_prefix + basic.efect_sampling_name)
+            os.path.join(impl_dir, basic.efect_sampling_name)
         ):
             impl_names.append(impl_name)
 
@@ -308,8 +308,8 @@ def do_compare(_experiment_dir: str,
 
         modeler_res = _results_get(modeler_impl)
 
-        curator_rep_fp = os.path.join(target_dir, curator_impl, target_prefix + basic.efect_report_name)
-        curator_smp_fp = os.path.join(target_dir, curator_impl, target_prefix + basic.efect_sampling_name)
+        curator_rep_fp = os.path.join(target_dir, curator_impl, basic.efect_report_name)
+        curator_smp_fp = os.path.join(target_dir, curator_impl, basic.efect_sampling_name)
 
         with open(curator_rep_fp, 'r') as f:
             curator_rep = libssr.EFECTReport.from_json(json.load(f))
