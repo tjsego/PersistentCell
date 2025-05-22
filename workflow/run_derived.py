@@ -81,6 +81,15 @@ def generate_derived_std(_experiment_dir: str, _impl_name: str):
     target_data = pd.read_csv(target_data_fp)
     target_data.rename(columns={'dt_MCS': 'time'}, inplace=True)
     target_data.drop(columns=['dt_nsteps', 'nsubtracks'], inplace=True)
+
+    # Handle possible NaN values
+    problematic_mask = target_data.isna().any(axis=1)
+    problematic_times = target_data.loc[problematic_mask, :]['time'].unique().tolist()
+    if problematic_times:
+        logger.error(f'Found problematic times in derived data: {problematic_times}')
+        logger.error(f'\tProblematic names in derived data: {target_data.loc[problematic_mask, :].to_dict()}')
+        target_data = target_data[~target_data['time'].isin(problematic_times)]
+
     target_data.to_csv(output_data_fp, index=False, columns=['time', 'id', 'msd', 'acor'])
 
 
