@@ -29,7 +29,8 @@ def setup(args):
 	os.makedirs( f'{result_dir}/img', exist_ok = True )
 	args['out_dir'] = out_dir
 	args['result_dir'] = result_dir
-	args['src_path'] = args['script'].replace( "persistent-cell.js" , "" )
+	args['src_path'] = os.path.dirname(args['script'])
+	#args['src_path'] = args['script'].replace( "persistent-cell.js" , "" )
 	return args, config_data
 
 
