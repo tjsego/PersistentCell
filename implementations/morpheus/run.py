@@ -12,13 +12,24 @@ def run(fp: str, plot : bool, output_dir: str = None):
     sim_data: dict = config_data['sim']
 
     if output_dir is None:
-        output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'results', sim_data['output_name'])
+        output_dir = os.path.join(os.getcwd(), sim_data['output_name'])
+    
+    # transfer all config data to single dataset
+    model_data['log_freq'] = sim_data['output_per']
+    
+    first=True
+    morph_voxels=""
+    for voxel in sim_data['init_voxels'] :
+        if not first :
+            morph_voxels += ' ; '
+        morph_voxels += '{},{},0'.format(voxel[0],voxel[1])
+        first=False
+    model_data['init_voxels'] = morph_voxels
     
     simulate(model_data,
              input_dir=os.path.dirname(os.path.abspath(fp)),
              output_dir=output_dir,
              num_sims=int(sim_data['num_sims']),
-             output_freq = int(sim_data['output_per']),
              plot=plot)
 
 
@@ -32,6 +43,7 @@ class ArgParser(argparse.ArgumentParser):
                           required=True,
                           dest='spec_path',
                           help='Absolute path to specification')
+        
         self.add_argument('-p', '--plot',
                           required=False,
                           action="store_true",
