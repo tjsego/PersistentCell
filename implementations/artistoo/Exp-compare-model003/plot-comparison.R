@@ -11,7 +11,7 @@ udvec <- c("source-to-target-norm", "source-to-target-unnorm", "cell-mass-displa
 opt.table <- expand.grid( model = modelvec, forceMode = fmvec, updateDir = udvec ) 
 
 getData <- function( fName, model, force.mode, update.dir, simulator ) {
-	d <- read.csv( fName )%>% filter( time %% 10 == 0 )
+	d <- read.csv( fName )%>% filter( time %% 10 == 0 ) %>% filter( time < 1000 )
 	tr <- as.tracks( d, time.column = 1, id.column = 2, pos.columns = 3:4 )
 	msd <- aggregate( tr, squareDisplacement, na.rm=TRUE ) %>% 
 	mutate(
@@ -42,12 +42,16 @@ all.data <- bind_rows( lapply( 1:nrow(opt.table), function(k){
 
 
 dArtistoo <- getData( "data/pdcmodel003.csv", "model003", "extension", "source-to-target-unnorm", "Artistoo" )
+dCC <- getData( "data/cc3d.csv", "model003", "extension", "cell-mass-displacement", "CC3D" )
+dMorph <- getData( "data/morpheus.csv", "model003", "reciprocal", "cell-mass-displacement", "Morpheus" )
 
 	
 	
 p <- ggplot( all.data, aes( x = dt, y = sqrt(value), color = forceMode, group = forceMode ) ) + 
 	geom_line( ) + 
 	geom_line( data = dArtistoo, color = "black", lty = 2) + 
+	geom_line( data = dCC, color = "black", lty = 3) + 
+	geom_line( data = dMorph, color = "black", lty = 4) + 
 	facet_grid( model ~ updateDir, scale="free" ) +
 	labs( x = expression( Delta*"t (MCS)"), y = expression( sqrt(MSD))) +
 	theme_bw() + theme( 
