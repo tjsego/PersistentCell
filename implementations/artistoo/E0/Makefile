@@ -58,15 +58,15 @@ model006c : results/model006c_artistoo/corrected-tracks.csv
 
 
 results/model%a_artistoo/corrected-tracks.csv : ../run.py ../src/persistent-cell.js input/model%a.json 
-	rm -f results/model%*a_artistoo && \
+	rm -f results/model$*a_artistoo && \
 	python $< -s ../src/persistent-cell.js -f input/model$*a.json -j $(MAX_PROC)
 
 results/model%b_artistoo/corrected-tracks.csv : ../run.py ../src/persistent-cell.js input/model%b.json 
-	rm -f results/model%*b_artistoo && \
+	rm -f results/model$*b_artistoo && \
 	python $< -s ../src/persistent-cell.js -f input/model$*b.json -j $(MAX_PROC)
 
 results/model%c_artistoo/corrected-tracks.csv : ../run.py ../src/persistent-cell.js input/model%c.json 
-	rm -f results/model%*c_artistoo && \
+	rm -f results/model$*c_artistoo && \
 	python $< -s ../src/persistent-cell.js -f input/model$*c.json -j $(MAX_PROC) -i $(NSIM)
 
 
