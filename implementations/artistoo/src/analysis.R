@@ -4,6 +4,7 @@ library( celltrackR )
 library( patchwork )
 library( jsonlite )
 
+print( getwd() )
 
 # command line input
 argv <- commandArgs( trailingOnly = TRUE )
