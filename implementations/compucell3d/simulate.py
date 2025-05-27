@@ -160,7 +160,7 @@ class Model005SteppableImplementation(ModelSteppableImplementation):
         self.pos_hist: List[Tuple[int, int, int]] = []
 
         self.persist = _parent.model_args['persist']
-        self.mu = _parent.model_args['mu']
+        self.lambda_dir = _parent.model_args['lambda_dir']
         self.dt = _parent.model_args['dt']
 
     @classmethod
@@ -184,8 +184,8 @@ class Model005SteppableImplementation(ModelSteppableImplementation):
 
         cell = _parent.cell
         ang = 2.0 * pi * random()
-        cell.lambdaVecX = - self.mu * cos(ang)
-        cell.lambdaVecY = - self.mu * sin(ang)
+        cell.lambdaVecX = - self.lambda_dir * cos(ang)
+        cell.lambdaVecY = - self.lambda_dir * sin(ang)
 
         self.record_pos(_parent, 0)
 
@@ -194,8 +194,8 @@ class Model005SteppableImplementation(ModelSteppableImplementation):
         disp = self.current_disp(_parent)
         cell = _parent.cell
 
-        cell.lambdaVecX -= self.persist * (cell.lambdaVecX + self.mu * disp[0])
-        cell.lambdaVecY -= self.persist * (cell.lambdaVecY + self.mu * disp[1])
+        cell.lambdaVecX -= self.persist * (cell.lambdaVecX + self.lambda_dir * disp[0])
+        cell.lambdaVecY -= self.persist * (cell.lambdaVecY + self.lambda_dir * disp[1])
 
         self.record_pos(_parent, mcs)
 
@@ -214,9 +214,8 @@ class Model006SteppableImplementation(ModelSteppableImplementation):
         self.xi2 = _parent.model_args['xi'] ** 2
         self.dt = _parent.model_args['dt']
         self.sqrt_dt = np.sqrt(self.dt)
-        lambda_dir = _parent.model_args['lambda_dir']
-        self.ang = np.arctan2(lambda_dir[1], lambda_dir[0])
-        self.mu = np.sqrt(lambda_dir[0] ** 2 + lambda_dir[1] ** 2)
+        self.ang = np.random.normal(scale=self.xi2)
+        self.lambda_dir = _parent.model_args['lambda_dir']
 
     @classmethod
     def model_name(cls) -> str:
@@ -225,8 +224,8 @@ class Model006SteppableImplementation(ModelSteppableImplementation):
     def update_cell(self, _parent, _mcs):
 
         cell = _parent.cell
-        cell.lambdaVecX = - self.mu * cos(self.ang)
-        cell.lambdaVecY = - self.mu * sin(self.ang)
+        cell.lambdaVecX = - self.lambda_dir * cos(self.ang)
+        cell.lambdaVecY = - self.lambda_dir * sin(self.ang)
         self.ang_hist = _mcs
 
     def start(self, _parent: TrackingSteppable):
