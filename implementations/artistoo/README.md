@@ -2,14 +2,57 @@
 
 Starting point for implementing models as defined in `../schemas` in Artistoo.
 
-## Preliminaries: install dependencies
+## Quick start
 
-### Make
+If you are using conda (recommended), set up your environment. Navigate to 
 
-The easiest way to interact with the code is to use the Makefile.
+```
+cd path/to/PersistentCell/implementations/artistoo
+```
+
+then create the conda environment:
+
+```
+conda env create -f env.yml
+```
+
+and activate it:
+
+
+```
+conda activate persistent-cell-artistoo
+```
+
+finally, install node packages (locally):
+
+```
+npm install
+```
+
+now run a simulation using the python wrapper, e.g.:
+
+```
+python run.py -s src/persistent-cell.js -f available_runs/model000.json
+```
+
+Results will pop up in a newly generated "results" folder with subfolder depending on 
+which model you are running.
+
+If not using conda, read on.
+
+## Without conda
+
+
+### Make and other command line tools:
+
+To use all code, the easiest way to interact with the code is to use the Makefile.
 Make sure you have basic command line tools such as 
 "make", "awk", "bc" etc. On MacOS, look for xcode CLT. On Linux, look for build-essential. 
 On Windows, I am not sure, but you can still run the code manually.
+
+Other tools you may need:
+- sed (used to automatically parse input json files for some of the exps)
+- ffmpeg (if you want to make videos, see [this page](https://www.ffmpeg.org/download.html) 
 
 ### Nodejs, npm, and packages
 
@@ -25,13 +68,7 @@ nvm install --lts
 nvm use --lts
 ```
 
-Once node and npm are installed, you can install the necessary packages using 
-
-```
-make node_modules
-```
-
-Or if you don't have make:
+Once node and npm are installed, you can install the necessary packages locally using 
 
 ```
 npm install
@@ -40,22 +77,26 @@ npm install
 
 ### R and packages
 
-To use the analysis code, please make sure you have R installed, and make sure to get the required 
-packages by running:
+Please make sure you have R installed, as well as the required packages:
 
-```
-make .Rsetup
-```
+- jsonlite
+- celltrackR
+- dplyr
+- ggplot2
+- patchwork
+- ggbeeswarm 
 
-or directly
+### Python and packages
 
-```
-Rscript Rsetup.R Rpackages.txt
-```
+To use the wrapper script, please make sure you have python installed, as well as the required
+packages:
 
-### ffmpeg
+- numpy
+- pandas
+- argparse
+- Naked
+- tqdm 
 
-If you want to generate video output, make sure to install ffmpeg as described [here](https://www.ffmpeg.org/download.html).
 
 
 ## How to run
@@ -69,46 +110,13 @@ make model000
 ```
 
 (or equivalent `modelXXX` for any `modelXXX.json` that is provided in the repo). 
-Outputs will automatically be generated in `results/modelXXX/`.
-
-To run simulations in parallel (recommended), try e.g.:
-
-```
-make model000 -j 4
-```
+Outputs will automatically be generated in `results/`.
 
 
-### Run manually
-
-#### Step 1 : run simulations
-
-If Node.js, npm, and the node modules are installed, you can run a single simulation of the model using:
+### Using the python wrapper
 
 ```
-	mkdir -p results/MODEL000/img
-	mkdir -p results/MODEL000/tracks
-	node persistent-cell.js model000.json 1 > results/MODEL000/tracks/track1.csv
+python run.py -s src/persistent-cell.js -f available_runs/model000.json -j 4
 ```
-
-Here, the `1` is the random seed used in the simulation, and replicates can be created analogously by using
-a different number here. The random seed will be stored as the track identifier in the csv output produced,
-so results of multiple simulations can easily be concatenated in a single file `results/MODEL000/combined-tracks.csv`
-at the end. 
-
-#### Step 2: example movie output
-
-Running the simulation with seed 1 as described above also creates images, which can be compiled into
-a timelapse by running:
-
-```
-ffmpeg -r 10 -i results/MODEL000/img/sim1/MODEL000-seed1-t%01d0.png -vcodec libx264 -pix_fmt yuv420p -y results/MODEL000/example.mp4
-```
-
-#### Step 3: track analysis using celltrackR
-
-You can run the analysis script on pooled tracks from step 1:
-
-```
-Rscript analysis.R results/MODEL000/combined-tracks.csv model000.json results/MODEL000/analysis.pdf 
-```
-
+will run model000 simulations in parallel using 4 cores, and postprocess tracks into 
+`/results/something/corrected-tracks.csv`.
