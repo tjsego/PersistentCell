@@ -35,7 +35,7 @@ def unique_data_dir(_output_dir: str, label : int):
     return os.path.join(_output_dir, result), label
 
 
-def _simulate(model, sim_label, sim_output_dir, output_freq):
+def _simulate(model, sim_label, sim_output_dir):
     print(f'Simulation {sim_label}: {sim_output_dir}')
 
     
@@ -46,10 +46,13 @@ def _simulate(model, sim_label, sim_output_dir, output_freq):
             raise r"Morpheus version of at least 2.3.9 required"
     else :
         raise r"Unable to launch Morpheus. Make sure 'morpheus' binary is reachable from path"
+    
+    model_xml = ET.tostring(model.getroot(), encoding='utf8', method='xml')
+    print (model_xml)
      
     subprocess.run(
-        ['morpheus','--num-threads=1', f'-s  log_freq={output_freq}' , '-'],
-        input=ET.tostring(model.getroot(), encoding='utf8', method='xml'),
+        ['morpheus','--num-threads=1', '-'],
+        input=model_xml,
         cwd=sim_output_dir)
 
     sim_data = csv.reader(open(os.path.join(sim_output_dir,'logger.csv'),"r"), delimiter="\t",quoting=csv.QUOTE_NONNUMERIC)
@@ -76,11 +79,10 @@ def simulate(model_data,
              input_dir: str,
              output_dir: str, 
              num_sims: int,
-             output_freq: float,
              plot: bool):
     
     
-    output_data_dir = os.path.join(output_dir, 'data')
+    output_data_dir = os.path.join(output_dir, 'morpheus_data')
 
     ensure_output_dir(output_data_dir)
 
@@ -96,10 +98,11 @@ def simulate(model_data,
         
         my_data= model_data.copy()
         my_data["seed"] = random.randint(0, 2147483647)
-        model = from_json_data(my_data, input_dir=input_dir )
+        
+        model = from_json_data(my_data )
         
         model.write(os.path.join(sim_output_dir,'model.xml'), encoding='utf-8');
-        input_args.append((model, sim_label, sim_output_dir, output_freq ))
+        input_args.append((model, sim_label, sim_output_dir ))
         
         scheduled_labels.append(sim_label)
         sim_label = sim_label+1
