@@ -57,6 +57,7 @@ class WorkTerm extends CPM.SoftConstraint {
 		@type {CellObject}
 		*/
 		this.cellcentroids = {}
+		this.pixelSum  = true
 		
 		/** Target direction of movement of each cell.
 		@type {CellObject}
@@ -371,7 +372,9 @@ class WorkTerm extends CPM.SoftConstraint {
 		}
 		case "COM" : {
 			if( cid == 0 ) return [0,0]
-			return this.centroidMovementVector( cid, targeti, this.C.getVolume(cid), mode )
+			let vec = this.centroidMovementVector( cid, targeti, this.C.getVolume(cid), mode )
+			//console.log(vec)
+			return vec
 		}
 		}
 		
@@ -417,13 +420,18 @@ class WorkTerm extends CPM.SoftConstraint {
 		switch( this.conf.FORCE_MODE ){
 		case "extension" : {
 			let dH = this.deltaHCell( sourcei, targeti, src_type, "gain" )
+			//console.log(dH)
 			return dH
 		}
 		case "retraction" : {
-			return this.deltaHCell( sourcei, targeti, tgt_type, "loss" )
+			let dH = this.deltaHCell( sourcei, targeti, tgt_type, "loss" )
+			//console.log(dH)
+			return dH
 		}
 		case "reciprocal" : {
-			return this.deltaHCell( sourcei, targeti, src_type, "gain" ) + this.deltaHCell( sourcei, targeti, tgt_type, "loss" )
+			let dH = this.deltaHCell( sourcei, targeti, src_type, "gain" ) + this.deltaHCell( sourcei, targeti, tgt_type, "loss" )
+			//console.log(dH)
+			return dH
 		}
 		}
 	}

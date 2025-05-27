@@ -105,13 +105,15 @@ switch( modelName ){
 		const alpha = configJSON["model_args"]["target_angle"]
 		let dir_map = { 'source-to-target-unnorm' : "copyVector", 'source-to-target-norm' : "normCopyVector", 'cell-mass-displacement' : "COM" }
 		const propdir = dir_map[ configJSON["model_args"]["cpm_update_direction"] ]		
-		sim.C.add( new PRW.TargetDirection( 
-			{
-				LAMBDA_DIR: [0,configJSON["model_args"]["lambda_dir"]], 
-				DIR: [[0,0], [Math.cos(alpha),Math.sin(alpha)]],
-				FORCE_MODE : configJSON["model_args"]["cpm_force_mode"],
-				PROPOSAL_DIR: propdir
-			} ) )
+		const ldir = configJSON["model_args"]["lambda_dir"], dirvec = [Math.cos(alpha),Math.sin(alpha)]
+		const wconf = {
+			LAMBDA_DIR: [0, ldir], 
+			DIR: [[0,0], dirvec ],
+			FORCE_MODE : configJSON["model_args"]["cpm_force_mode"],
+			PROPOSAL_DIR: propdir
+		}
+		//console.log( wconf )
+		sim.C.add( new PRW.TargetDirection( wconf ) )
 		break
 	}
 	case 'MODEL006' : {
@@ -141,6 +143,9 @@ function logStats(){
 }
 
 function initializeGrid(){
+
+	//this.C.setpix( [50,50], this.C.makeNewCellID( 1 ) )
+
 	let pixList = outputJSON["init_voxels"]
 	//console.log(pixList)
 	const newID = this.C.makeNewCellID( 1 )
