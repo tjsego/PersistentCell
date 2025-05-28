@@ -19,11 +19,12 @@
     </Space>
     <Time>
         <StartTime value="0"/>
-        <StopTime value="10000"/>
+        <StopTime value="1000"/>
         <TimeSymbol symbol="time"/>
         <RandomSeed value="0"/>
     </Time>
     <Analysis>
+        <!--    <Disabled>
         <Gnuplotter time-step="100">
             <Plot>
                 <Cells value="vel.abs"/>
@@ -31,6 +32,8 @@
             </Plot>
             <Terminal name="png" size="1200,1200,0"/>
         </Gnuplotter>
+    </Disabled>
+-->
         <Logger time-step="log_freq">
             <Input>
                 <Symbol symbol-ref="cell.center.x"/>
@@ -60,7 +63,10 @@
                 <Celltype celltype="cell"/>
             </Restriction>
         </Logger>
+        <!--    <Disabled>
         <ModelGraph format="dot" reduced="false" include-tags="#untagged"/>
+    </Disabled>
+-->
     </Analysis>
     <Global>
         <Constant symbol="cpm_time_scale" value="1"/>
@@ -100,7 +106,7 @@
             <!--             <Property symbol="α" value="0"/> -->
             <PropertyVector symbol="vel" name="observed velocity" value="0,0,0"/>
             <Constant symbol="cpm_persist_rate" value="persist * cpm_time_scale"/>
-            <PersistentMotion decay-time="1/cpm_persist_rate" strength="mu_cpm"/>
+            <PersistentMotion observation-window="1" decay-time="1/cpm_persist_rate" strength="mu_cpm" protrusion="true"/>
             <MotilityReporter time-step="5.0">
                 <Velocity symbol-ref="vel"/>
             </MotilityReporter>
