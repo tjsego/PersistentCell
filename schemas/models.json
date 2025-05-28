@@ -67,6 +67,10 @@
     "method": "CPM",
     "description": "Persistent motion controlled by cell-intrinsic orientation under effect of continuous time noise",
     "model_args": {
+      "initial_angle": {
+        "description": "Initial angle (to the positive x-axis) of the target direction.",
+        "type": "number"
+      },
       "lambda_dir": {
         "description": "Lagrange multiplier of the work term, controls the cell speed.",
         "type": "number"

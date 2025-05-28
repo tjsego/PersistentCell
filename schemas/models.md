@@ -156,8 +156,8 @@ $$ \vec{e}_\alpha(\sigma, t) = \left(\cos \quad \alpha(\sigma, t), \sin \quad \a
 | $A_\text{target}$  | As Model000 |
 | $\lambda_\text{perim}$ | As Model000		              |
 | $P_\text{target}$  | As Model000 |
+| $\alpha(0)$   | Initial angle (to the positive x-axis) of the target direction $\alpha$.     |
 | $\lambda_\text{dir}$ | As Model003, the Lagrange multiplier controls the cell speed.     |
-| $\Delta t$   | Evolution time step of changes in target direction, in (a positive integer number of) MCS.    |
 | $\xi$   | Standard deviation of noise added to the cell direction (larger $\xi$ implies lower persistence time).   |
 | `cpm_force_mode` | "extension", i.e. $\delta_s = 1, \delta_t = 0$ (see "work term")              |
 | `cpm_update_direction` | "cell-mass-displacement", i.e.   $\vec{dx}(\sigma) = A(\sigma,t)\vec{\delta c}(\sigma) $     |

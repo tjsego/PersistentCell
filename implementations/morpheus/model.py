@@ -142,7 +142,7 @@ class morpheus_model_6(morpheus_model) :
     
     def xpath4param(self) :
         base = super().xpath4param()
-        base["target_angle"] = "./CellTypes/CellType/Property[@symbol='α']/@value"
+        base["initial_alpha"] = "./CellTypes/CellType/Property[@symbol='α']/@value"
         base["xi"] = "./Global/Constant[@symbol='xi']/@value"
         base["reenf_rate"] = "./Global/Constant[@symbol='reenf_rate']/@value"
         base["cpm_force_extension"] = "./CellTypes/CellType/DirectedMotion/@extension"
@@ -153,7 +153,6 @@ class morpheus_model_6(morpheus_model) :
     
     def addon_spec(self) :   
         return {
-            "target_angle" :  "0",
             "reenf_rate" : "0"
         }
 
