@@ -48,7 +48,7 @@ def _simulate(model, sim_label, sim_output_dir):
         raise r"Unable to launch Morpheus. Make sure 'morpheus' binary is reachable from path"
     
     model_xml = ET.tostring(model.getroot(), encoding='utf8', method='xml')
-    print (model_xml)
+    model.write(os.path.join(sim_output_dir,'model.xml'))
      
     subprocess.run(
         ['morpheus','--num-threads=1', '-'],

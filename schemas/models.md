@@ -142,11 +142,12 @@ $$\vec{dx}(\sigma) = A(\sigma,t)\vec{\delta c}(\sigma) $$
 
 where $\vec{\delta c}(\sigma )$ is the cell centroid displacement due to the proposed update, $A(\sigma, t)$ is the cell's current area. Furthermore, we let the cell orientation $\alpha$ diffuse over time with Gaussian noise:
 
-$$\alpha(\sigma, t) = \alpha(\sigma, t-\Delta t) + \epsilon\sqrt{\Delta t}, \quad \epsilon \sim \mathcal{N}(0,\xi^2)$$
+$$\alpha(\sigma, t) = \alpha(\sigma, t-\Delta t) + \epsilon \sqrt{\Delta t}, \quad \epsilon \sim \mathcal{N}(0,\xi^2)$$
+
+Without loss of generality, we assume the integer $\Delta t = 1$ MCS, such that the temporal evolution equation simplifies accordingly.
 
 $$ \vec{e}_\alpha(\sigma, t) = \left(\cos \quad \alpha(\sigma, t), \sin \quad \alpha(\sigma, t) \right)$$
-			
-with step size $\Delta t$ an integer $\geq 1$ MCS.
+
 
 | Parameter | Description                                                                 |
 |-----------|-----------------------------------------------------------------------------|
@@ -155,8 +156,8 @@ with step size $\Delta t$ an integer $\geq 1$ MCS.
 | $A_\text{target}$  | As Model000 |
 | $\lambda_\text{perim}$ | As Model000		              |
 | $P_\text{target}$  | As Model000 |
+| $\alpha(0)$   | Initial angle (to the positive x-axis) of the target direction $\alpha$.     |
 | $\lambda_\text{dir}$ | As Model003, the Lagrange multiplier controls the cell speed.     |
-| $\Delta t$   | Evolution time step of changes in target direction, in (a positive integer number of) MCS.    |
 | $\xi$   | Standard deviation of noise added to the cell direction (larger $\xi$ implies lower persistence time).   |
 | `cpm_force_mode` | "extension", i.e. $\delta_s = 1, \delta_t = 0$ (see "work term")              |
 | `cpm_update_direction` | "cell-mass-displacement", i.e.   $\vec{dx}(\sigma) = A(\sigma,t)\vec{\delta c}(\sigma) $     |

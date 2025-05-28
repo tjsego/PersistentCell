@@ -46,7 +46,7 @@ class morpheus_model:
             switch  = {
                 "extension" : [True,False],
                 "retraction" : [False, True],
-                "reciprocated" : [True, True]
+                "reciprocal" : [True, True]
             }
             spec_data["cpm_force_extension"], spec_data["cpm_force_retraction"] = switch[spec_data["cpm_force_mode"]]
             del spec_data["cpm_force_mode"]
@@ -124,6 +124,7 @@ class morpheus_model_5(morpheus_model) :
     def xpath4param(self) :
         base = super().xpath4param()
         base["persist"] = "./CellTypes/CellType/Constant[@symbol='cpm_persist_rate']/@value"
+        base["dt"] = "./CellTypes/CellType/PersistentMotion/@observation-window"
         base["mu"] = base["lambda_dir"]
         base["cpm_force_extension"] = "./CellTypes/CellType/PersistentMotion/@extension"
         base["cpm_force_retraction"] = "./CellTypes/CellType/PersistentMotion/@retraction"
@@ -141,16 +142,17 @@ class morpheus_model_6(morpheus_model) :
     
     def xpath4param(self) :
         base = super().xpath4param()
-        base["target_angle"] = "./CellTypes/CellType/Property[@symbol='α']/@value"
-        base["orientation_noise"] = "./Global/Constant[@symbol='ω']/@value"
+        base["initial_alpha"] = "./CellTypes/CellType/Property[@symbol='α']/@value"
+        base["xi"] = "./Global/Constant[@symbol='xi']/@value"
+        base["reenf_rate"] = "./Global/Constant[@symbol='reenf_rate']/@value"
         base["cpm_force_extension"] = "./CellTypes/CellType/DirectedMotion/@extension"
         base["cpm_force_retraction"] = "./CellTypes/CellType/DirectedMotion/@retraction"
         base["cpm_update_direction"] = "./CellTypes/CellType/DirectedMotion/@update-direction"
+        
         return base;
     
     def addon_spec(self) :   
         return {
-            "target_angle" :  "0",
             "reenf_rate" : "0"
         }
 

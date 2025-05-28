@@ -67,12 +67,12 @@
     "method": "CPM",
     "description": "Persistent motion controlled by cell-intrinsic orientation under effect of continuous time noise",
     "model_args": {
-      "lambda_dir": {
-        "description": "Lagrange multiplier of the work term, controls the cell speed.",
+      "initial_angle": {
+        "description": "Initial angle (to the positive x-axis) of the target direction.",
         "type": "number"
       },
-      "dt": {
-        "description": "Time interval (in MCS) over which we evaluate the cell's recent displacement; this determines persistence time of the random walk.",
+      "lambda_dir": {
+        "description": "Lagrange multiplier of the work term, controls the cell speed.",
         "type": "number"
       },
       "xi": {
