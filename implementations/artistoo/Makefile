@@ -12,7 +12,7 @@ model005 : results/model005_artistoo/analysis.pdf results/model005_artistoo/exam
 model006 : results/model006_artistoo/analysis.pdf results/model006_artistoo/example.mp4
 
 results/model%_artistoo/corrected-tracks.csv : run.py src/persistent-cell.js available_runs/model%.json 
-	rm -f results/model$*_artistoo && \
+	rm -rf results/model$*_artistoo && \
 	python $< -s src/persistent-cell.js -f available_runs/model$*.json -j $(MAX_PROC)
 
 results/model%_artistoo/analysis.pdf : src/analysis.R results/model%_artistoo/corrected-tracks.csv

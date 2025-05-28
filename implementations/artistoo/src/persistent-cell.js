@@ -14,6 +14,7 @@ if (seed > 1 ) img = false
 const modelName = configJSON["model"]
 const lograte = outputJSON["output_per"] || 2
 const prng = require( jsonFile )["artistoo"]["prng"]
+const out_name = require( jsonFile )["artistoo"]["output_name"]
 
 if( configJSON["cpm_nbs_n"] != 2 ){
 	throw( "cpm_nbs_n is set to a value different from 2, which is not (yet) supported. Please change value to 2 to continue.")
@@ -28,7 +29,7 @@ if(  configJSON["model"] == "MODEL005" ){
 	if( configJSON["model_args"]["cpm_update_direction"] != "source-to-target-unnorm" ){ throw( "only cpm_update_direction 'source-to-target-unnorm' is currently supported in MODEL005. Please change to continue.") }
 }
 
-let outPath = "./results/"+ outputJSON["output_name"] + "_artistoo/img"
+let outPath = "./results/"+ out_name + "/img"
 
 
 let config = {
@@ -96,7 +97,7 @@ switch( modelName ){
 		sim.C.add( new CPM.PersistenceConstraint( 
 			{
 				LAMBDA_DIR: [0,configJSON["model_args"]["lambda_dir"]], 
-				PERSIST: [0,configJSON["model_args"]["persist"]],
+				PERSIST: [0,0],
 				DELTA_T : [0,configJSON["model_args"]["dt"]]
 			} ) )
 		break
@@ -127,6 +128,8 @@ switch( modelName ){
 				FORCE_MODE : configJSON["model_args"]["cpm_force_mode"],
 				PROPOSAL_DIR: propdir
 			} ) )
+		let a0 = configJSON["model_args"]["initial_alpha"]
+		sim.C.getConstraint( "LangevinPRW" ).celldirections[1] = [Math.cos(a0), Math.sin(a0)]
 			break
 	}
 	default : {
@@ -156,6 +159,6 @@ function initializeGrid(){
 }
 
 sim.drawCanvas()
-sim.Cim.writePNG( "./results/"+ outputJSON["output_name"] + "_artistoo/init.png" )
+sim.Cim.writePNG( "./results/"+ out_name + "/init.png" )
 
 sim.run()

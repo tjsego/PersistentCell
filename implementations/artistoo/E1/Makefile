@@ -28,14 +28,15 @@ MAX_PROC=4
 input :
 	mkdir -p $@
 	
-input/model%a.json : ../available_runs/model%.json | input
-	cat $< | sed 's/"num_sims": 100/"num_sims": $(NSIM)/g' | sed 's/"output_name": "model$*",/"output_name": "model$*a",/g'> $@
+input/model%a.json : ../E0/make-json.R ../available_runs/model%.json | input
+	Rscript $^ $(NSIM) a $@
 
-input/model%b.json : input/model%a.json | input
-	cat $< | sed 's/MersenneTwister/MathRandom/g'  | sed 's/model$*a/model$*b/g' > $@
+input/model%b.json : ../E0/make-json.R ../available_runs/model%.json | input
+	Rscript $^ $(NSIM) b $@
 
-input/model%c.json : input/model%a.json | input
-	cat $< | sed 's/model$*a/model$*c/g' > $@
+input/model%c.json : ../E0/make-json.R ../available_runs/model%.json | input
+	Rscript $^ $(NSIM) c $@
+
 
 
 # Run models
@@ -59,15 +60,15 @@ model006c : results/model006c_artistoo/corrected-tracks.csv
 
 
 results/model%a_artistoo/corrected-tracks.csv : ../run.py ../src/persistent-cell.js input/model%a.json 
-	rm -f results/model$*a_artistoo && \
+	rm -rf results/model$*a_artistoo && \
 	python $< -s ../src/persistent-cell.js -f input/model$*a.json -j $(MAX_PROC)
 
 results/model%b_artistoo/corrected-tracks.csv : ../run.py ../src/persistent-cell.js input/model%b.json 
-	rm -f results/model$*b_artistoo && \
+	rm -rf results/model$*b_artistoo && \
 	python $< -s ../src/persistent-cell.js -f input/model$*b.json -j $(MAX_PROC)
 
 results/model%c_artistoo/corrected-tracks.csv : ../run.py ../src/persistent-cell.js input/model%c.json 
-	rm -f results/model$*c_artistoo && \
+	rm -rf results/model$*c_artistoo && \
 	python $< -s ../src/persistent-cell.js -f input/model$*c.json -j $(MAX_PROC) -i $(NSIM)
 
 

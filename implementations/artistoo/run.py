@@ -22,7 +22,7 @@ import argparse
 def setup(args):
 	with open(args['fp'], 'r') as f:
 		config_data = json.load(f)
-	expName = config_data['sim']['output_name'] + "_artistoo"
+	expName = config_data['artistoo']['output_name'] 
 	out_dir = "results/" + expName + "/tracks"
 	result_dir = "results/" + expName 
 	os.makedirs( out_dir, exist_ok = True )
