@@ -14,6 +14,7 @@
         "model": "MODEL005",
         "model_args": {
             "lambda_dir": 20,
+            "initial_alpha" : 0,
             "dt": 50,
             "cpm_force_mode": "extension",
             "cpm_update_direction": "source-to-target-unnorm"

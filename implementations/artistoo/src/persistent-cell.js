@@ -22,12 +22,7 @@ if( configJSON["cpm_nbs_n"] != 2 ){
 if( configJSON["cpm_surface_nbs_n"] != 2 ){
 	throw( "cpm_surface_nbs_n is set to a value different from 2, which is not (yet) supported. Please change value to 2 to continue.")
 }
-if(  configJSON["model"] == "MODEL005" ){
-	if( configJSON["model_args"]["cpm_force_mode"] != "extension" ){ 	throw( "only cpm_force_mode 'extension' is currently supported in MODEL005. Please change to continue.") }
-}
-if(  configJSON["model"] == "MODEL005" ){
-	if( configJSON["model_args"]["cpm_update_direction"] != "source-to-target-unnorm" ){ throw( "only cpm_update_direction 'source-to-target-unnorm' is currently supported in MODEL005. Please change to continue.") }
-}
+
 
 let outPath = "./results/"+ out_name + "/img"
 
@@ -94,12 +89,18 @@ switch( modelName ){
 		break
 	}
 	case 'MODEL005' : {
-		sim.C.add( new CPM.PersistenceConstraint( 
+		let dir_map = { 'source-to-target-unnorm' : "copyVector", 'source-to-target-norm' : "normCopyVector", 'cell-mass-displacement' : "COM" }
+		const propdir = dir_map[ configJSON["model_args"]["cpm_update_direction"] ]		
+		sim.C.add( new PRW.PersistenceConstraint( 
 			{
 				LAMBDA_DIR: [0,configJSON["model_args"]["lambda_dir"]], 
 				PERSIST: [0,0],
-				DELTA_T : [0,configJSON["model_args"]["dt"]]
+				DELTA_T : [0,configJSON["model_args"]["dt"]],
+				FORCE_MODE : configJSON["model_args"]["cpm_force_mode"],
+				PROPOSAL_DIR: propdir
 			} ) )
+		let a0 = configJSON["model_args"]["initial_alpha"]
+		sim.C.getConstraint( "PersistenceConstraint" ).celldirections[1] = [Math.cos(a0),Math.sin(a0)]
 		break
 	}
 	case 'MODEL003' : {

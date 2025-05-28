@@ -554,8 +554,9 @@ class LangevinPRW extends WorkTerm {
 class PersistenceConstraint extends WorkTerm {
 	
 	confChecker(){
-		this.checker.confCheckParameter( "PERSIST", "KindArray", "Probability" )
-		this.checker.confCheckParameter( "DELTA_T", "KindArray", "NonNegative" )
+		let checker = new CPM.ParameterChecker( this.conf, this.C )
+		checker.confCheckParameter( "PERSIST", "KindArray", "Probability" )
+		checker.confCheckParameter( "DELTA_T", "KindArray", "NonNegative" )
 	}
 	
 	targetVector( sourcei, targeti, cid ){
@@ -566,29 +567,31 @@ class PersistenceConstraint extends WorkTerm {
 	// length is <= delta_t
 	updateCentroidHistory( cid, centroid ) {
 	
+		
+	
 		let dt = this.cellParameter("DELTA_T", cid )
 			
-		if( !(cid in this.cellcentroidlists ) ){
-			this.cellcentroidlists[t] = []
+		if( !(cid in this.cellcentroidhistory ) ){
+			this.cellcentroidhistory[cid] = []
 		}
 		
-		this.cellcentroidlists[t].unshift(centroid)
+		this.cellcentroidhistory[cid].unshift(centroid)
 		
-		while( this.cellcentroidlists[cid].length > dt ){
-			this.cellcentroidlists[cid].pop()
+		while( this.cellcentroidhistory[cid].length > dt ){
+			this.cellcentroidhistory[cid].pop()
 		}
+		
 		
 	}
 	
 	// compute cell's displacement over the centroid history (normalized)
 	recentDisplacement( cid, current, norm = true ) {
 		
-		let last = this.cellcentroidlists[cid].pop()
+		let last = this.cellcentroidhistory[cid].pop()
 		let dx = current.map( (x,i) => {
 			let ddim = x - last[i]
-			this.correctTorusDim( ddim, ddim, i )
+			return this.correctTorusDim( ddim, ddim, i )
 		} )
-		
 		if( norm ) dx = this.normalize(dx)
 		
 		return dx
@@ -601,11 +604,11 @@ class PersistenceConstraint extends WorkTerm {
 	postMCSListener(){
 		for( let cid of this.C.cellIDs() ){
 			
-			let ci = this.currentCentroid( cid )
+			let ci = this.currentCentroid( cid ).map( x => x / this.C.getVolume(cid))
 			this.updateCentroidHistory( cid, ci ) 
 			
 			// note, dt could change during execution
-			if( this.cellcentroidlists[cid].length == dt ){
+			if( this.cellcentroidhistory[cid].length == this.cellParameter("DELTA_T", cid ) ){
 				
 				// check cell's recent displacement;
 				let dx = this.recentDisplacement( cid, ci ) 
@@ -633,7 +636,6 @@ class PersistenceConstraint extends WorkTerm {
 	}
 	
 }
-
 
 exports.WorkTerm = WorkTerm
 exports.TargetDirection = TargetDirection
