@@ -71,10 +71,6 @@
         "description": "Lagrange multiplier of the work term, controls the cell speed.",
         "type": "number"
       },
-      "dt": {
-        "description": "Time interval (in MCS) over which we evaluate the cell's recent displacement; this determines persistence time of the random walk.",
-        "type": "number"
-      },
       "xi": {
         "description": "Standard deviation of noise added to the cell direction (larger value implies lower persistence time).",
         "type": "number"

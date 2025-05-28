@@ -142,11 +142,12 @@ $$\vec{dx}(\sigma) = A(\sigma,t)\vec{\delta c}(\sigma) $$
 
 where $\vec{\delta c}(\sigma )$ is the cell centroid displacement due to the proposed update, $A(\sigma, t)$ is the cell's current area. Furthermore, we let the cell orientation $\alpha$ diffuse over time with Gaussian noise:
 
-$$\alpha(\sigma, t) = \alpha(\sigma, t-\Delta t) + \epsilon\sqrt{\Delta t}, \quad \epsilon \sim \mathcal{N}(0,\xi^2)$$
+$$\alpha(\sigma, t) = \alpha(\sigma, t-\Delta t) + \epsilon \sqrt{\Delta t}, \quad \epsilon \sim \mathcal{N}(0,\xi^2)$$
+
+Without loss of generality, we assume the integer $\Delta t = 1$ MCS, such that the temporal evolution equation simplifies accordingly.
 
 $$ \vec{e}_\alpha(\sigma, t) = \left(\cos \quad \alpha(\sigma, t), \sin \quad \alpha(\sigma, t) \right)$$
-			
-with step size $\Delta t$ an integer $\geq 1$ MCS.
+
 
 | Parameter | Description                                                                 |
 |-----------|-----------------------------------------------------------------------------|
