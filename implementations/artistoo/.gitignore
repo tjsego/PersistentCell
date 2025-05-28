@@ -1,0 +1,5 @@
+results
+.Rsetup
+results/MODEL*/img
+results/MODEL*/tracks
+node_modules

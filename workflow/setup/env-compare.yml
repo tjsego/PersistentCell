@@ -1,0 +1,13 @@
+name: persistent_cell_compare
+channels:
+  - conda-forge
+dependencies:
+  - python>=3.8
+  - matplotlib
+  - numpy=1
+  - pandas
+  - scipy
+  - pip
+  - pip:
+      - numba
+      - git+https://github.com/tjsego/libSSR@port#subdirectory=src/python

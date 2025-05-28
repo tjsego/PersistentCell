@@ -1,0 +1,52 @@
+{
+  "data": [
+    {
+      "key": "time",
+      "description": "Simulation times",
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    },
+    {
+      "key": "id",
+      "description": "Integer identifier of the cell",
+      "type": "array",
+      "items": {
+        "type": "integer"
+      }
+    },
+    {
+      "key": "com_1",
+      "description": "Centroid positions along first spatial dimension",
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    },
+    {
+      "key": "com_2",
+      "description": "Centroid positions along second spatial dimension",
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    },
+    {
+      "key": "area",
+      "description": "Area occupied by the cell",
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    },
+    {
+      "key": "surface",
+      "description": "Surface length of the cell",
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    }
+  ]
+}

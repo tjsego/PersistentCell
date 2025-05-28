@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, user-scalable=no">
+  	
+<title>PRW</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-wEmeIV1mKuiNpC+IOBjI7aAzPcEZeedi5yW5f2yOq55WWLwNGmvvx4Um1vskeMj0" crossorigin="anonymous">
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.13.0/css/all.css">
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+
+</script>
+<link rel="stylesheet" href="./style.css">
+
+<script src="./artistoo.js"></script>
+<script src="./langevinPRW.js"></script>
+
+<!-- Model scripts -->
+<script src="./configuration.js"></script>
+<script src="./gui.js"></script>
+
+
+
+<script>
+"use strict"
+
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  }
+};
+
+let config = {
+		field_size : [configJSON["len_1"],configJSON["len_2"]],
+		conf : {
+			torus : [true,true],					
+			seed : 1,		
+			T : configJSON["cpm_temperature"],			
+			LAMBDA_V : [0,configJSON["cpm_area_v"]],					
+			V : [0,configJSON["cpm_area_c"]],						
+			LAMBDA_P : [0,configJSON["cpm_perim_v"]],
+			P : [0,configJSON["cpm_perim_c"]]
+		},
+		simsettings : {
+			NRCELLS : [1],					
+			BURNIN : 0,
+			RUNTIME : configJSON["max_time"],
+			CANVASCOLOR : "eaecef",
+			CELLCOLOR : ["CC0000"],	
+			zoom : 3,							
+			SAVEIMG : false,		
+			STATSOUT : { browser: false, node: true },
+			LOGRATE : 2
+		}
+	}
+
+let sims = {}
+let model_config = configJSON[ "model_args" ]
+let model_names = Object.keys( model_config )
+
+// linking configuration parameters to the slider's ID in the html;
+// used in ./gui.js to set sliders and update model parameters if sliders change
+
+let rangeMap = {
+	"perim" : {
+		model : "shared",
+		key : 'P',
+		position : 1,
+		rangeToModel : function(v){ return v/1000 },
+		modelToRange : function(v){ return v*1000 }
+	},
+	"T" : {
+		model : "shared",
+		key : 'T',
+		position : 'none',
+		rangeToModel : function(v){ return v/1000 },
+		modelToRange : function(v){ return v*1000 }
+	},
+	"larea" : {
+		model : "shared",
+		key : 'LAMBDA_V',
+		position : 1,
+		rangeToModel : function(v){ return v/1000 },
+		modelToRange : function(v){ return v*1000 }
+	},
+	"area" : {
+		model : "shared",
+		key : 'V',
+		position : 1,
+		rangeToModel : function(v){ return v/1000 },
+		modelToRange : function(v){ return v*1000 }
+	},
+	"lper" : {
+		model : "shared",
+		key : 'LAMBDA_P',
+		position : 1,
+		rangeToModel : function(v){ return v/1000 },
+		modelToRange : function(v){ return v*1000 }
+	},
+	"ldir003" : {
+		model : "MODEL003",
+		constraint : "PreferredDirectionConstraint", 
+		key : 'LAMBDA_DIR',
+		position : 1,
+		rangeToModel : function(v){ return v/1000 },
+		modelToRange : function(v){ return v*1000 }
+	},
+	"phi003" : {
+		model : "MODEL003",
+		constraint : "PreferredDirectionConstraint", 
+		key : 'DIR',
+		position : 1,
+		rangeToModel : function(v){ 
+			let angle = Math.PI * 2 * v/360 
+			return [ Math.cos( angle ), Math.sin(angle)]
+		},
+		bubbleText : function(v){
+			return v 
+		},
+		modelToRange : function(v){ 
+			let ang = Math.atan2( v[1], v[0] )
+			ang = Math.round( 180 * ang / Math.PI )
+			return ang
+		}
+	},
+	"ldir" : {
+		model : "MODEL005",
+		constraint : "PersistenceConstraint", 
+		key : 'LAMBDA_DIR',
+		position : 1,
+		rangeToModel : function(v){ return v/1000 },
+		modelToRange : function(v){ return v*1000 }
+	},
+	"pper" : {
+		model : "MODEL005",
+		constraint : "PersistenceConstraint", 
+		key : 'PERSIST',
+		position : 1,
+		rangeToModel : function(v){ return v/1000 },
+		modelToRange : function(v){ return v*1000 }
+	},
+	"dt" : {
+		model : "MODEL005",
+		constraint : "PersistenceConstraint", 
+		key : 'DELTA_T',
+		position : 1,
+		rangeToModel : function(v){ return v/1000 },
+		modelToRange : function(v){ return v*1000 }
+	},
+	"mu" : {
+		model : "MODEL006",
+		constraint : "LangevinPRW", 
+		key : 'MU',
+		position : 1,
+		rangeToModel : function(v){ return v/1000 },
+		modelToRange : function(v){ return v*1000 }
+	},
+	"xi" : {
+		model : "MODEL006",
+		constraint :  "LangevinPRW",
+		key : 'XI',
+		position : 1,
+		rangeToModel : function(v){ return v/1000 },
+		modelToRange : function(v){ return v*1000 }
+	}
+	
+}
+
+
+
+let trackMemory = 500, trackResolution = 10
+
+
+function logStats(){
+	let centroid = this.C.getStat( CPM.CentroidsWithTorusCorrection )[1]
+	console.log( this.time + "," + seed + "," + centroid.join(",") )		
+}
+
+function drawOnTop(){
+
+	// ========= draw direction vectors on top
+	
+	let pdc = this.C.getConstraint( "PersistenceConstraint" )
+	let ctx = this.Cim.context(), zoom = this.conf["zoom"]
+	ctx.strokeStyle="#000000"
+	let prefdir = ( pdc.conf["LAMBDA_DIR"][ 1 ] > 0  ) || false
+	ctx.beginPath()
+	ctx.lineWidth = 2*zoom
+
+	for( let i of this.C.cellIDs() ){
+		
+		// Only draw for cells that have a preferred direction.
+		//if( i == 0 ) continue
+		if( !prefdir ) continue
+
+		
+		function normalize( a ){
+			let norm = 0
+			for( let i = 0 ; i < a.length ; i ++ ){
+				norm += a[i]*a[i]
+			}
+			norm = Math.sqrt(norm)
+			let b = []
+			for( let i = 0 ; i < a.length ; i ++ ){
+				b.push( a[i] / norm )
+			}
+			return b
+		}
+		let cdir = normalize(pdc.celldirections[i])
+		
+		ctx.moveTo( 
+			pdc.cellcentroidlists[i][0][0]*zoom,
+			pdc.cellcentroidlists[i][0][1]*zoom)
+		ctx.lineTo( (pdc.cellcentroidlists[i][0][0]+5*cdir[0])*zoom,
+			(pdc.cellcentroidlists[i][0][1]+5*cdir[1])*zoom)
+	}
+	ctx.stroke()		
+	
+	
+	document.getElementById("time").innerHTML = this.time
+}
+
+function drawBelow(){
+	// draw Tracks
+	const ctx = this.Cim.ctx
+	ctx.globalAlpha = 0.8;
+	ctx.strokeStyle="#0000EE"
+	ctx.beginPath()
+	ctx.lineWidth = 3
+	const trace = this.centroids
+	if( trace.length >= 2 ){
+		let start = [trace[0][0]*this.Cim.zoom,trace[0][1]*this.Cim.zoom]
+		ctx.moveTo( start[0],start[1] )
+		for( let t = 1; t < trace.length; t++ ){
+			let end = [trace[t][0]*this.Cim.zoom,trace[t][1]*this.Cim.zoom]
+			if( ( Math.abs( start[0]-end[0] ) < Math.floor( this.C.extents[0]/2 ) ) && ( Math.abs( start[1]-end[1] ) < Math.floor( this.C.extents[1]/2 ) ) ){
+				ctx.lineTo( end[0],end[1])
+				ctx.moveTo( end[0],end[1])
+				start = end.slice()
+			} else {
+				ctx.moveTo( end[0],end[1])
+				start = end.slice()
+			}
+			//ctx.lineTo(  )
+		}
+	}
+
+	ctx.stroke()
+	ctx.globalAlpha = 1;	
+}
+
+function postMCSListener(){
+	if( this.time % trackResolution == 0 ){
+		const centr = this.C.getStat( CPM.CentroidsWithTorusCorrection )
+		const cid = Object.keys( centr )[0]
+		this.centroids.push( centr[cid] )
+		while( this.centroids.length > (trackMemory/trackResolution) ){
+			this.centroids.shift()
+		}
+	}
+	
+}
+
+let custommethods = {
+	drawOnTop : drawOnTop,
+	drawBelow : drawBelow,
+	logStats : logStats,
+	postMCSListener : postMCSListener
+}
+
+function initialize(){
+
+	sims = {}
+	
+	for( let mi of model_names ){
+		let simi = new CPM.Simulation( config, custommethods )
+		simi.centroids = []
+		simi.running = false
+		sims[mi] = simi 
+	}
+	
+	initCanvas()
+	
+	for( let i = 0; i < model_names.length; i++ ){
+	
+		let modelName = model_names[i]
+		let simi = sims[modelName]
+		
+		
+		
+		switch( modelName ){
+	
+			case 'MODEL000' : {
+				let pconstraint = new CPM.PersistenceConstraint( 
+					{
+						LAMBDA_DIR: [0,configJSON["model_args"][modelName]["lambda_dir"]], 
+						PERSIST: [0,configJSON["model_args"][modelName]["persist"]],
+						DELTA_T : [0,configJSON["model_args"][modelName]["dt"]]
+					} )
+				simi.C.add( pconstraint )
+				break
+			}
+			case 'MODEL005' : {
+				let pconstraint = new CPM.PersistenceConstraint( 
+					{
+						LAMBDA_DIR: [0,configJSON["model_args"][modelName]["lambda_dir"]], 
+						PERSIST: [0,configJSON["model_args"][modelName]["persist"]],
+						DELTA_T : [0,configJSON["model_args"][modelName]["dt"]]
+					} )
+				simi.C.add( pconstraint )
+				break
+			}
+			case 'MODEL003' : {
+				const alpha = configJSON["model_args"][modelName]["target_angle"]
+			
+				let prefdir = new CPM.PreferredDirectionConstraint( 
+					{
+						LAMBDA_DIR: [0,configJSON["model_args"][modelName]["lambda_dir"]], 
+						DIR: [[0,0], [Math.cos(alpha),Math.sin(alpha)]]
+					} )
+				simi.C.add( prefdir )
+				// non-active persistence just for the visualization
+				let pconstraint = new CPM.PersistenceConstraint( 
+					{
+						LAMBDA_DIR: [0,0.000001], 
+						PERSIST: [0,0],
+						DELTA_T : [0,50]
+					} )
+				simi.C.add( pconstraint )
+				break
+			}
+			case 'MODEL006' : {
+				//const alpha = configJSON["model_args"][modelName]["target_angle"]
+			
+				let prefdir = new LangevinPRW( 
+					{
+						MU: [0,configJSON["model_args"][modelName]["mu"]], 
+						XI: [0,configJSON["model_args"][modelName]["xi"]], 
+						PROTRUDE: [false,true],
+						RETRACT : [false,true]
+					} )
+				simi.C.add( prefdir )
+				// non-active persistence just for the visualization
+				let pconstraint = new CPM.PersistenceConstraint( 
+					{
+						LAMBDA_DIR: [0,0.000001], 
+						PERSIST: [0,0],
+						DELTA_T : [0,50]
+					} )
+				simi.C.add( pconstraint )
+				break
+			}
+			default : {
+				throw( "Unsupported model " + modelName  )
+			}
+		
+		
+			
+		}
+
+	}
+	
+}
+
+
+function step(){
+	for( let mi of model_names ){
+		if( sims[mi].running ) sims[mi].step()
+	}
+	requestAnimationFrame( step )
+}
+
+function initCanvas(){
+
+	for( let name of model_names ){
+		const canvasID = "canvas" + name
+		document.getElementById(canvasID).innerHTML = ""
+		const sim = sims[name]
+		sim.helpClasses["canvas"] = true
+		sim.Cim = new CPM.Canvas( sim.C, {zoom:3, parentElement: document.getElementById(canvasID) } )
+	}
+	
+	document.getElementById("time").innerHTML = 0
+}
+
+</script>
+</head>
+<body onload = "initialize(); setPlayPause(); setSliders(); sliderInput(); step()">
+
+<div style="text-align:center;max-width:1600px;margin:auto">
+
+<h1>Persistent Random Walk Models in the CPM</h1>
+<p><br><br><i>This is a work in progress; some debugging still required.</i></p>
+
+<p> Below, we will show side-by-side visualizations of different
+variations of persistent random walk (PRW) models in the CPM. Some parameters are shared by
+all models, whereas others can be controlled for each model individually.<br><br></p>
+
+<p><b>Shared parameters:</b></p>
+<table width="400px" align="center">
+<tr>
+	<td style="width:20%">T</td>
+	<td style="width:5%">0</td>
+	<td style="width:70%"> 
+		<div class="range-wrap">
+		  <input type="range" class="range" min="0" max="20000" id="T" oninput="sliderInput()" >
+		  <output class="bubble"></output>
+		</div>
+	</td>
+	<td style="width:5%">20</td>
+</tr>
+<tr>
+	<td style="width:20%">&lambda;<sub>area</sub></td>
+	<td style="width:5%">0</td>
+	<td style="width:70%"> 
+		<div class="range-wrap">
+		  <input type="range" class="range" min="0" max="10000" id="larea" oninput="sliderInput()">
+		  <output class="bubble"></output>
+		</div>
+	</td>
+	<td style="width:5%">10</td>
+</tr>
+<tr>
+	<td style="width:20%">A<sub>target</sub></td>
+	<td style="width:5%">0</td>
+	<td style="width:70%"> 
+		<div class="range-wrap">
+		  <input type="range" class="range" min="0" max="100000"  step = "1000" id="area" oninput="sliderInput()">
+		  <output class="bubble"></output>
+		</div>
+	</td>
+	<td style="width:5%">100</td>
+</tr>
+<tr>
+	<td style="width:20%">&lambda;<sub>perim</sub></td>
+	<td style="width:5%">0</td>
+	<td style="width:70%"> 
+		<div class="range-wrap">
+		  <input type="range" class="range" min="0" max="3000" id="lper" oninput="sliderInput()">
+		  <output class="bubble"></output>
+		</div>
+	</td>
+	<td style="width:5%">3</td>
+</tr>
+<tr>
+	<td style="width:20%">P<sub>target</sub></td>
+	<td style="width:5%">0</td>
+	<td style="width:70%"> 
+		<div class="range-wrap">
+		  <input type="range" class="range" min="0" max="200000"  step = "1000" id="perim" oninput="sliderInput()">
+		  <output class="bubble"></output>
+		</div>
+	</td>
+	<td style="width:5%">200</td>
+</tr>
+</table>
+<br>
+
+	<div class="row sim-controls">
+		<div class="col-12">
+			<button id="playPause" class="btn"><span id="playIcon" class="fa fa-play"></span></button>
+			<button id="reset" class="btn"><i class="fa fa-redo"></i></button>
+		</div>			
+	</div>
+	<p>
+	Time: <span id ="time">0</span> MCS<br></p>
+
+<div align="center">
+	<div class="row sim-controls">
+		<div class="col-12 col-sm-12 col-md-6 col-lg-4 col-xl-3">
+			<h3>MODEL000</h3>
+			<p>A standard, single-cell CPM with only area and perimeter terms (diffusive motion without persistence).
+			
+			</p>
+			<div id="canvasMODEL000" class="simulationCanvas"></div><br>
+			<table width="300px" align="center">
+				<tr>
+					<td style="width:20%;color:#ffffff">.</td>
+					<td style="width:5%"></td>
+					<td style="width:70%"></td>
+					<td style="width:5%"></td>
+				</tr>
+				<tr>
+					<td style="width:20%;color:#ffffff"">.</td>
+					<td style="width:5%"></td>
+					<td style="width:70%"></td>
+					<td style="width:5%"></td>
+				</tr>
+				<tr>
+					<td style="width:20%;color:#ffffff"">.</td>
+					<td style="width:5%"></td>
+					<td style="width:70%"></td>
+					<td style="width:5%"></td>
+				</tr>
+				</table>
+			<p>
+			With:
+			$$H = H_\text{area} + H_\text{perimeter}$$
+			$$H_\text{area} =  \lambda_\text{area} (A(t) - A_\text{target})^2$$
+			$$H_\text{perimeter} =  \lambda_\text{perim} (P(t) - P_\text{target})^2$$
+			with $A(t)$ and $P(t)$ the cell's current area and perimeter, respectively.
+			</p>
+		</div>	
+		<div class="col-12 col-sm-12 col-md-6 col-lg-4 col-xl-3">
+			<h3>MODEL003</h3>
+			<p>Extends MODEL000 with a term to favour motion in a static target direction (yielding ballistic motion). </p>
+			
+			<div id="canvasMODEL003" class="simulationCanvas"></div><br>
+			<table width="300px" align="center">
+				<tr>
+					<td style="width:20%">&lambda;<sub>dir</sub></td>
+					<td style="width:5%">0</td>
+					<td style="width:70%"> 
+						<div class="range-wrap">
+						  <input type="range" class="range" min="0" max="20000" step="100" id="ldir003" oninput="sliderInput()">
+						  <output class="bubble"></output>
+						</div>
+					</td>
+					<td style="width:5%">20</td>
+				</tr>
+				<tr>
+					<td style="width:20%"> $\alpha$</td>
+					<td style="width:5%">0</td>
+					<td style="width:70%"> 
+						<div class="range-wrap">
+						  <input type="range" class="range" min="0" max="360" step="1" id="phi003" oninput="sliderInput()">
+						  <output class="bubble"></output>
+						</div>
+					</td>
+					<td style="width:5%">360</td></tr>
+				<tr>
+					<td style="width:20%;color:#ffffff"">.</td>
+					<td style="width:5%"></td>
+					<td style="width:70%"></td>
+					<td style="width:5%"></td>
+				</tr>
+				</table>
+				<p> Where we extend model000 with a work term:
+			$$\Delta H_\text{dir} = \lambda_\text{dir} (\vec{e_\alpha} \cdot \vec{a})$$
+
+			where $\vec{e_\alpha}= ( \cos \alpha, \sin \alpha )$ 
+			
+			is a unit vector in a (fixed) reference direction $\alpha$ and $\vec{a}$ is 
+			the (unnormalized) vector pointing from source to target pixel involved 
+			in the copy attempt.
+			</p>
+
+		</div>	
+		<div class="col-12 col-sm-12 col-md-6 col-lg-4 col-xl-3">
+			<h3>MODEL005</h3>
+			<p>Similar to MODEL003, but target directions can adapt through self-reinforcement of random fluctuations.</p>
+			<div id="canvasMODEL005" class="simulationCanvas"></div><br>
+			<table width="300px" align="center">
+				<tr>
+					<td style="width:20%">P<sub>persist</sub></td>
+					<td style="width:5%">0</td>
+					<td style="width:70%"> 
+						<div class="range-wrap">
+						  <input type="range" class="range" min="0" max="1000" step = "10" id="pper" oninput="sliderInput()" >
+						  <output class="bubble"></output>
+						</div>
+					</td>
+					<td style="width:5%">1</td>
+				</tr>
+				<tr>
+					<td style="width:20%">&lambda;<sub>dir</sub></td>
+					<td style="width:5%">0</td>
+					<td style="width:70%"> 
+						<div class="range-wrap">
+						  <input type="range" class="range" min="0" max="20000" step="100" id="ldir" oninput="sliderInput()">
+						  <output class="bubble"></output>
+						</div>
+					</td>
+					<td style="width:5%">20</td>
+				</tr>
+				<tr>
+					<td style="width:20%">&Delta;t</td>
+					<td style="width:5%">0</td>
+					<td style="width:70%"> 
+						<div class="range-wrap">
+						  <input type="range" class="range" min="0" max="100000" step="1000" id="dt" oninput="sliderInput()">
+						  <output class="bubble"></output>
+						</div>
+					</td>
+					<td style="width:5%">100</td>
+				</tr>
+				</table>
+				<p> Rephrasing the target direction in model003
+			$$\Delta H_\text{dir} = \lambda_\text{dir} (\tfrac{\vec{u}(t)}{||\vec{u}(t)||} \cdot \vec{a})$$
+
+			$$\vec{u}(t)= P_\text{persist}\vec{u}(t-1) + (1-P_\text{persist})\vec{\Delta c} (\Delta t)$$
+			
+			where $\vec{a}$ is defined as in model003 and $\vec{\Delta c}(\Delta t)$ is the (normalized) observed displacement vector of the cell centroid over the last $\Delta t$ MCS, and 
+			$\Delta t$ determines persistence time.
+			</p>
+		</div>			
+		<div class="col-12 col-sm-12 col-md-6 col-lg-4 col-xl-3">
+			<h3>MODEL006</h3>
+			<p>Produces a PRW similar to MODEL005, but directly evolves angle with angular noise.</p>
+			<div id="canvasMODEL006" class="simulationCanvas"></div><br>
+			<table width="300px" align="center">
+				<tr>
+					<td style="width:20%">&xi; (noise level)</td>
+					<td style="width:5%">0</td>
+					<td style="width:70%"> 
+						<div class="range-wrap">
+						  <input type="range" class="range" min="0" max="1000" step = "10" id="xi" oninput="sliderInput()" >
+						  <output class="bubble"></output>
+						</div>
+					</td>
+					<td style="width:5%">1</td>
+				</tr>
+				<tr>
+					<td style="width:20%">&lambda;<sub>dir</sub></td>
+					<td style="width:5%">0</td>
+					<td style="width:70%"> 
+						<div class="range-wrap">
+						  <input type="range" class="range" min="0" max="10000" step="100" id="mu" oninput="sliderInput()">
+						  <output class="bubble"></output>
+						</div>
+					</td>
+					<td style="width:5%">10</td>
+				</tr>
+				</table>
+				<p> Rephrasing the target direction in model003
+			$$\Delta H_\text{dir} = \lambda_\text{dir}  ( \vec{e_\alpha(t)} \cdot A(t)\vec{\delta c} )$$
+
+			where $\vec{\delta c}$ is the cell centroid displacement due to the proposed update,
+			$A(t)$ is the cell's current area, and 
+			the target $\alpha$ diffuses over time with Gaussian noise:
+
+			$$\alpha(t) = \alpha(t-\Delta t) + \epsilon\sqrt{\Delta t}, \quad \epsilon \sim \mathcal{N}(0,\xi^2)$$
+			
+			with step size $\Delta t \geq 1$ MCS.
+			
+			</p>
+		</div>			
+	</div>
+	
+	<span style="font-size:90%">Powered by <a href="https://artistoo.net" target="_blank">artistoo</a>.</span><br>
+	<br>
+
+</div>
+
+
+
+</div>
+
+
+</body>
+<script>
+	
+	$(document).ready(function () {
+			
+		$('#playPause').on('click', function () {
+			for( let i of model_names ){
+				sims[i].toggleRunning()
+			}
+			//sim0.toggleRunning()
+			//sim5.toggleRunning()
+			setPlayPause()		
+		});
+		$('#reset').on('click', function () {
+			resetSim()
+			setPlayPause()
+		});
+	});
+
+</script>
+</html>
