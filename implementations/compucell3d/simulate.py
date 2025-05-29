@@ -159,7 +159,7 @@ class Model005SteppableImplementation(ModelSteppableImplementation):
 
         self.pos_hist: List[Tuple[int, int, int]] = []
 
-        self.persist = _parent.model_args['persist']
+        self.initial_alpha = _parent.model_args['initial_alpha']
         self.lambda_dir = _parent.model_args['lambda_dir']
         self.dt = _parent.model_args['dt']
 
@@ -183,19 +183,19 @@ class Model005SteppableImplementation(ModelSteppableImplementation):
     def start(self, _parent: TrackingSteppable):
 
         cell = _parent.cell
-        ang = 2.0 * pi * random()
-        cell.lambdaVecX = - self.lambda_dir * cos(ang)
-        cell.lambdaVecY = - self.lambda_dir * sin(ang)
+        cell.lambdaVecX = - self.lambda_dir * cos(self.initial_alpha)
+        cell.lambdaVecY = - self.lambda_dir * sin(self.initial_alpha)
 
         self.record_pos(_parent, 0)
 
     def step(self, _parent: TrackingSteppable, mcs):
 
         disp = self.current_disp(_parent)
+        disp_len = np.sqrt(disp[0] * disp[0] + disp[1] * disp[1])
         cell = _parent.cell
 
-        cell.lambdaVecX -= self.persist * (cell.lambdaVecX + self.lambda_dir * disp[0])
-        cell.lambdaVecY -= self.persist * (cell.lambdaVecY + self.lambda_dir * disp[1])
+        cell.lambdaVecX = - self.lambda_dir * disp[0] / disp_len
+        cell.lambdaVecY = - self.lambda_dir * disp[1] / disp_len
 
         self.record_pos(_parent, mcs)
 
@@ -209,34 +209,28 @@ class Model006SteppableImplementation(ModelSteppableImplementation):
 
         seed()
 
-        self.ang_hist = 0
-
         self.xi2 = _parent.model_args['xi'] ** 2
-        self.dt = _parent.model_args['dt']
-        self.sqrt_dt = np.sqrt(self.dt)
-        self.ang = np.random.normal(scale=self.xi2)
+        self.ang = _parent.model_args['initial_alpha']
         self.lambda_dir = _parent.model_args['lambda_dir']
 
     @classmethod
     def model_name(cls) -> str:
         return 'MODEL006'
 
-    def update_cell(self, _parent, _mcs):
+    def update_cell(self, _parent):
 
         cell = _parent.cell
         cell.lambdaVecX = - self.lambda_dir * cos(self.ang)
         cell.lambdaVecY = - self.lambda_dir * sin(self.ang)
-        self.ang_hist = _mcs
 
     def start(self, _parent: TrackingSteppable):
 
-        self.update_cell(_parent, 0)
+        self.update_cell(_parent)
 
     def step(self, _parent: TrackingSteppable, mcs):
 
-        if mcs - self.ang_hist >= self.dt:
-            self.ang += np.random.normal(scale=self.xi2) * self.sqrt_dt
-            self.update_cell(_parent, mcs)
+        self.ang += np.random.normal(scale=self.xi2)
+        self.update_cell(_parent)
 
 
 def create_sim(specs, cell_type_name: str, cell_length_target: int, init_voxels: List[Tuple[int, int]], output_per: int, model_name: str, model_args: Dict[str, Any], *args, **kwargs):

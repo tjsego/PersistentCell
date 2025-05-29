@@ -29,24 +29,28 @@ def _impl_MODEL003(**kwargs):
     cpm_force_mode = kwargs['cpm_force_mode']
     cpm_update_direction = kwargs['cpm_update_direction']
 
-    return [
-        pcs.ExternalPotentialPlugin(lambda_x=lambda_dir * cos(target_angle),
-                                    lambda_y=lambda_dir * sin(target_angle),
-                                    com_based=cpm_update_direction == 'cell-mass-displacement',
-                                    force_type=force_mapping[cpm_force_mode],
-                                    normalized=cpm_update_direction == 'source-to-target-norm')
-    ]
+    plugin_kwargs = dict(lambda_x=lambda_dir * cos(target_angle),
+                         lambda_y=lambda_dir * sin(target_angle),
+                         force_type=force_mapping[cpm_force_mode],
+                         normalized=cpm_update_direction == 'source-to-target-norm')
+    if cpm_update_direction == 'cell-mass-displacement':
+        plugin_kwargs['com_based'] = True
+        plugin_kwargs['volume_weighted'] = True
+
+    return [pcs.ExternalPotentialPlugin(**plugin_kwargs)]
 
 
 def _impl_MODEL005(**kwargs):
     cpm_force_mode = kwargs['cpm_force_mode']
     cpm_update_direction = kwargs['cpm_update_direction']
 
-    return [
-        pcs.ExternalPotentialPlugin(com_based=cpm_update_direction == 'cell-mass-displacement',
-                                    force_type=force_mapping[cpm_force_mode],
-                                    normalized=cpm_update_direction == 'source-to-target-norm')
-    ]
+    plugin_kwargs = dict(force_type=force_mapping[cpm_force_mode],
+                         normalized=cpm_update_direction == 'source-to-target-norm')
+    if cpm_update_direction == 'cell-mass-displacement':
+        plugin_kwargs['com_based'] = True
+        plugin_kwargs['volume_weighted'] = True
+
+    return [pcs.ExternalPotentialPlugin(**plugin_kwargs)]
 
 
 def _impl_MODEL006(**kwargs):
