@@ -49,10 +49,15 @@ def _impl_MODEL005(**kwargs):
     ]
 
 
+def _impl_MODEL006(**kwargs):
+    return _impl_MODEL005(**kwargs)
+
+
 model_implementations = {
     'MODEL000': _impl_MODEL000,
     'MODEL003': _impl_MODEL003,
-    'MODEL005': _impl_MODEL005
+    'MODEL005': _impl_MODEL005,
+    'MODEL006': _impl_MODEL006
 }
 method_implementation = 'CPM'
 
