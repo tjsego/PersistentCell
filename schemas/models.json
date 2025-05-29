@@ -43,6 +43,10 @@
     "method": "CPM",
     "description": "Simple self-reinforcing PRW in the CPM",
     "model_args": {
+      "initial_alpha": {
+        "description": "Initial angle (to the positive x-axis) of the target direction.",
+        "type": "number"
+      },
       "lambda_dir": {
         "description": "Lagrange multiplier of the work term, controls the cell speed.",
         "type": "number"
@@ -67,7 +71,7 @@
     "method": "CPM",
     "description": "Persistent motion controlled by cell-intrinsic orientation under effect of continuous time noise",
     "model_args": {
-      "initial_angle": {
+      "initial_alpha": {
         "description": "Initial angle (to the positive x-axis) of the target direction.",
         "type": "number"
       },
