@@ -61,7 +61,8 @@
     "cc3d": {
         "output_name": "model006_cc3d"
     },
-  "artistoo": {
+    "artistoo": {
         "prng": "MersenneTwister",
         "output_name" : "model006_artistoo"
     }
+}
