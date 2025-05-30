@@ -192,10 +192,12 @@ class Model005SteppableImplementation(ModelSteppableImplementation):
 
         disp = self.current_disp(_parent)
         disp_len = np.sqrt(disp[0] * disp[0] + disp[1] * disp[1])
-        cell = _parent.cell
 
-        cell.lambdaVecX = - self.lambda_dir * disp[0] / disp_len
-        cell.lambdaVecY = - self.lambda_dir * disp[1] / disp_len
+        if disp_len > 0:
+            cell = _parent.cell
+
+            cell.lambdaVecX = - self.lambda_dir * disp[0] / disp_len
+            cell.lambdaVecY = - self.lambda_dir * disp[1] / disp_len
 
         self.record_pos(_parent, mcs)
 
