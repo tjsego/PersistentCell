@@ -47,7 +47,7 @@ all.data.artistoo <- bind_rows( lapply( 1:nrow(opt.table), function(k){
 	fm <- opt.table[k,"forceMode"]
 	ud <- opt.table[k,"updateDir"]
 	
-	fName <- paste0( "results/",m, fm, "_", ud, "_artistoo/corrected-tracks.csv" )
+	fName <- paste0( "results/",m, fm, "_", ud, "/corrected-tracks.csv" )
 	message(fName)
 	
 	msd <- getData( fName, m, fm, ud, "ArtistooPRW" )

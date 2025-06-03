@@ -17,7 +17,7 @@ json$model$model_args[[ "cpm_update_direction" ]] = update_dir
 
 mod <- paste0(  force_mode, "_", update_dir )
 	
-json$sim$output_name <- paste0( json$sim$output_name, mod )
+json$artistoo$output_name <- paste0( json$sim$output_name, mod )
 write_json( json, outJSON, pretty = TRUE, auto_unbox=TRUE )
 
 
