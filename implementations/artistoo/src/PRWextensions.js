@@ -330,12 +330,8 @@ class WorkTerm extends CPM.SoftConstraint {
 		if( cid == 0 ){ return new Array(this.C.grid.extents.length).fill(0) }
 	
 		let cenOld = this.currentCentroid( cid ).map( x => x / N )
-		cenOld = this.correctPosition( cenOld )
-		
-		let targetPixelRelPos = this.C.grid.i2p( targeti ).map( (x,i) => { 
-			let dx = x - cenOld[i] 
-			return this.correctTorusDim( dx, dx, i )
-		} )
+		let pi = this.correctTorus( this.C.grid.i2p( targeti ), cenOld )
+		let targetPixelRelPos = pi.map( (x,i) => { return pi[i] - cenOld[i] })
 			
 		// check if we're looking at a cell that is gaining a pixel or losing one.
 		switch( mode ) {
@@ -373,7 +369,6 @@ class WorkTerm extends CPM.SoftConstraint {
 		case "COM" : {
 			if( cid == 0 ) return [0,0]
 			let vec = this.centroidMovementVector( cid, targeti, this.C.getVolume(cid), mode )
-			//console.log(vec)
 			return vec
 		}
 		}
@@ -405,7 +400,6 @@ class WorkTerm extends CPM.SoftConstraint {
 		let target = this.targetVector( sourcei, targeti, cid )
 		let proposal = this.proposalVector( sourcei, targeti, cid, mode )
 		let dH = - l *  this.dotProduct( target, proposal )
-		//console.log(dH)
 		return dH
 	}
 	
@@ -420,17 +414,14 @@ class WorkTerm extends CPM.SoftConstraint {
 		switch( this.conf.FORCE_MODE ){
 		case "extension" : {
 			let dH = this.deltaHCell( sourcei, targeti, src_type, "gain" )
-			//console.log(dH)
 			return dH
 		}
 		case "retraction" : {
 			let dH = this.deltaHCell( sourcei, targeti, tgt_type, "loss" )
-			//console.log(dH)
 			return dH
 		}
 		case "reciprocal" : {
 			let dH = this.deltaHCell( sourcei, targeti, src_type, "gain" ) + this.deltaHCell( sourcei, targeti, tgt_type, "loss" )
-			//console.log(dH)
 			return dH
 		}
 		}
@@ -542,7 +533,7 @@ class LangevinPRW extends WorkTerm {
 	// after each MCS, update the target direction with Gaussian angular noise.
 	postMCSListener(){
 		for( let cid of this.C.cellIDs() ){
-			let xi = this.cellParameter( "XI", cid )
+			let xi = Math.pow( this.cellParameter( "XI", cid ), 1 )
 			let di = this.currentDirection(cid)
 			let alpha = Math.atan2( di[1], di[0])
 			alpha += this.sampleNorm( 0, xi )
@@ -609,6 +600,7 @@ class PersistenceConstraint extends WorkTerm {
 			
 			// note, dt could change during execution
 			if( this.cellcentroidhistory[cid].length == this.cellParameter("DELTA_T", cid ) ){
+
 				
 				// check cell's recent displacement;
 				let dx = this.recentDisplacement( cid, ci ) 
@@ -624,7 +616,8 @@ class PersistenceConstraint extends WorkTerm {
 				if( per < 1 ){
 
 					let cdir = this.currentDirection(cid)
-					let newdir = this.normalize( dx.map( (x,i) => (1-per)*x + per * cdir[i] ) )
+					let newdir =  dx.map( (x,i) => (1-per)*x + per * cdir[i] )
+					newdir = this.normalize(newdir) 
 					this.celldirections[cid] = newdir
 					
 				}
