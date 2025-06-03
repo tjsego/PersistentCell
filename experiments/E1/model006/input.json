@@ -15,7 +15,7 @@
         "model_args": {
             "initial_alpha" : 0,
             "lambda_dir": 5,
-            "xi": 0.3,
+            "xi": 0.09,
             "cpm_force_mode": "reciprocal",
             "cpm_update_direction": "cell-mass-displacement"
         }

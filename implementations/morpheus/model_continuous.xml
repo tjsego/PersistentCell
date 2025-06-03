@@ -113,7 +113,7 @@
             </MotilityReporter>
             <System time-step="mcs_d" solver="Euler [fixed, O(1)]">
                 <DiffEqn symbol-ref="α" name="orientation">
-                    <Expression>rand_norm(0,xi^2 / sqrt(mcs_d) ) + reenf_rate_cpm * sin(α-vel.phi) </Expression>
+                    <Expression>rand_norm(0,xi / sqrt(mcs_d) ) + reenf_rate_cpm * sin(α-vel.phi) </Expression>
                 </DiffEqn>
                 <VectorRule symbol-ref="dir" notation="r,φ,θ">
                     <Expression>1, α, 0.0</Expression>
