@@ -3,7 +3,7 @@ from cc3d import __revision__ as cc3d_revision
 from cc3d import __githash__ as cc3d_githash
 from cc3d.core import PyCoreSpecs as pcs
 import json
-from math import sqrt, cos, sin
+from math import sqrt
 from typing import Any, List, Optional, Type, Union
 
 cell_type_name = 'Cell'
@@ -13,9 +13,14 @@ HAS_SURFACE_NBS = 'neighbor_order' in pcs.SurfacePlugin.check_dict
 
 
 force_mapping = {
-    'extension': pcs.EXTERNALPOTENTIAL_FORCETYPEEXTENSION,
-    'retraction': pcs.EXTERNALPOTENTIAL_FORCETYPERETRACTION,
-    'reciprocal': pcs.EXTERNALPOTENTIAL_FORCETYPERECIPROCAL
+    'extension': pcs.PERSISTENCE_FORCEMODE_EXTENSION,
+    'retraction': pcs.PERSISTENCE_FORCEMODE_RETRACTION,
+    'reciprocal': pcs.PERSISTENCE_FORCEMODE_RECIPROCAL
+}
+disp_mapping = {
+    'source-to-target-unnorm': pcs.PERSISTENCE_WORKTERM_REGULAR,
+    'source-to-target-norm': pcs.PERSISTENCE_WORKTERM_NORMALIZED,
+    'cell-mass-displacement': pcs.PERSISTENCE_WORKTERM_MASS
 }
 
 
@@ -24,37 +29,55 @@ def _impl_MODEL000(**kwargs):
 
 
 def _impl_MODEL003(**kwargs):
-    lambda_dir = - float(kwargs['lambda_dir'])
-    target_angle = float(kwargs['target_angle'])
     cpm_force_mode = kwargs['cpm_force_mode']
     cpm_update_direction = kwargs['cpm_update_direction']
+    lambda_dir = kwargs['lambda_dir']
+    target_angle = 180.0 + kwargs['target_angle']
 
-    plugin_kwargs = dict(lambda_x=lambda_dir * cos(target_angle),
-                         lambda_y=lambda_dir * sin(target_angle),
-                         force_type=force_mapping[cpm_force_mode],
-                         normalized=cpm_update_direction == 'source-to-target-norm')
-    if cpm_update_direction == 'cell-mass-displacement':
-        plugin_kwargs['com_based'] = True
-        plugin_kwargs['volume_weighted'] = True
-
-    return [pcs.ExternalPotentialPlugin(**plugin_kwargs)]
+    return [pcs.PersistencePlugin([pcs.PersistencePluginANModel(cell_type=cell_type_name,
+                                                                magnitude=lambda_dir,
+                                                                force_mode=force_mapping[cpm_force_mode],
+                                                                work_term=disp_mapping[cpm_update_direction],
+                                                                vector_init=[pcs.PersistencePluginInitTransformRotate(
+                                                                    value=target_angle,
+                                                                    axis='Z'
+                                                                )])])]
 
 
 def _impl_MODEL005(**kwargs):
     cpm_force_mode = kwargs['cpm_force_mode']
     cpm_update_direction = kwargs['cpm_update_direction']
+    lambda_dir = kwargs['lambda_dir']
+    initial_alpha = 180.0 + kwargs['initial_alpha']
+    dt = kwargs['dt']
 
-    plugin_kwargs = dict(force_type=force_mapping[cpm_force_mode],
-                         normalized=cpm_update_direction == 'source-to-target-norm')
-    if cpm_update_direction == 'cell-mass-displacement':
-        plugin_kwargs['com_based'] = True
-        plugin_kwargs['volume_weighted'] = True
-
-    return [pcs.ExternalPotentialPlugin(**plugin_kwargs)]
+    return [pcs.PersistencePlugin([pcs.PersistencePluginSRModel(cell_type=cell_type_name,
+                                                                magnitude=lambda_dir,
+                                                                force_mode=force_mapping[cpm_force_mode],
+                                                                work_term=disp_mapping[cpm_update_direction],
+                                                                period=dt,
+                                                                vector_init=[pcs.PersistencePluginInitTransformRotate(
+                                                                    value=initial_alpha,
+                                                                    axis='Z'
+                                                                )])])]
 
 
 def _impl_MODEL006(**kwargs):
-    return _impl_MODEL005(**kwargs)
+    cpm_force_mode = kwargs['cpm_force_mode']
+    cpm_update_direction = kwargs['cpm_update_direction']
+    lambda_dir = kwargs['lambda_dir']
+    initial_alpha = 180.0 + kwargs['initial_alpha']
+    xi = kwargs['xi']
+
+    return [pcs.PersistencePlugin([pcs.PersistencePluginANModel(cell_type=cell_type_name,
+                                                                magnitude=lambda_dir,
+                                                                force_mode=force_mapping[cpm_force_mode],
+                                                                work_term=disp_mapping[cpm_update_direction],
+                                                                stdev3=xi,
+                                                                vector_init=[pcs.PersistencePluginInitTransformRotate(
+                                                                    value=initial_alpha,
+                                                                    axis='Z'
+                                                                )])])]
 
 
 model_implementations = {
