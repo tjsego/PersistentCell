@@ -11,6 +11,7 @@ Persistent random walk models
 | MODEL005 | CPM    | Simple self-reinforcing PRW in the CPM, described below                       |
 | MODEL006 | CPM    | Persistent motion controlled by cell-intrinsic orientation under effect of continuous time noise |
 | MODEL007 | CPM    | Persistent motion controlled by cell-intrinsic orientation under effect of continuous time noise and self-reenforcement of direction of motion |
+| MODEL008 | CPM    | Chemotaxis: chemotaxis CPM coupled to a PDE |
 
 ## CPM-based models
 
