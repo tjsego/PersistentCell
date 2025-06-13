@@ -148,93 +148,6 @@ def get_implementation(_name: str) -> Type[ModelSteppableImplementation]:
     return __model_implementations__.get(_name, ModelSteppableImplementation)
 
 
-@register_implementation
-class Model005SteppableImplementation(ModelSteppableImplementation):
-
-    def __init__(self, _parent: TrackingSteppable):
-
-        super().__init__(_parent)
-
-        seed()
-
-        self.pos_hist: List[Tuple[int, int, int]] = []
-
-        self.initial_alpha = _parent.model_args['initial_alpha']
-        self.lambda_dir = _parent.model_args['lambda_dir']
-        self.dt = _parent.model_args['dt']
-
-    @classmethod
-    def model_name(cls) -> str:
-        return 'MODEL005'
-
-    def record_pos(self, _parent: TrackingSteppable, _mcs):
-        cell_com = _parent.cell_com
-        self.pos_hist.append((_mcs, cell_com[0], cell_com[1]))
-        while self.pos_hist[0][0] < _mcs - self.dt and self.pos_hist:
-            self.pos_hist.pop(0)
-
-    def current_disp(self, _parent: TrackingSteppable):
-        if not self.pos_hist:
-            return 0, 0
-        cell_com = _parent.cell_com
-        prev_com = self.pos_hist[0][1:]
-        return cell_com[0] - prev_com[0], cell_com[1] - prev_com[1]
-
-    def start(self, _parent: TrackingSteppable):
-
-        cell = _parent.cell
-        cell.lambdaVecX = - self.lambda_dir * cos(self.initial_alpha)
-        cell.lambdaVecY = - self.lambda_dir * sin(self.initial_alpha)
-
-        self.record_pos(_parent, 0)
-
-    def step(self, _parent: TrackingSteppable, mcs):
-
-        disp = self.current_disp(_parent)
-        disp_len = np.sqrt(disp[0] * disp[0] + disp[1] * disp[1])
-
-        if disp_len > 0:
-            cell = _parent.cell
-
-            cell.lambdaVecX = - self.lambda_dir * disp[0] / disp_len
-            cell.lambdaVecY = - self.lambda_dir * disp[1] / disp_len
-
-        self.record_pos(_parent, mcs)
-
-
-@register_implementation
-class Model006SteppableImplementation(ModelSteppableImplementation):
-
-    def __init__(self, _parent: TrackingSteppable):
-
-        super().__init__(_parent)
-
-        seed()
-
-        self.xi2 = _parent.model_args['xi'] ** 2
-        self.ang = _parent.model_args['initial_alpha']
-        self.lambda_dir = _parent.model_args['lambda_dir']
-
-    @classmethod
-    def model_name(cls) -> str:
-        return 'MODEL006'
-
-    def update_cell(self, _parent):
-
-        cell = _parent.cell
-        cell.lambdaVecX = - self.lambda_dir * cos(self.ang)
-        cell.lambdaVecY = - self.lambda_dir * sin(self.ang)
-
-    def start(self, _parent: TrackingSteppable):
-
-        self.update_cell(_parent)
-
-    def step(self, _parent: TrackingSteppable, mcs):
-
-        self.ang += np.random.normal(scale=self.xi2)
-        self.update_cell(_parent)
-
-
 def create_sim(specs, cell_type_name: str, cell_length_target: int, init_voxels: List[Tuple[int, int]], output_per: int, model_name: str, model_args: Dict[str, Any], *args, **kwargs):
     steppable = TrackingSteppable(cell_type_name, cell_length_target, init_voxels, output_per, model_name, model_args=model_args)
     cc3d_sim = CC3DSimService(*args, **kwargs)
@@ -286,36 +199,49 @@ def _simulate(specs,
               max_time,
               sim_label,
               output_frequency: int):
-    print(f'Simulation {sim_label}: {sim_output_dir}')
+    result = False
 
-    kwargs = {}
-    if output_frequency > 0:
-        kwargs['output_dir'] = sim_output_dir
-        kwargs['output_frequency'] = output_frequency
-    cc3d_sim, steppable = create_sim(specs,
-                                     cell_type_name,
-                                     cell_length_target,
-                                     init_voxels,
-                                     output_per,
-                                     model_name,
-                                     model_args,
-                                     **kwargs)
-    while cc3d_sim.current_step <= max_time:
-        cc3d_sim.step()
+    try:
+        print(f'Simulation {sim_label}: {sim_output_dir}')
 
-    sim_data = steppable.output_data()
-    with open(os.path.join(output_dir, f'sim_{sim_label}.json'), 'w') as f:
-        json.dump(
-            dict(
-                time=[sd[0] for sd in sim_data],
-                com_1=[sd[1] for sd in sim_data],
-                com_2=[sd[2] for sd in sim_data],
-                area=[sd[3] for sd in sim_data],
-                surface=[sd[4] for sd in sim_data]
-            ),
-            f,
-            indent=4
-        )
+        kwargs = {}
+        if output_frequency > 0:
+            kwargs['output_dir'] = sim_output_dir
+            kwargs['output_frequency'] = output_frequency
+        cc3d_sim, steppable = create_sim(specs,
+                                         cell_type_name,
+                                         cell_length_target,
+                                         init_voxels,
+                                         output_per,
+                                         model_name,
+                                         model_args,
+                                         **kwargs)
+        while cc3d_sim.current_step <= max_time:
+            cc3d_sim.step()
+
+        sim_data = steppable.output_data()
+        with open(os.path.join(output_dir, f'sim_{sim_label}.json'), 'w') as f:
+            json.dump(
+                dict(
+                    time=[sd[0] for sd in sim_data],
+                    com_1=[sd[1] for sd in sim_data],
+                    com_2=[sd[2] for sd in sim_data],
+                    area=[sd[3] for sd in sim_data],
+                    surface=[sd[4] for sd in sim_data]
+                ),
+                f,
+                indent=4
+            )
+
+        result = True
+
+    except Exception as e:
+        if not os.path.isdir(output_dir):
+            os.makedirs(output_dir)
+        with open(os.path.join(output_dir, 'error.txt'), 'w') as f:
+            f.write('\n'.join(traceback.format_exception(e)))
+
+    return result, output_dir
 
 
 def simulate(output_dir: str, 
@@ -349,7 +275,10 @@ def simulate(output_dir: str,
         num_jobs = min(mp.cpu_count(), len(input_args))
         jobs = [input_args.pop(0) for _ in range(num_jobs)]
         with mp.Pool(num_jobs, maxtasksperchild=1) as p:
-            p.starmap(_simulate, jobs)
+            print(f'Launching {num_jobs} jobs ({len(input_args)})')
+            for res, res_dir in p.starmap(_simulate, jobs):
+                if not res:
+                    raise RuntimeError(f'Received error flag during execution for target: {res_dir}')
     
     if not os.path.isfile(os.path.join(output_dir, screenshot_name)):
         with open(os.path.join(output_dir, screenshot_name), 'w') as f:

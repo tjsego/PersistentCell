@@ -94,7 +94,7 @@ def _post_dists(_post_dir: str,
             for i, impl_name in enumerate(impl_names):
                 try:
                     data = _impl_data_raw[impl_name][var_name][:, ind]
-                except KeyError:
+                except (IndexError, KeyError):
                     logger.error(f'Missing variable {var_name} for implementation {impl_name}')
                     continue
 

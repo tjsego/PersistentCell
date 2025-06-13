@@ -36,9 +36,12 @@ def _compare_results(_modeler_res: Dict[str, np.ndarray],
     err_granular = {name: [] for name in _curator_rep.variable_names}
     for i, name in enumerate(_curator_rep.variable_names):
         for j in range(_curator_rep.simulation_times.shape[0]):
-            ecf_res = libssr.ecf(libssr.round_arr_to_sigfigs(_modeler_res[name][:, j], _curator_rep.sig_figs),
-                                 libssr.get_eval_info_times(_curator_rep.ecf_nval, _curator_rep.ecf_tval[j, i]))
-            err_granular[name].append(libssr.ecf_compare(ecf_res, _curator_rep.ecf_evals[j, i, :, :]))
+            try:
+                ecf_res = libssr.ecf(libssr.round_arr_to_sigfigs(_modeler_res[name][:, j], _curator_rep.sig_figs),
+                                     libssr.get_eval_info_times(_curator_rep.ecf_nval, _curator_rep.ecf_tval[j, i]))
+                err_granular[name].append(libssr.ecf_compare(ecf_res, _curator_rep.ecf_evals[j, i, :, :]))
+            except IndexError:
+                logger.error(f'Missing index {j}.')
     err_names = {n: max(v) for n, v in err_granular.items()}
     err_res = max(err_names.values())
     return {
