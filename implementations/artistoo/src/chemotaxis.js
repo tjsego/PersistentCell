@@ -43,7 +43,7 @@ let config = {
 	simsettings : {
 		NRCELLS : [1],					
 		BURNIN : 0,
-		RUNTIME : configJSON["max_time"]+1,
+		RUNTIME : configJSON["max_time"],
 		CANVASCOLOR : "eaecef",
 		CELLCOLOR : ["CC0000"],	
 		zoom : 3,							
@@ -108,11 +108,11 @@ function postMCSListener(){
 	
 }
 
-function logStats(){
+function logStats( add = 1 ){
 	let centroid = this.C.getStat( CPM.CentroidsWithTorusCorrection )[1]
 	let area = this.C.cellvolume[1]
 	let perim = this.C.getConstraint("PerimeterConstraint").cellperimeters[1]
-	console.log( this.time + "," + seed + "," + centroid.join(",") + "," + area + "," + perim )		
+	console.log( (this.time+add) + "," + seed + "," + centroid.join(",") + "," + area + "," + perim )		
 }
 
 function initializeGrid(){
@@ -135,6 +135,7 @@ function drawCanvas(){
 }
 
 sim.drawCanvas()
+sim.logStats(0)
 sim.Cim.writePNG( "./results/"+ out_name + "/init.png" )
 
 sim.run()

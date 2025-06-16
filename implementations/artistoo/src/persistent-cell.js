@@ -42,7 +42,7 @@ let config = {
 	simsettings : {
 		NRCELLS : [1],					
 		BURNIN : 0,
-		RUNTIME : configJSON["max_time"]+1,
+		RUNTIME : configJSON["max_time"],
 		CANVASCOLOR : "eaecef",
 		CELLCOLOR : ["CC0000"],	
 		zoom : 3,							
@@ -79,8 +79,6 @@ switch( prng ){
 	
 }
 
-// print header
-console.log( "time,id,com_1,com_2,area,surface" )	
 
 switch( modelName ){
 	
@@ -139,11 +137,15 @@ switch( modelName ){
 }
 
 
-function logStats(){
+function logStats( add = 1 ){
 	let centroid = this.C.getStat( CPM.CentroidsWithTorusCorrection )[1]
 	let area = this.C.cellvolume[1]
 	let perim = this.C.getConstraint("PerimeterConstraint").cellperimeters[1]
-	console.log( this.time + "," + seed + "," + centroid.join(",") + "," + area + "," + perim )		
+	// fix time definition with +1 since the default simulation class does 
+	// run step - create outputs - update time
+	// rather than (as expected)
+	// run step - update time - create outputs.
+	console.log( (this.time+add) + "," + seed + "," + centroid.join(",") + "," + area + "," + perim )		
 }
 
 function initializeGrid(){
@@ -159,7 +161,13 @@ function initializeGrid(){
 	
 }
 
+// print header
+console.log( "time,id,com_1,com_2,area,surface" )	
+
+// initial conditions
 sim.drawCanvas()
+sim.logStats( 0 )
+
 sim.Cim.writePNG( "./results/"+ out_name + "/init.png" )
 
 sim.run()
