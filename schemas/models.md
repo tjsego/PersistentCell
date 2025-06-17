@@ -11,6 +11,7 @@ Persistent random walk models
 | MODEL005 | CPM    | Simple self-reinforcing PRW in the CPM, described below                       |
 | MODEL006 | CPM    | Persistent motion controlled by cell-intrinsic orientation under effect of continuous time noise |
 | MODEL007 | CPM    | Persistent motion controlled by cell-intrinsic orientation under effect of continuous time noise and self-reenforcement of direction of motion |
+| MODEL008 | CPM    | Chemotaxis: chemotaxis CPM coupled to a PDE |
 
 ## CPM-based models
 
@@ -41,11 +42,11 @@ with $A(t)$ and $P(t)$ the cell's current area and perimeter, respectively.
 
 #### General work term
 
-We define a general work term for movement along a given direction as the energy difference $\Delta H (s \rightarrow t)$ associated with a proposed copy attempt from source pixel $s$ into target pixel $t$, involving cells $\sigma_s$ and $\sigma_t$. The general formula is:
+We define a general work term for movement along a given direction as the energy difference $\Delta H (p_\text{src} \rightarrow p_\text{tgt})$ associated with a proposed copy attempt from source pixel $p_\text{src}$ into target pixel $p_\text{tgt}$, involving cells $\sigma_\text{src}$ and $\sigma_\text{tgt}$. The general formula is:
 
-$$\Delta H_\text{work} = \delta_s \Delta H_\text{work} (\sigma_s) + \delta_t \Delta H_\text{work}(\sigma_t)$$
+$$\Delta H_\text{work} = \delta_\text{src} \Delta H_\text{work} (\sigma_\text{src}) + \delta_\text{tgt} \Delta H_\text{work}(\sigma_\text{tgt})$$
 
-where $\delta_s, \delta_t \in 0,1$ determine whether the force acts on the "protruding" cell $\sigma_s$ and/or the "retracting" cell $\sigma_t$.  We describe this as `cpm_force_mode` which can be `"extension"` ($\delta_s = 1, \delta_t = 0$), `"retraction"` ($\delta_s = 0, \delta_t = 1$), `"reciprocal"` ($\delta_s = \delta_t = 1$).  
+where $\delta_\text{src}, \delta_\text{tgt} \in 0,1$ determine whether the force acts on the "protruding" cell $\sigma_\text{src}$ and/or the "retracting" cell $\sigma_\text{tgt}$.  We describe this as `cpm_force_mode` which can be `"extension"` ($\delta_\text{src} = 1, \delta_\text{tgt} = 0$), `"retraction"` ($\delta_\text{src} = 0, \delta_\text{tgt} = 1$), `"reciprocal"` ($\delta_\text{src} = \delta_\text{tgt} = 1$).  
 
 The definition of $\Delta H_\text{work} (\sigma)$ depends on the specific model.
 
@@ -85,7 +86,7 @@ i.e. we define:
 | $P_\text{target}$  | As Model000 |
 | $\lambda_\text{dir}$ | Lagrange multiplier of the work term, controls the cell speed.	              |
 | $\alpha$ | Angle (to the positive x-axis) of the fixed target direction              |
-| `cpm_force_mode` | "extension", i.e. $\delta_s = 1, \delta_t = 0$ (see "work term")              |
+| `cpm_force_mode` | "extension", i.e. $\delta_\text{src} = 1, \delta_\text{tgt} = 0$ (see "work term")              |
 | `cpm_update_direction` | "source-to-target-unnorm", i.e.  $\vec{dx}(\sigma)$ is the unnormalized vector $s\rightarrow t$    |
 
 ### MODEL005
@@ -119,7 +120,7 @@ where $\vec{\Delta c}(\Delta t)$ is the (normalized) observed displacement vecto
 | $P_\text{target}$  | As Model000 |
 | $\lambda_\text{dir}$ | As Model003, the Lagrange multiplier controls the cell speed.     |
 | $\Delta t$   | Time interval (in MCS) over which we evaluate the cell's recent displacement; this determines persistence time of the random walk.      |
-| `cpm_force_mode` | "extension", i.e. $\delta_s = 1, \delta_t = 0$ (see "work term")              |
+| `cpm_force_mode` | "extension", i.e. $\delta_\text{src} = 1, \delta_\text{tgt} = 0$ (see "work term")              |
 | `cpm_update_direction` | "source-to-target-unnorm", i.e.  $\vec{dx}(\sigma)$ is the unnormalized vector $s\rightarrow t$         |
 
 
@@ -159,8 +160,53 @@ $$ \vec{e}_\alpha(\sigma, t) = \left(\cos \quad \alpha(\sigma, t), \sin \quad \a
 | $\alpha(0)$   | Initial angle (to the positive x-axis) of the target direction $\alpha$.     |
 | $\lambda_\text{dir}$ | As Model003, the Lagrange multiplier controls the cell speed.     |
 | $\xi$   | Standard deviation of noise added to the cell direction (larger $\xi$ implies lower persistence time).   |
-| `cpm_force_mode` | "extension", i.e. $\delta_s = 1, \delta_t = 0$ (see "work term")              |
+| `cpm_force_mode` | "extension", i.e. $\delta_\text{src} = 1, \delta_\text{tgt} = 0$ (see "work term")              |
 | `cpm_update_direction` | "cell-mass-displacement", i.e.   $\vec{dx}(\sigma) = A(\sigma,t)\vec{\delta c}(\sigma) $     |
+
+### MODEL008
+This model implements chemotaxis of a single cell in a coupled chemotactic field. Both the CPM and the chemokine grid have periodic boundaries. 
+
+#### CPM
+We use model000 along with the following work term:
+
+$$\Delta H_\text{chem} (\sigma) = \lambda_\text{chem}(\sigma) \left( c( p_\text{tgt} ) - c( p_\text{src} ) \right)$$
+
+where $c(p)$ is the current chemokine concentration at pixel p, and $p_\text{src},p_\text{tgt}$ are the source and target pixel of the copy attempt.
+
+#### PDE
+The chemokine is implemented on a separate (Float32) grid of the same dimensions as the CPM itself (initial condition: zero everywhere). The chemokine is described by the following PDE:
+
+$$\frac{\partial c(p)}{\partial t} = \beta(p)  + D\nabla^2 c(p) - k_\text{decay}c(p) $$
+
+where $D$ is the diffusion coefficient (in pixels<sup>2</sup>/MCS), $k_\text{decay}$ the degradation rate per MCS, and $\beta(p)$ the chemokine production:
+
+$$\beta(p) = \begin{cases}
+k_\text{prod} & p = p_\text{chem source}\\
+0 & \text{otherwise}
+\end{cases} $$
+
+The PDE is implemented using a finite difference scheme (https://en.wikipedia.org/wiki/Discrete_Laplace_operator#Finite_differences) with h = 1, and solved with $N_{ds}=10$ steps after every MCS in the CPM (where $D$, $k_\text{prod}$ and $k_\text{decay}$ have to be divided by $N_{ds}$ to maintain the same effective rates per MCS).
+
+
+
+
+
+| Parameter | Description                                                                 |
+|-----------|-----------------------------------------------------------------------------|
+| $T$ | As Model000             |
+| $\lambda_\text{area}$ | As Model000		              |
+| $A_\text{target}$  | As Model000 |
+| $\lambda_\text{perim}$ | As Model000		              |
+| $P_\text{target}$  | As Model000 |
+| $\lambda_\text{chem}$ | As Model003, the Lagrange multiplier controls sensitivity to the chemokine gradient.     |
+| $p_\text{chem source}$ | Location of the point source of the chemokine |
+| $k_\text{prod}$ | Units of chemokine produced per MCS at the point source |
+| $k_\text{decay}$ | Fraction of chemokine that decays each MCS at a given location |
+| $D$ | diffusion coefficient in pixels<sup>2</sup>/MCS) |
+| $N_{ds}$ | number of PDE steps performed after every MCS |
+| `cpm_force_mode` | "extension", i.e. $\delta_\text{src} = 1, \delta_\text{tgt} = 0$ (see "work term")              |
+
+
 
 
 ### MODEL007

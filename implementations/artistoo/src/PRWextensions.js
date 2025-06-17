@@ -533,7 +533,7 @@ class LangevinPRW extends WorkTerm {
 	// after each MCS, update the target direction with Gaussian angular noise.
 	postMCSListener(){
 		for( let cid of this.C.cellIDs() ){
-			let xi = Math.pow( this.cellParameter( "XI", cid ), 1 )
+			let xi =  this.cellParameter( "XI", cid )
 			let di = this.currentDirection(cid)
 			let alpha = Math.atan2( di[1], di[0])
 			alpha += this.sampleNorm( 0, xi )

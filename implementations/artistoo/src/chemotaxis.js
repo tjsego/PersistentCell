@@ -1,5 +1,4 @@
 let CPM = require("./artistoo-cjs.js")
-let PRW = require( "./PRWextensions.js")
 let fs = require('fs')
 
 let jsonFile = process.argv[2] 
@@ -22,10 +21,12 @@ if( configJSON["cpm_nbs_n"] != 2 ){
 if( configJSON["cpm_surface_nbs_n"] != 2 ){
 	throw( "cpm_surface_nbs_n is set to a value different from 2, which is not (yet) supported. Please change value to 2 to continue.")
 }
-
+if( modelName != "MODEL008" ){
+	throw( "chemotaxis.js is only for MODEL008; did you mean to run persistent-cell.js?")
+}
 
 let outPath = "./results/"+ out_name + "/img"
-
+fs.mkdirSync(outPath, { recursive: true })
 
 let config = {
 
@@ -60,7 +61,9 @@ let config = {
 
 let custommethods = {
 	logStats : logStats,
-	initializeGrid : initializeGrid
+	initializeGrid : initializeGrid,
+	postMCSListener : postMCSListener,
+	drawCanvas : drawCanvas
 }
 let sim = new CPM.Simulation( config, custommethods )
 switch( prng ){
@@ -79,72 +82,36 @@ switch( prng ){
 	
 }
 
+// print header
+console.log( "time,id,com_1,com_2,area,surface" )	
 
-switch( modelName ){
+sim.g = new CPM.Grid2D(sim.C.extents, [true,true], "Float32"),
+sim.gi = new CPM.CoarseGrid( sim.g, 1 ),
+sim.C.add( new CPM.ChemotaxisConstraint( {
+	LAMBDA_CH: [0,configJSON["model_args"]["lambda_chem"]],
+	CH_FIELD : sim.gi }
+) )
+
+function postMCSListener(){
+	let center = configJSON["model_args"]["chemo_source_position"]
+	const Nds = configJSON["model_args"]["diffusion_steps_per_mcs"]
 	
-	case 'MODEL000' : {
-		// no additional terms to add
-		break
+	const effective_prod = configJSON["model_args"]["chemo_production_rate_per_mcs"] / Nds
+	const effective_D = configJSON["model_args"]["diffusion_coefficient_per_mcs"] / Nds
+	const effective_decay = configJSON["model_args"]["chemo_decay_rate_per_mcs"] / Nds
+	
+	for( let i = 1 ; i <= Nds ; i ++ ){
+		this.g.setpix( center, effective_prod+this.g.pixt(center) )
+		this.g.diffusion( effective_D )
+		this.g.multiplyBy( 1-effective_decay )
 	}
-	case 'MODEL005' : {
-		let dir_map = { 'source-to-target-unnorm' : "copyVector", 'source-to-target-norm' : "normCopyVector", 'cell-mass-displacement' : "COM" }
-		const propdir = dir_map[ configJSON["model_args"]["cpm_update_direction"] ]		
-		sim.C.add( new PRW.PersistenceConstraint( 
-			{
-				LAMBDA_DIR: [0,configJSON["model_args"]["lambda_dir"]], 
-				PERSIST: [0,0],
-				DELTA_T : [0,configJSON["model_args"]["dt"]],
-				FORCE_MODE : configJSON["model_args"]["cpm_force_mode"],
-				PROPOSAL_DIR: propdir
-			} ) )
-		let a0 = configJSON["model_args"]["initial_alpha"]
-		sim.C.getConstraint( "PersistenceConstraint" ).celldirections[1] = [Math.cos(a0),Math.sin(a0)]
-		break
-	}
-	case 'MODEL003' : {
-		const alpha = configJSON["model_args"]["target_angle"]
-		let dir_map = { 'source-to-target-unnorm' : "copyVector", 'source-to-target-norm' : "normCopyVector", 'cell-mass-displacement' : "COM" }
-		const propdir = dir_map[ configJSON["model_args"]["cpm_update_direction"] ]		
-		const ldir = configJSON["model_args"]["lambda_dir"], dirvec = [Math.cos(alpha),Math.sin(alpha)]
-		const wconf = {
-			LAMBDA_DIR: [0, ldir], 
-			DIR: [[0,0], dirvec ],
-			FORCE_MODE : configJSON["model_args"]["cpm_force_mode"],
-			PROPOSAL_DIR: propdir
-		}
-		//console.log( wconf )
-		sim.C.add( new PRW.TargetDirection( wconf ) )
-		break
-	}
-	case 'MODEL006' : {
-		
-		let dir_map = { 'source-to-target-unnorm' : "copyVector", 'source-to-target-norm' : "normCopyVector", 'cell-mass-displacement' : "COM" }
-		const propdir = dir_map[ configJSON["model_args"]["cpm_update_direction"] ]		
-		sim.C.add( new PRW.LangevinPRW( 
-			{
-				LAMBDA_DIR:  [0,configJSON["model_args"]["lambda_dir"]], 
-				XI: [0,configJSON["model_args"]["xi"]], 
-				FORCE_MODE : configJSON["model_args"]["cpm_force_mode"],
-				PROPOSAL_DIR: propdir
-			} ) )
-		let a0 = configJSON["model_args"]["initial_alpha"]
-		sim.C.getConstraint( "LangevinPRW" ).celldirections[1] = [Math.cos(a0), Math.sin(a0)]
-			break
-	}
-	default : {
-		throw( "Unsupported model " + modelName  )
-	}
+	
 }
-
 
 function logStats( add = 1 ){
 	let centroid = this.C.getStat( CPM.CentroidsWithTorusCorrection )[1]
 	let area = this.C.cellvolume[1]
 	let perim = this.C.getConstraint("PerimeterConstraint").cellperimeters[1]
-	// fix time definition with +1 since the default simulation class does 
-	// run step - create outputs - update time
-	// rather than (as expected)
-	// run step - update time - create outputs.
 	console.log( (this.time+add) + "," + seed + "," + centroid.join(",") + "," + area + "," + perim )		
 }
 
@@ -161,13 +128,14 @@ function initializeGrid(){
 	
 }
 
-// print header
-console.log( "time,id,com_1,com_2,area,surface" )	
+function drawCanvas(){
+	if( !this.helpClasses["canvas"] ){ this.addCanvas() }
+	this.Cim.drawField( this.g )
+	this.Cim.drawCellBorders( 1, "000000" )
+}
 
-// initial conditions
 sim.drawCanvas()
-sim.logStats( 0 )
-
+sim.logStats(0)
 sim.Cim.writePNG( "./results/"+ out_name + "/init.png" )
 
 sim.run()

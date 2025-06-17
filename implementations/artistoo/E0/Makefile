@@ -3,9 +3,9 @@
 
 all : allA allB allC
 
-allA : model000a model003a model005a model006a
-allB : model000b model003b model005b model006b
-allC : model000c model003c model005c model006c
+allA : model000a model003a model005a model006a model008a
+allB : model000b model003b model005b model006b model008b
+allC : model000c model003c model005c model006c model008c
 
 
 
@@ -56,6 +56,10 @@ model006a : results/model006a_artistoo/corrected-tracks.csv
 model006b : results/model006b_artistoo/corrected-tracks.csv
 model006c : results/model006c_artistoo/corrected-tracks.csv
 
+model008a : results/model008a_artistoo/corrected-tracks.csv
+model008b : results/model008b_artistoo/corrected-tracks.csv
+model008c : results/model008c_artistoo/corrected-tracks.csv
+
 
 results/model%a_artistoo/corrected-tracks.csv : ../run.py ../src/persistent-cell.js input/model%a.json 
 	rm -rf results/model$*a_artistoo && \
@@ -68,6 +72,18 @@ results/model%b_artistoo/corrected-tracks.csv : ../run.py ../src/persistent-cell
 results/model%c_artistoo/corrected-tracks.csv : ../run.py ../src/persistent-cell.js input/model%c.json 
 	rm -rf results/model$*c_artistoo && \
 	python $< -s ../src/persistent-cell.js -f input/model$*c.json -j $(MAX_PROC) -i $(NSIM)
+
+results/model008a_artistoo/corrected-tracks.csv : ../run.py ../src/chemotaxis.js input/model008a.json 
+	rm -rf results/model$*a_artistoo && \
+	python $< -s ../src/chemotaxis.js -f input/model008a.json -j $(MAX_PROC)
+
+results/model008b_artistoo/corrected-tracks.csv : ../run.py ../src/chemotaxis.js input/model008b.json 
+	rm -rf results/model$*b_artistoo && \
+	python $< -s ../src/chemotaxis.js -f input/model008b.json -j $(MAX_PROC)
+
+results/model008c_artistoo/corrected-tracks.csv : ../run.py ../src/chemotaxis.js input/model008c.json 
+	rm -rf results/model$*c_artistoo && \
+	python $< -s ../src/chemotaxis.js -f input/model008c.json -j $(MAX_PROC) -i $(NSIM)
 
 
 
