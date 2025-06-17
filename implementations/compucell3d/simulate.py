@@ -82,6 +82,8 @@ class TrackingSteppable(SteppableBasePy):
 
         self.model.start(self)
 
+        self.data.append((0, cell.xCOM, cell.yCOM, cell.volume, cell.surface))
+
     def step(self, mcs):
         cell = self.fetch_cell_by_id(self.cell_id)
 
@@ -108,8 +110,8 @@ class TrackingSteppable(SteppableBasePy):
         self.model.step(self, mcs)
 
         # Store data
-        if divmod(mcs, self.output_per)[1] == 0:
-            self.data.append((mcs, xcom + self.xcom_adjust, ycom + self.ycom_adjust, cell.volume, cell.surface))
+        if divmod(mcs + 1, self.output_per)[1] == 0:
+            self.data.append((mcs + 1, xcom + self.xcom_adjust, ycom + self.ycom_adjust, cell.volume, cell.surface))
 
     def output_data(self):
         return self.data
@@ -216,7 +218,7 @@ def _simulate(specs,
                                          model_name,
                                          model_args,
                                          **kwargs)
-        while cc3d_sim.current_step <= max_time:
+        while cc3d_sim.current_step < max_time:
             cc3d_sim.step()
 
         sim_data = steppable.output_data()
