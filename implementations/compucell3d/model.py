@@ -3,7 +3,7 @@ from cc3d import __revision__ as cc3d_revision
 from cc3d import __githash__ as cc3d_githash
 from cc3d.core import PyCoreSpecs as pcs
 import json
-from math import sqrt
+from math import pi, sqrt
 from typing import Any, List, Optional, Type, Union
 
 cell_type_name = 'Cell'
@@ -32,7 +32,7 @@ def _impl_MODEL003(**kwargs):
     cpm_force_mode = kwargs['cpm_force_mode']
     cpm_update_direction = kwargs['cpm_update_direction']
     lambda_dir = kwargs['lambda_dir']
-    target_angle = 180.0 + kwargs['target_angle']
+    target_angle = pi + kwargs['target_angle']
 
     return [pcs.PersistencePlugin([pcs.PersistencePluginANModel(cell_type=cell_type_name,
                                                                 magnitude=lambda_dir,
@@ -40,7 +40,8 @@ def _impl_MODEL003(**kwargs):
                                                                 work_term=disp_mapping[cpm_update_direction],
                                                                 vector_init=[pcs.PersistencePluginInitTransformRotate(
                                                                     value=target_angle,
-                                                                    axis='Z'
+                                                                    axis='Z',
+                                                                    units=pcs.PERSISTENCE_TRANSFORM_UNIT_RADIANS
                                                                 )])])]
 
 
@@ -48,7 +49,7 @@ def _impl_MODEL005(**kwargs):
     cpm_force_mode = kwargs['cpm_force_mode']
     cpm_update_direction = kwargs['cpm_update_direction']
     lambda_dir = kwargs['lambda_dir']
-    initial_alpha = 180.0 + kwargs['initial_alpha']
+    initial_alpha = pi + kwargs['initial_alpha']
     dt = kwargs['dt']
 
     return [pcs.PersistencePlugin([pcs.PersistencePluginSRModel(cell_type=cell_type_name,
@@ -58,7 +59,8 @@ def _impl_MODEL005(**kwargs):
                                                                 period=dt,
                                                                 vector_init=[pcs.PersistencePluginInitTransformRotate(
                                                                     value=initial_alpha,
-                                                                    axis='Z'
+                                                                    axis='Z',
+                                                                    units=pcs.PERSISTENCE_TRANSFORM_UNIT_RADIANS
                                                                 )])])]
 
 
@@ -66,7 +68,7 @@ def _impl_MODEL006(**kwargs):
     cpm_force_mode = kwargs['cpm_force_mode']
     cpm_update_direction = kwargs['cpm_update_direction']
     lambda_dir = kwargs['lambda_dir']
-    initial_alpha = 180.0 + kwargs['initial_alpha']
+    initial_alpha = pi + kwargs['initial_alpha']
     xi = kwargs['xi']
 
     return [pcs.PersistencePlugin([pcs.PersistencePluginANModel(cell_type=cell_type_name,
@@ -76,7 +78,8 @@ def _impl_MODEL006(**kwargs):
                                                                 stdev3=xi,
                                                                 vector_init=[pcs.PersistencePluginInitTransformRotate(
                                                                     value=initial_alpha,
-                                                                    axis='Z'
+                                                                    axis='Z',
+                                                                    units=pcs.PERSISTENCE_TRANSFORM_UNIT_RADIANS
                                                                 )])])]
 
 
