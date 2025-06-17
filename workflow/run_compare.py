@@ -32,7 +32,8 @@ def _log_error(msg: str, err_type: Type[BaseException]):
 
 def _compare_results(_modeler_res: Dict[str, np.ndarray],
                      _curator_rep: libssr.EFECTReport,
-                     _curator_smp: List[float]):
+                     _curator_smp: List[float],
+                     ignore_first=True):
     err_granular = {name: [] for name in _curator_rep.variable_names}
     for i, name in enumerate(_curator_rep.variable_names):
         for j in range(_curator_rep.simulation_times.shape[0]):
@@ -42,7 +43,10 @@ def _compare_results(_modeler_res: Dict[str, np.ndarray],
                 err_granular[name].append(libssr.ecf_compare(ecf_res, _curator_rep.ecf_evals[j, i, :, :]))
             except IndexError:
                 logger.error(f'Missing index {j}.')
-    err_names = {n: max(v) for n, v in err_granular.items()}
+    if ignore_first:
+        err_names = {n: max(v[1:]) for n, v in err_granular.items()}
+    else:
+        err_names = {n: max(v) for n, v in err_granular.items()}
     err_res = max(err_names.values())
     return {
         basic.comparison_key_efect_error: err_res,
@@ -89,7 +93,8 @@ def _post_summary_name(_data: Dict[str, float],
 def _post_summary_granular(_data: Dict[str, List[float]],
                            _output_dir: str,
                            _output_fexts: List[str],
-                           _dpi: int):
+                           _dpi: int,
+                           ignore_first=True):
 
     names = _data.keys()
 
@@ -101,7 +106,11 @@ def _post_summary_granular(_data: Dict[str, List[float]],
         values = _data[n]
 
         ax.plot(list(range(len(values))), values, color='black')
-        ax.axhline(max(values), color='black', linestyle='--')
+        if ignore_first:
+            max_value = max(values)
+        else:
+            max_value = max(values[1:])
+        ax.axhline(max_value, color='black', linestyle='--')
 
         ax.set_ylim(0, 2)
         ax.set_title(n)
@@ -132,8 +141,8 @@ def _post_all(_data: Dict[str, Dict[str, float]],
     fig, ax = plt.subplots(1, 1,
                            layout='compressed',
                            figsize=(2.0 * num_names, 2.0 * num_names))
-    cax = ax.matshow(heatmap_data, cmap='viridis')
-    fig.colorbar(cax)
+    cax = ax.matshow(heatmap_data, cmap='viridis', vmin=0.0, vmax=1.0)
+    fig.colorbar(cax, ticks=np.linspace(0.0, 1.0, 6))
 
     ax.set_xticks(list(range(num_names)))
     ax.set_yticks(list(range(num_names)))
