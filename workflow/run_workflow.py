@@ -28,6 +28,14 @@ def _log_error(msg: str, err_type: Type[BaseException]):
     raise err_type(msg)
 
 
+def _get_colors(num_entries: int = None):
+    if num_entries is None or num_entries < 10:
+        cs = plt.color_sequences['tab10']
+    else:
+        cs = plt.color_sequences['tab20']
+    return cs
+
+
 def _post_raw(_post_dir: str,
               _impl_data_raw: Dict[str, Dict[str, np.ndarray]],
               _output_fexts: List[str],
@@ -83,7 +91,7 @@ def _post_dists(_post_dir: str,
     if not os.path.isdir(_post_dir):
         os.makedirs(_post_dir)
 
-    cs = plt.color_sequences['tab10']
+    cs = _get_colors(len(impl_names))
     dist_indices = np.asarray(list(range(num_times)), dtype=int)[::(num_times - 1) // (num_dists - 1)].tolist()
     for ind in dist_indices:
         # Plot distributions
@@ -98,7 +106,7 @@ def _post_dists(_post_dir: str,
                     logger.error(f'Missing variable {var_name} for implementation {impl_name}')
                     continue
 
-                ax.hist(data, density=True, alpha=0.25, color=cs[i], label=impl_name)
+                ax.hist(data, density=True, alpha=0.25, color=cs[i % len(cs)], label=impl_name)
 
             ax.set_xlabel(f'Step {ind}')
             ax.set_title(var_name)
@@ -129,7 +137,7 @@ def _post_summary(_post_dir: str,
     fig, axs = plt.subplots(len(var_names), 1,
                             layout='compressed',
                             figsize=(3, 3 * len(var_names)))
-    cs = plt.color_sequences['tab10']
+    cs = _get_colors(len(impl_names))
     # Plot medians
     for var_name, ax in zip(var_names, axs):
         for i, impl_name in enumerate(impl_names):
@@ -143,7 +151,7 @@ def _post_summary(_post_dir: str,
                 xdata = _impl_data_raw[impl_name][VAR_TIME]
             else:
                 xdata = list(range(data.shape[1]))
-            ax.plot(xdata, np.median(data, axis=0), color=cs[i], label=impl_name)
+            ax.plot(xdata, np.median(data, axis=0), color=cs[i % len(cs)], label=impl_name)
 
         ax.set_xlabel('Step')
         ax.set_title(var_name)
@@ -175,7 +183,7 @@ def _post_summary(_post_dir: str,
             ax.fill_between(xdata,
                             *_shader(data),
                             alpha=0.25,
-                            color=cs[i])
+                            color=cs[i % len(cs)])
 
     handles, labels = axs[0].get_legend_handles_labels()
     axs[0].legend(handles[:len(impl_names)], labels[:len(impl_names)])

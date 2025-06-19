@@ -30,6 +30,14 @@ def _log_error(msg: str, err_type: Type[BaseException]):
     raise err_type(msg)
 
 
+def _get_colors(num_entries: int = None):
+    if num_entries is None or num_entries < 10:
+        cs = plt.color_sequences['tab10']
+    else:
+        cs = plt.color_sequences['tab20']
+    return cs
+
+
 def _post_ecfs(_post_dir: str,
                _impl_data_raw: Dict[str, Dict[str, np.ndarray]],
                _output_fexts: List[str],
@@ -44,7 +52,7 @@ def _post_ecfs(_post_dir: str,
     if not os.path.isdir(_post_dir):
         os.makedirs(_post_dir)
 
-    cs = plt.color_sequences['tab10']
+    cs = _get_colors(len(impl_names))
     dist_indices = np.asarray(list(range(1, num_times)), dtype=int)[::(num_times - 2) // (num_dists - 1)].tolist()
     for ind in dist_indices:
         # Plot ECFs
@@ -64,7 +72,7 @@ def _post_ecfs(_post_dir: str,
                 if i == 0:
                     eval_t = libssr.get_eval_info_times(100, libssr.eval_final(data))
                 ecf = libssr.ecf(data, eval_t)
-                [ax[j].plot(eval_t, ecf[:, j], color=cs[i], label=impl_name) for j in range(2)]
+                [ax[j].plot(eval_t, ecf[:, j], color=cs[i % len(cs)], label=impl_name) for j in range(2)]
 
             for j in range(2):
                 ax[j].set_xlabel(f'Step {ind}')
