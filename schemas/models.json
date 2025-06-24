@@ -98,5 +98,43 @@
   "MODEL007": {
     "method": "CPM",
     "description": "Persistent motion controlled by cell-intrinsic orientation under effect of continuous time noise and self-reenforcement of direction of motion"
+  },
+  "MODEL008": {
+    "method": "CPM",
+    "description": "Chemotaxis of a single cell in a coupled chemotactic field.",
+    "model_args": {
+      "lambda_chem": {
+        "description": "The Lagrange multiplier controls sensitivity to the chemokine gradient",
+        "type": "number"
+      },
+      "chemo_source_position": {
+        "description": "Location of the point source of the chemokine.",
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      },
+      "chemo_production_rate_per_mcs": {
+        "description": "Units of chemokine produced per MCS at the point source.",
+        "type": "number"
+      },
+      "chemo_decay_rate_per_mcs": {
+        "description": "Fraction of chemokine that decays each MCS at a given location.",
+        "type": "number"
+      },
+      "diffusion_coefficient_per_mcs": {
+        "description": "Diffusion coefficient (in pixels2/MCS).",
+        "type": "number"
+      },
+      "diffusion_steps_per_mcs": {
+        "description": "Number of PDE steps performed after every MCS.",
+        "type": "number"
+      },
+      "cpm_force_mode": {
+        "description": "Work term for movement along a given direction.",
+        "type": "string",
+        "enum": ["extension", "retraction", "reciprocal"]
+      }
+    }
   }
 }
