@@ -1,13 +1,19 @@
 from cc3d.CompuCellSetup.CC3DCaller import CC3DSimService
 from cc3d.core.PySteppables import SteppableBasePy
 import json
-from math import cos, pi, sin
 import multiprocessing as mp
-import numpy as np
 import os
-from random import random, seed
 import traceback
 from typing import Any, Dict, List, Optional, Tuple, Type
+
+
+_cdata_lock = mp.Lock()
+
+
+def get_constants_data():
+    with _cdata_lock:
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'constants.json'), 'r') as f:
+            return json.load(f)
 
 
 def ensure_output_dir(_output_dir: str):
@@ -33,7 +39,6 @@ class TrackingSteppable(SteppableBasePy):
 
     def __init__(self,
                  cell_type_name: str,
-                 cell_length_target: int,
                  init_voxels: List[Tuple[int, int]],
                  output_per: int,
                  model_name: str,
@@ -42,7 +47,6 @@ class TrackingSteppable(SteppableBasePy):
         super().__init__(frequency=1)
 
         self.cell_type_name = cell_type_name
-        self.cell_length_target = cell_length_target
         self.init_voxels = init_voxels
         self.output_per = output_per
         self.model_name = model_name
@@ -74,7 +78,7 @@ class TrackingSteppable(SteppableBasePy):
         # Mitigating a rare, strange bug
         if cell.volume == 0:
             msg = 'Found zero volume cell'
-            msg += f' ({self.cell_id, self.cell_length_target, self.dim.x, self.dim.y, cell.xCOM, cell.yCOM})'
+            msg += f' ({self.cell_id, self.dim.x, self.dim.y, cell.xCOM, cell.yCOM})'
             raise RuntimeError(msg)
 
         self.xcom_prev = cell.xCOM
@@ -82,7 +86,8 @@ class TrackingSteppable(SteppableBasePy):
 
         self.model.start(self)
 
-        self.data.append((0, cell.xCOM, cell.yCOM, cell.volume, cell.surface))
+        if self.output_per > 0:
+            self.data.append((0, cell.xCOM, cell.yCOM, cell.volume, cell.surface))
 
     def step(self, mcs):
         cell = self.fetch_cell_by_id(self.cell_id)
@@ -110,7 +115,7 @@ class TrackingSteppable(SteppableBasePy):
         self.model.step(self, mcs)
 
         # Store data
-        if divmod(mcs + 1, self.output_per)[1] == 0:
+        if self.output_per > 0 and divmod(mcs + 1, self.output_per)[1] == 0:
             self.data.append((mcs + 1, xcom + self.xcom_adjust, ycom + self.ycom_adjust, cell.volume, cell.surface))
 
     def output_data(self):
@@ -150,8 +155,8 @@ def get_implementation(_name: str) -> Type[ModelSteppableImplementation]:
     return __model_implementations__.get(_name, ModelSteppableImplementation)
 
 
-def create_sim(specs, cell_type_name: str, cell_length_target: int, init_voxels: List[Tuple[int, int]], output_per: int, model_name: str, model_args: Dict[str, Any], *args, **kwargs):
-    steppable = TrackingSteppable(cell_type_name, cell_length_target, init_voxels, output_per, model_name, model_args=model_args)
+def create_sim(specs, cell_type_name: str, init_voxels: List[Tuple[int, int]], output_per: int, model_name: str, model_args: Dict[str, Any], *args, **kwargs):
+    steppable = TrackingSteppable(cell_type_name, init_voxels, output_per, model_name, model_args=model_args)
     cc3d_sim = CC3DSimService(*args, **kwargs)
     cc3d_sim.register_specs(specs)
     cc3d_sim.register_steppable(steppable)
@@ -161,10 +166,10 @@ def create_sim(specs, cell_type_name: str, cell_length_target: int, init_voxels:
     return cc3d_sim, steppable
 
 
-def generate_screenshot_data(specs, cell_type_name: str, cell_length_target: int, init_voxels: List[Tuple[int, int]], output_per: int, model_name: str, model_args: Dict[str, Any], field_names: List[str] = None):
+def generate_screenshot_data(specs, cell_type_name: str, init_voxels: List[Tuple[int, int]], output_per: int, model_name: str, model_args: Dict[str, Any], field_names: List[str] = None):
     cc3d_sim = CC3DSimService()
     cc3d_sim.register_specs(specs)
-    cc3d_sim.register_steppable(TrackingSteppable(cell_type_name, cell_length_target, init_voxels, output_per, model_name, model_args=model_args))
+    cc3d_sim.register_steppable(TrackingSteppable(cell_type_name, init_voxels, output_per, model_name, model_args=model_args))
     cc3d_sim.run()
     cc3d_sim.init()
     cc3d_sim.start()
@@ -212,7 +217,6 @@ def _simulate(specs,
             kwargs['output_frequency'] = output_frequency
         cc3d_sim, steppable = create_sim(specs,
                                          cell_type_name,
-                                         cell_length_target,
                                          init_voxels,
                                          output_per,
                                          model_name,
@@ -254,7 +258,6 @@ def simulate(output_dir: str,
              screenshot_name: str, 
              specs,
              cell_type_name: str,
-             cell_length_target: int,
              init_voxels: List[Tuple[int, int]],
              max_time: int,
              field_names: List[str] = None,
@@ -269,7 +272,7 @@ def simulate(output_dir: str,
     for i in range(num_sims):
 
         sim_output_dir, sim_label = unique_data_dir(output_data_dir, scheduled_labels)
-        input_args.append((specs, cell_type_name, cell_length_target, init_voxels, output_dir, sim_output_dir, output_per, model_name, model_args, max_time, sim_label, output_frequency))
+        input_args.append((specs, cell_type_name, init_voxels, output_dir, sim_output_dir, output_per, model_name, model_args, max_time, sim_label, output_frequency))
         scheduled_labels.append(sim_label)
 
     # Ensure clean memory space per batch. This is analogous to simservice features but with reduced overhead.
@@ -284,4 +287,35 @@ def simulate(output_dir: str,
     
     if not os.path.isfile(os.path.join(output_dir, screenshot_name)):
         with open(os.path.join(output_dir, screenshot_name), 'w') as f:
-            json.dump(generate_screenshot_data(specs, cell_type_name, cell_length_target, init_voxels, output_per, model_name, model_args, field_names=field_names), f, indent=4)
+            json.dump(generate_screenshot_data(specs, cell_type_name, init_voxels, output_per, model_name, model_args, field_names=field_names), f, indent=4)
+
+
+def run_through(model_name: str,
+                model_args: Dict[str, Any],
+                specs,
+                cell_type_name: str,
+                init_voxels: List[Tuple[int, int]],
+                max_time: int,
+                output_frequency=0):
+    try:
+        cc3d_sim, steppable = create_sim(specs,
+                                         cell_type_name,
+                                         init_voxels,
+                                         output_frequency,
+                                         model_name,
+                                         model_args)
+        while cc3d_sim.current_step < max_time:
+            cc3d_sim.step()
+
+        sim_data = steppable.output_data()
+        output_data = dict(
+            time=[sd[0] for sd in sim_data],
+            com_1=[sd[1] for sd in sim_data],
+            com_2=[sd[2] for sd in sim_data],
+            area=[sd[3] for sd in sim_data],
+            surface=[sd[4] for sd in sim_data]
+        )
+        return output_data
+    except Exception as e:
+        print(''.join(traceback.format_exception(e)))
+        return None

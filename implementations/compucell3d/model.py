@@ -3,10 +3,13 @@ from cc3d import __revision__ as cc3d_revision
 from cc3d import __githash__ as cc3d_githash
 from cc3d.core import PyCoreSpecs as pcs
 import json
-from math import pi, sqrt
+from math import pi
+import os
 from typing import Any, List, Optional, Type, Union
 
-cell_type_name = 'Cell'
+with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'constants.json'), 'r') as f:
+    constants_data = json.load(f)
+    cell_type_name = constants_data['cell_type_name']
 
 # Check version-dependent stuff
 HAS_SURFACE_NBS = 'neighbor_order' in pcs.SurfacePlugin.check_dict
@@ -468,7 +471,7 @@ def model(cell_area_target,
                         cell_perim_target,
                         cell_perim_lm,
                         model_label,
-                        model_args), cell_type_name, int(sqrt(cell_area_target))
+                        model_args), cell_type_name
 
 
 def from_json_data(spec_data: dict):
