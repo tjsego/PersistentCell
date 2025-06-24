@@ -86,11 +86,41 @@ def _impl_MODEL006(**kwargs):
                                                                 )])])]
 
 
+def _impl_MODEL008(**kwargs):
+    cpm_force_mode = kwargs['cpm_force_mode']
+    lambda_chem = kwargs['lambda_chem']
+    diffusion_coefficient_per_mcs = kwargs['diffusion_coefficient_per_mcs']
+    chemo_decay_rate_per_mcs = kwargs['chemo_decay_rate_per_mcs']
+
+    field_name = constants_data['MODEL008']['field_name']
+
+    spec_solver = pcs.DiffusionSolverFE()
+    field: pcs.DiffusionSolverFEField = spec_solver.field_new(field_name)
+    diff_data: pcs.DiffusionSolverFEDiffusionData = field.diff_data
+    diff_data.diff_global = diffusion_coefficient_per_mcs
+    diff_data.decay_global = chemo_decay_rate_per_mcs
+    field.bcs.x_min_type = field.bcs.y_min_type = pcs.PDEBOUNDARYPERIODIC
+
+    spec_chemo = pcs.ChemotaxisPlugin()
+    if cpm_force_mode == 'extension':
+        spec_chemo.algorithm = pcs.CHEMOTAXIS_ALGORITHM_REGULAR
+    elif cpm_force_mode == 'reciprocal':
+        spec_chemo.algorithm = pcs.CHEMOTAXIS_ALGORITHM_RECIPROCATED
+    else:
+        ValueError(f'Unsupported force model: {cpm_force_mode}')
+
+    chemo_field_params = spec_chemo.param_new(field_name, spec_solver.registered_name)
+    chemo_field_params.params_new(cell_type_name, lambda_chem)
+
+    return [spec_solver, spec_chemo]
+
+
 model_implementations = {
     'MODEL000': _impl_MODEL000,
     'MODEL003': _impl_MODEL003,
     'MODEL005': _impl_MODEL005,
-    'MODEL006': _impl_MODEL006
+    'MODEL006': _impl_MODEL006,
+    'MODEL008': _impl_MODEL008
 }
 method_implementation = 'CPM'
 

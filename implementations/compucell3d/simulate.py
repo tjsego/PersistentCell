@@ -151,6 +151,30 @@ def register_implementation(_cls: Type[ModelSteppableImplementation]):
     return _cls
 
 
+@register_implementation
+class Model008SteppableImplementation(ModelSteppableImplementation):
+
+    def __init__(self, _parent: TrackingSteppable):
+
+        super().__init__(_parent)
+
+        self.source_pos = _parent.model_args['chemo_source_position']
+        self.source_rate = _parent.model_args['chemo_production_rate_per_mcs']
+        self.field_name = get_constants_data()['MODEL008']['field_name']
+        self.field_fetcher = _parent.field
+
+    @property
+    def chemo_field(self):
+        return getattr(self.field_fetcher, self.field_name)
+
+    def step(self, _parent: TrackingSteppable, mcs):
+        self.chemo_field[self.source_pos[0], self.source_pos[1], 0] += self.source_rate
+
+    @classmethod
+    def model_name(cls) -> str:
+        return 'MODEL008'
+
+
 def get_implementation(_name: str) -> Type[ModelSteppableImplementation]:
     return __model_implementations__.get(_name, ModelSteppableImplementation)
 
