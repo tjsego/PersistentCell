@@ -15,7 +15,7 @@
                 <Condition type="periodic" boundary="y"/>
             </BoundaryConditions>
         </Lattice>
-        <SpaceSymbol symbol="space"/>
+        <SpaceSymbol symbol="pos"/>
     </Space>
     <Time>
         <StartTime value="0"/>
@@ -29,6 +29,7 @@
             <Plot>
                 <Cells value="vel.abs"/>
                 <CellArrows orientation="vel*10" center="origin"/>
+                <Field symbol-ref="c"/>
             </Plot>
             <Terminal name="png" size="1200,1200,0"/>
         </Gnuplotter>
@@ -67,13 +68,12 @@
         <ModelGraph format="dot" reduced="false" include-tags="#untagged"/>
     </Disabled>
 -->
-        <ModelGraph format="dot" reduced="false" include-tags="#untagged"/>
     </Analysis>
     <Global>
         <Constant symbol="cpm_time_scale" value="1"/>
         <Constant symbol="l_n" name="node length" value="1"/>
-        <Constant symbol="len_x" name="x lattice size" value="20*r*5"/>
-        <Constant symbol="len_y" name="y lattice size" value="20*r * 5"/>
+        <Constant symbol="len_x" name="x lattice size" value="10*r*5"/>
+        <Constant symbol="len_y" name="y lattice size" value="10*r * 5"/>
         <Constant symbol="a_cpm" value="60"/>
         <Constant symbol="r" name="cell radius" value="sqrt(a_cpm/pi) * l_n"/>
         <Constant symbol="a" name="cell area" value="pi*r^2"/>
@@ -87,21 +87,26 @@
                 In this model we make use normalization of interface / surface lengths, such that xi==1 </Annotation>
         </Constant>
         <Constant symbol="mu" value="1"/>
-        <Constant symbol="persist_rate" value="0.02"/>
         <Constant symbol="mcs_d" name="MonteCarloStep duration" value="cpm_time_scale * l_n"/>
         <Constant symbol="array_size" value="1">
             <Annotation>Population array size</Annotation>
         </Constant>
         <Variable symbol="msd" name="mean squared displacement" value="0.0"/>
         <Constant symbol="log_freq" value="5"/>
+        <Constant symbol="D" name="Diffusion rate of c" value="1.0"/>
+        <Constant symbol="D_steps" name="useless" value="1.0"/>
         <Field symbol="c" name="diffusive attractant" value="0.0">
-            <Diffusion rate="0.0"/>
+            <Diffusion rate="D"/>
         </Field>
-        <System solver="Dormand-Prince [adaptive, O(5)]">
+        <System name="attractant dynamics" solver="Dormand-Prince [adaptive, O(5)]">
             <DiffEqn symbol-ref="c">
-                <Expression>0.0</Expression>
+                <Expression>k_prod * source_mask - k_decay * c</Expression>
             </DiffEqn>
+            <Constant symbol="k_prod" value="1.0"/>
+            <Constant symbol="k_decay" value="0.01"/>
         </System>
+        <ConstantVector symbol="source" value="150.0, 150.0, 0.0"/>
+        <Field symbol="source_mask" name="source mask" value="(pos.x==source.x &amp;&amp; pos.y == source.y)"/>
     </Global>
     <CellTypes>
         <CellType class="biological" name="cell">
@@ -114,8 +119,7 @@
             <Constant symbol="mu_cpm" value="mu * mcs_d * l_n"/>
             <!--             <Property symbol="α" value="0"/> -->
             <PropertyVector symbol="vel" name="observed velocity" value="0,0,0"/>
-            <Constant symbol="cpm_persist_rate" value="persist * cpm_time_scale"/>
-            <Chemotaxis retraction="true" strength="1" field="c" protrusion="true" update-direction="source-to-target-norm"/>
+            <Chemotaxis retraction="true" strength="mu_cpm" field="c" protrusion="true" update-direction="source-to-target-norm"/>
             <MotilityReporter time-step="5.0">
                 <Velocity symbol-ref="vel"/>
             </MotilityReporter>

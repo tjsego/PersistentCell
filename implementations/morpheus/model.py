@@ -51,6 +51,10 @@ class morpheus_model:
             spec_data["cpm_force_extension"], spec_data["cpm_force_retraction"] = switch[spec_data["cpm_force_mode"]]
             del spec_data["cpm_force_mode"]
             
+        if "chemo_source_position" in spec_data :
+            x,y = spec_data["chemo_source_position"]
+            spec_data["chemo_source_position"] = " %d, %d, 0" %  (x,y)
+            
         
         spec_data.update(self.addon_spec())
         
@@ -175,6 +179,27 @@ class morpheus_model_7(morpheus_model) :
             "orientation" :  "0"
         }
 
+class morpheus_model_8(morpheus_model) :
+    """ morpheus implementation for model 7, classical persistent random walk with self-reenforcement """
+        
+    def model_file(self):
+        return "model_chemotax.xml";
+    
+    def xpath4param(self) :
+        base = super().xpath4param()
+        base["lambda_chem"] = base["lambda_dir"]
+        base["chemo_source_position"] = "Global/ConstantVector/@value"
+        base["chemo_production_rate_per_mcs"] = "Global/System/Constant[@symbol='k_prod']/@value"
+        base["chemo_decay_rate_per_mcs"] = "Global/System/Constant[@symbol='k_decay']/@value"
+        base["cpm_force_extension"] = "./CellTypes/CellType/Chemotaxis/@extension"
+        base["cpm_force_retraction"] = "./CellTypes/CellType/Chemotaxis/@retraction"
+        base["diffusion_coefficient_per_mcs"] = "Global/Constant[@symbol='D']/@value"
+        base["diffusion_steps_per_mcs"] = "Global/Constant[@symbol='D_steps']/@value"
+        return base;
+    
+    def addon_spec(self) :
+        return {}
+    
 
 def from_json_data(spec_data: dict):
     model_name = spec_data['model']
@@ -190,6 +215,8 @@ def from_json_data(spec_data: dict):
         return morpheus_model_6().get(spec_data);
     elif model_name == 'MODEL007' :
         return morpheus_model_7().get(spec_data);
+    elif model_name == 'MODEL008' :
+        return morpheus_model_8().get(spec_data);
     else :
         raise "Unknown model " + model_name + " in mode spec";
 
