@@ -197,6 +197,8 @@ def generate_screenshot_data(specs, cell_type_name: str, init_voxels: List[Tuple
     cc3d_sim.run()
     cc3d_sim.init()
     cc3d_sim.start()
+
+    print('Launching visualization')
     
     frame_cells = cc3d_sim.visualize()
     field_frames = []
@@ -204,6 +206,8 @@ def generate_screenshot_data(specs, cell_type_name: str, init_voxels: List[Tuple
     if field_names is None:
         field_names = []
     for name in field_names:
+        print(f'\t{name}...')
+
         frame_field = cc3d_sim.visualize()
         frame_field.set_field_name(name)
         frame_field.draw(blocking=True)
@@ -211,6 +215,8 @@ def generate_screenshot_data(specs, cell_type_name: str, init_voxels: List[Tuple
         field_frames_data[name] = frame_field.get_screenshot_data()
     
     result = dict(cells=frame_cells.get_screenshot_data(), fields=field_frames_data)
+
+    print('Closing frames...')
     
     cc3d_sim.close_frames()
     field_frames.clear()
@@ -220,7 +226,6 @@ def generate_screenshot_data(specs, cell_type_name: str, init_voxels: List[Tuple
 
 def _simulate(specs,
               cell_type_name: str,
-              cell_length_target: int,
               init_voxels: List[Tuple[int, int]],
               output_dir,
               sim_output_dir,
@@ -285,7 +290,8 @@ def simulate(output_dir: str,
              init_voxels: List[Tuple[int, int]],
              max_time: int,
              field_names: List[str] = None,
-             output_frequency=0):
+             output_frequency=0,
+             do_viz=False):
     output_data_dir = os.path.join(output_dir, 'data')
 
     ensure_output_dir(output_data_dir)
@@ -309,7 +315,9 @@ def simulate(output_dir: str,
                 if not res:
                     raise RuntimeError(f'Received error flag during execution for target: {res_dir}')
     
-    if not os.path.isfile(os.path.join(output_dir, screenshot_name)):
+    if do_viz and not os.path.isfile(os.path.join(output_dir, screenshot_name)):
+        print('Dumping screenshot data:', os.path.join(output_dir, screenshot_name))
+
         with open(os.path.join(output_dir, screenshot_name), 'w') as f:
             json.dump(generate_screenshot_data(specs, cell_type_name, init_voxels, output_per, model_name, model_args, field_names=field_names), f, indent=4)
 

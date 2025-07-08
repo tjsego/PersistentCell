@@ -11,7 +11,8 @@ DEF_SCREENSHOT_NAME = 'screenshot.json'
 
 def run(fp: str,
         output_dir: str = None,
-        output_frequency=0):
+        output_frequency=0,
+        do_viz=False):
     with open(fp, 'r') as f:
         config_data = json.load(f)
 
@@ -43,7 +44,8 @@ def run(fp: str,
              specs=specs,
              cell_type_name=cell_type_name,
              max_time=int(model_data['max_time']),
-             output_frequency=output_frequency)
+             output_frequency=output_frequency,
+             do_viz=do_viz)
 
 
 def run_through(fp: str,
@@ -95,6 +97,11 @@ class ArgParser(argparse.ArgumentParser):
                           dest='output_frequency',
                           help='Period between simulation data dumps. Default is no data dumps.')
 
+        self.add_argument('-v', '--viz',
+                          action='store_true',
+                          dest='do_viz',
+                          help='Generate spatial data visualization')
+
         self.add_argument('-t', '--test',
                           action='store_true',
                           dest='run_through',
@@ -115,6 +122,10 @@ class ArgParser(argparse.ArgumentParser):
         return self.parsed_args.output_frequency
 
     @property
+    def do_viz(self) -> bool:
+        return self.parsed_args.do_viz
+
+    @property
     def run_through(self) -> bool:
         return self.parsed_args.run_through
 
@@ -123,7 +134,8 @@ class ArgParser(argparse.ArgumentParser):
         return dict(
             fp=self.spec_path,
             output_dir=self.output_dir,
-            output_frequency=self.output_frequency
+            output_frequency=self.output_frequency,
+            do_viz=self.do_viz
         )
 
     @property
