@@ -12,6 +12,3 @@ conda env remove -n ${PC_CONDAENVNAME_DERIVED}
 # Install environments
 conda env create -f ${PC_SETUP_THISDIR}/env-compare.yml
 conda env create -f ${PC_SETUP_THISDIR}/env-derived.yml
-conda activate ${PC_CONDAENVNAME_DERIVED}
-Rscript -e "install.packages('celltrackR', repos='https://CRAN.R-project.org')"
-conda deactivate

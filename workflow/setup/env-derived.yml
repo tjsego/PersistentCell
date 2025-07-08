@@ -1,6 +1,6 @@
 name: persistent_cell_derived
 channels:
-  - r
+  - conda-forge
 dependencies:
   - r-essentials
   - r-base
@@ -9,5 +9,4 @@ dependencies:
   - r-patchwork
   - r-jsonlite
   - r-ggbeeswarm
-  - r-devtools
-  - r-remotes
+  - r-celltrackr
