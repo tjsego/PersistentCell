@@ -7,6 +7,7 @@ import libssr
 import logging
 import matplotlib as mpl
 from matplotlib import pyplot as plt
+import multiprocessing as mp
 import numpy as np
 import os
 import pandas as pd
@@ -199,6 +200,7 @@ def _post(_experiment_dir: str,
     post_dirs = [os.path.join(post_dir_root, str(i)) for i in range(num_outputs)]
     jobs_to_do = [i for i, d in enumerate(post_dirs) if not os.path.isdir(d) or not os.listdir(d)]
 
+    input_args = []
     for job in jobs_to_do:
         output_dir_job = post_dirs[job]
 
@@ -207,18 +209,12 @@ def _post(_experiment_dir: str,
         if not os.path.isdir(output_dir_job):
             os.makedirs(output_dir_job)
 
-        output_data_job = output_data[job]
-        _post_summary_name(output_data_job[basic.comparison_key_named_efect_error],
-                           output_data_job[basic.comparison_key_rej_pval],
-                           output_dir_job,
-                           _output_fexts,
-                           fig_dpi,
-                           output_data_job[basic.comparison_key_modeler],
-                           output_data_job[basic.comparison_key_curator])
-        _post_summary_granular(output_data_job[basic.comparison_key_granular_efect_error],
-                               output_dir_job,
-                               _output_fexts,
-                               fig_dpi)
+        input_args.append((output_data[job], output_dir_job, _output_fexts, fig_dpi))
+
+    if len(input_args) > 0:
+        num_workers = min(len(input_args), mp.cpu_count())
+        with mp.Pool(num_workers) as p:
+            p.starmap(_post_job, input_args)
 
     if output_data:
 
@@ -236,6 +232,20 @@ def _post(_experiment_dir: str,
             with open(efect_fp, 'r') as f:
                 post_all_data[impl_name][impl_name] = json.load(f)["errorMetricMean"]
         _post_all(post_all_data, post_dir_root, _output_fexts, fig_dpi)
+
+
+def _post_job(output_data_job, output_dir_job, _output_fexts, fig_dpi):
+    _post_summary_name(output_data_job[basic.comparison_key_named_efect_error],
+                       output_data_job[basic.comparison_key_rej_pval],
+                       output_dir_job,
+                       _output_fexts,
+                       fig_dpi,
+                       output_data_job[basic.comparison_key_modeler],
+                       output_data_job[basic.comparison_key_curator])
+    _post_summary_granular(output_data_job[basic.comparison_key_granular_efect_error],
+                           output_dir_job,
+                           _output_fexts,
+                           fig_dpi)
 
 
 def do_compare(_experiment_dir: str,
@@ -303,39 +313,30 @@ def do_compare(_experiment_dir: str,
     logger.info(f'Implementation names: {impl_names}')
 
     # Construct candidate jobs
-    jobs = []
+    input_args = []
     logger.info('Candidate jobs:')
     for modeler_impl, curator_impl in product(impl_names, impl_names):
         if modeler_impl == curator_impl:
             continue
         entry = modeler_impl, curator_impl
         if entry not in jobs_completed:
-            logger.info(f'\t{entry}')
+            logger.info(f'Working: {modeler_impl}, {curator_impl}')
 
-            jobs.append(entry)
+            modeler_res = _results_get(modeler_impl)
 
-    # Work jobs
-    for modeler_impl, curator_impl in jobs:
-        logger.info(f'Working: {modeler_impl}, {curator_impl}')
+            input_args.append((target_dir, modeler_impl, curator_impl, modeler_res))
 
-        modeler_res = _results_get(modeler_impl)
+    if len(input_args) > 0:
+        logger.info('Executing')
 
-        curator_rep_fp = os.path.join(target_dir, curator_impl, basic.efect_report_name)
-        curator_smp_fp = os.path.join(target_dir, curator_impl, basic.efect_sampling_name)
+        num_workers = min(len(input_args), mp.cpu_count())
+        with mp.Pool(num_workers) as p:
+            for res in p.starmap(_compare_job, input_args):
+                output_data.append(res)
 
-        with open(curator_rep_fp, 'r') as f:
-            curator_rep = libssr.EFECTReport.from_json(json.load(f))
-
-        curator_smp = pd.read_csv(curator_smp_fp, skiprows=1, header=None).iloc[:, 1].to_list()
-
-        res = _compare_results(modeler_res, curator_rep, curator_smp)
-        res[basic.comparison_key_modeler] = modeler_impl
-        res[basic.comparison_key_curator] = curator_impl
-        output_data.append(res)
-
-        # Fin
-        with open(output_fp, 'w') as f:
-            json.dump(output_data, f, indent=4)
+    # Fin
+    with open(output_fp, 'w') as f:
+        json.dump(output_data, f, indent=4)
 
     # Do post
     if post_kwargs is None:
@@ -343,3 +344,19 @@ def do_compare(_experiment_dir: str,
     _post(_experiment_dir, do_appended=do_appended, **post_kwargs)
 
     return output_data
+
+
+def _compare_job(target_dir: str, modeler_impl: str, curator_impl: str, modeler_res):
+    curator_rep_fp = os.path.join(target_dir, curator_impl, basic.efect_report_name)
+    curator_smp_fp = os.path.join(target_dir, curator_impl, basic.efect_sampling_name)
+
+    with open(curator_rep_fp, 'r') as f:
+        curator_rep = libssr.EFECTReport.from_json(json.load(f))
+
+    curator_smp = pd.read_csv(curator_smp_fp, skiprows=1, header=None).iloc[:, 1].to_list()
+
+    res = _compare_results(modeler_res, curator_rep, curator_smp)
+    res[basic.comparison_key_modeler] = modeler_impl
+    res[basic.comparison_key_curator] = curator_impl
+
+    return res

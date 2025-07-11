@@ -6,6 +6,7 @@ Runs the workflow
 import logging
 import matplotlib as mpl
 from matplotlib import pyplot as plt
+import multiprocessing as mp
 import numpy as np
 import os
 import sys
@@ -45,36 +46,46 @@ def _post_raw(_post_dir: str,
     if not os.path.isdir(_post_dir):
         os.makedirs(_post_dir)
 
+    input_args = []
     for i, impl_name in enumerate(impl_names):
-        # Plot
-        var_names: List[str] = list(_impl_data_raw[impl_name].keys())
-        if VAR_TIME in var_names:
-            has_time = True
-            var_names.remove(VAR_TIME)
+        input_args.append((_post_dir, impl_name, _impl_data_raw[impl_name], _output_fexts, _dpi))
+
+    if len(input_args) > 0:
+        num_workers = min(len(input_args), mp.cpu_count())
+        with mp.Pool(num_workers) as p:
+            p.starmap(_post_raw_job, input_args)
+
+
+def _post_raw_job(_post_dir: str, impl_name, _impl_data_raw, _output_fexts, _dpi):
+    # Plot
+    var_names: List[str] = list(_impl_data_raw.keys())
+    if VAR_TIME in var_names:
+        has_time = True
+        var_names.remove(VAR_TIME)
+    else:
+        has_time = False
+
+    fig, axs = plt.subplots(len(var_names), 1,
+                            layout='compressed',
+                            figsize=(3, 3 * len(var_names)))
+    for var_name, ax in zip(var_names, axs):
+        data = _impl_data_raw[var_name]
+
+        if has_time:
+            xdata = _impl_data_raw[VAR_TIME]
         else:
-            has_time = False
+            xdata = list(range(data.shape[1]))
+        ax.plot(np.tile(xdata, [data.shape[0], 1]).T, data.T, alpha=0.1, color='black')
 
-        fig, axs = plt.subplots(len(var_names), 1,
-                                layout='compressed',
-                                figsize=(3, 3 * len(var_names)))
-        for var_name, ax in zip(var_names, axs):
-            data = _impl_data_raw[impl_name][var_name]
+        ax.set_xlabel('Step')
+        ax.set_title(var_name)
 
-            if has_time:
-                xdata = _impl_data_raw[impl_name][VAR_TIME]
-            else:
-                xdata = list(range(data.shape[1]))
-            ax.plot(np.tile(xdata, [data.shape[0], 1]).T, data.T, alpha=0.1, color='black')
-
-            ax.set_xlabel('Step')
-            ax.set_title(var_name)
-
-        # Save
-        output_name = 'raw_' + impl_name
-        for fext in _output_fexts:
-            fig.savefig(os.path.join(_post_dir, output_name + '.' + fext),
-                        dpi=_dpi)
-        plt.close(fig)
+    # Save
+    output_name = 'raw_' + impl_name
+    for fext in _output_fexts:
+        fig.savefig(os.path.join(_post_dir, output_name + '.' + fext),
+                    dpi=_dpi)
+    plt.close(fig)
 
 
 def _post_dists(_post_dir: str,

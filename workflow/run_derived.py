@@ -7,11 +7,14 @@ Runs the derived step of the workflow
 
 import json
 import logging
+import multiprocessing as mp
 import os
 import pandas as pd
 import subprocess
 import sys
 from typing import Tuple, Type
+
+from matplotlib.pyplot import subplot
 
 from workflow import basic
 
@@ -202,8 +205,8 @@ else:
     exec_module = exec_module_unix
 
 
-def exec_module(_experiment_dir: str, _impl_name: str):
-    return subprocess.Popen([exec_script(_experiment_dir, _impl_name)], cwd=_experiment_dir).wait()
+def _exec_module_job(_experiment_dir: str, _impl_name: str):
+    return _impl_name, exec_module(_experiment_dir, _impl_name)
 
 
 def do_derived(_experiment_dir: str):
@@ -239,6 +242,7 @@ def do_derived(_experiment_dir: str):
             os.makedirs(impl_subdir)
 
     result = {}
+    jobs = []
 
     for name in impl_names:
         logger.info(f'Doing implementation: {name}')
@@ -261,11 +265,21 @@ def do_derived(_experiment_dir: str):
 
             generate_json(field_size, impl_data_raw[name], impl_subdir)
 
-        # Execute the module
-        logger.info('Executing')
-        result[name] = exec_module(_experiment_dir, name)
+        jobs.append((name, spec_path))
 
-        # Cleanup
+    # Execute the module
+
+    num_workers = min(len(jobs), mp.cpu_count())
+    if num_workers > 0:
+        logger.info('Executing')
+
+        with mp.Pool(num_workers) as p:
+            for name, name_result in p.starmap(_exec_module_job, [(_experiment_dir, name) for name, _ in jobs]):
+                result[name] = name_result
+
+    # Cleanup
+
+    for name, spec_path in jobs:
         logger.info('Cleaning up')
         if os.path.isfile(spec_path):
             logger.debug(f'Cleaning spec: {spec_path}')
