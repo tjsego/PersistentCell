@@ -181,13 +181,25 @@ Rscript {derived_dir_rel}/scripts/data-msd-acov.R {impl_data_rel} {impl_derived_
     return script_fp
 
 
+def exec_module_win(_experiment_dir: str, _impl_name: str):
+    return subprocess.Popen([exec_script(_experiment_dir, _impl_name)], cwd=_experiment_dir).wait()
+
+
+def exec_module_unix(_experiment_dir: str, _impl_name: str):
+    fp = exec_script(_experiment_dir, _impl_name)
+    subprocess.Popen(['chmod', '+x', fp], cwd=_experiment_dir).wait()
+    return subprocess.Popen(['bash', fp], cwd=_experiment_dir).wait()
+
+
 if is_win:
     exec_script = exec_script_win
     exec_script_fp = exec_script_fp_win
+    exec_module = exec_module_win
 
 else:
     exec_script = exec_script_unix
     exec_script_fp = exec_script_fp_unix
+    exec_module = exec_module_unix
 
 
 def exec_module(_experiment_dir: str, _impl_name: str):
