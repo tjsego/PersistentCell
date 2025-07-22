@@ -10,6 +10,7 @@ import multiprocessing as mp
 import numpy as np
 import os
 import sys
+import traceback
 from typing import Dict, List, Type
 
 from workflow import basic, run_compare, run_derived, run_ssr
@@ -53,39 +54,48 @@ def _post_raw(_post_dir: str,
     if len(input_args) > 0:
         num_workers = min(len(input_args), mp.cpu_count())
         with mp.Pool(num_workers) as p:
-            p.starmap(_post_raw_job, input_args)
+            for res in p.starmap(_post_raw_job, input_args):
+                if isinstance(res, str):
+                    logger.error(res)
+                    raise RuntimeError(res)
 
 
 def _post_raw_job(_post_dir: str, impl_name, _impl_data_raw, _output_fexts, _dpi):
-    # Plot
-    var_names: List[str] = list(_impl_data_raw.keys())
-    if VAR_TIME in var_names:
-        has_time = True
-        var_names.remove(VAR_TIME)
-    else:
-        has_time = False
-
-    fig, axs = plt.subplots(len(var_names), 1,
-                            layout='compressed',
-                            figsize=(3, 3 * len(var_names)))
-    for var_name, ax in zip(var_names, axs):
-        data = _impl_data_raw[var_name]
-
-        if has_time:
-            xdata = _impl_data_raw[VAR_TIME]
+    try:
+        # Plot
+        var_names: List[str] = list(_impl_data_raw.keys())
+        if VAR_TIME in var_names:
+            has_time = True
+            var_names.remove(VAR_TIME)
         else:
-            xdata = list(range(data.shape[1]))
-        ax.plot(np.tile(xdata, [data.shape[0], 1]).T, data.T, alpha=0.1, color='black')
+            has_time = False
 
-        ax.set_xlabel('Step')
-        ax.set_title(var_name)
+        fig, axs = plt.subplots(len(var_names), 1,
+                                layout='compressed',
+                                figsize=(3, 3 * len(var_names)))
+        for var_name, ax in zip(var_names, axs):
+            data = _impl_data_raw[var_name]
 
-    # Save
-    output_name = 'raw_' + impl_name
-    for fext in _output_fexts:
-        fig.savefig(os.path.join(_post_dir, output_name + '.' + fext),
-                    dpi=_dpi)
-    plt.close(fig)
+            if has_time:
+                xdata = _impl_data_raw[VAR_TIME]
+            else:
+                xdata = list(range(data.shape[1]))
+            ax.plot(np.tile(xdata, [data.shape[0], 1]).T, data.T, alpha=0.1, color='black')
+
+            ax.set_xlabel('Step')
+            ax.set_title(var_name)
+
+        # Save
+        output_name = 'raw_' + impl_name
+        for fext in _output_fexts:
+            fig.savefig(os.path.join(_post_dir, output_name + '.' + fext),
+                        dpi=_dpi)
+        plt.close(fig)
+
+        return 0
+
+    except Exception as e:
+        return '\n'.join(traceback.format_exception(e))
 
 
 def _post_dists(_post_dir: str,

@@ -12,6 +12,7 @@ import os
 import pandas as pd
 import subprocess
 import sys
+import traceback
 from typing import Tuple, Type
 
 from matplotlib.pyplot import subplot
@@ -206,7 +207,10 @@ else:
 
 
 def _exec_module_job(_experiment_dir: str, _impl_name: str):
-    return _impl_name, exec_module(_experiment_dir, _impl_name)
+    try:
+        return _impl_name, exec_module(_experiment_dir, _impl_name)
+    except Exception as e:
+        return '\n'.join(traceback.format_exception(e))
 
 
 def do_derived(_experiment_dir: str):
@@ -274,7 +278,11 @@ def do_derived(_experiment_dir: str):
         logger.info('Executing')
 
         with mp.Pool(num_workers) as p:
-            for name, name_result in p.starmap(_exec_module_job, [(_experiment_dir, name) for name, _ in jobs]):
+            for res in p.starmap(_exec_module_job, [(_experiment_dir, name) for name, _ in jobs]):
+                if isinstance(res, str):
+                    logger.error(res)
+                    raise RuntimeError(res)
+                name, name_result = res
                 result[name] = name_result
 
     # Cleanup

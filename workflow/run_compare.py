@@ -12,6 +12,7 @@ import numpy as np
 import os
 import pandas as pd
 import sys
+import traceback
 from typing import Any, Dict, List, Type
 
 from workflow import basic
@@ -214,7 +215,10 @@ def _post(_experiment_dir: str,
     if len(input_args) > 0:
         num_workers = min(len(input_args), mp.cpu_count())
         with mp.Pool(num_workers) as p:
-            p.starmap(_post_job, input_args)
+            for res in p.starmap(_post_job, input_args):
+                if isinstance(res, str):
+                    logger.error(res)
+                    raise RuntimeError(res)
 
     if output_data:
 
@@ -235,17 +239,21 @@ def _post(_experiment_dir: str,
 
 
 def _post_job(output_data_job, output_dir_job, _output_fexts, fig_dpi):
-    _post_summary_name(output_data_job[basic.comparison_key_named_efect_error],
-                       output_data_job[basic.comparison_key_rej_pval],
-                       output_dir_job,
-                       _output_fexts,
-                       fig_dpi,
-                       output_data_job[basic.comparison_key_modeler],
-                       output_data_job[basic.comparison_key_curator])
-    _post_summary_granular(output_data_job[basic.comparison_key_granular_efect_error],
+    try:
+        _post_summary_name(output_data_job[basic.comparison_key_named_efect_error],
+                           output_data_job[basic.comparison_key_rej_pval],
                            output_dir_job,
                            _output_fexts,
-                           fig_dpi)
+                           fig_dpi,
+                           output_data_job[basic.comparison_key_modeler],
+                           output_data_job[basic.comparison_key_curator])
+        _post_summary_granular(output_data_job[basic.comparison_key_granular_efect_error],
+                               output_dir_job,
+                               _output_fexts,
+                               fig_dpi)
+        return 0
+    except Exception as e:
+        return '\n'.join(traceback.format_exception(e))
 
 
 def do_compare(_experiment_dir: str,
@@ -332,6 +340,9 @@ def do_compare(_experiment_dir: str,
         num_workers = min(len(input_args), mp.cpu_count())
         with mp.Pool(num_workers) as p:
             for res in p.starmap(_compare_job, input_args):
+                if isinstance(res, str):
+                    logger.error(res)
+                    raise RuntimeError(res)
                 output_data.append(res)
 
     # Fin
@@ -347,16 +358,19 @@ def do_compare(_experiment_dir: str,
 
 
 def _compare_job(target_dir: str, modeler_impl: str, curator_impl: str, modeler_res):
-    curator_rep_fp = os.path.join(target_dir, curator_impl, basic.efect_report_name)
-    curator_smp_fp = os.path.join(target_dir, curator_impl, basic.efect_sampling_name)
+    try:
+        curator_rep_fp = os.path.join(target_dir, curator_impl, basic.efect_report_name)
+        curator_smp_fp = os.path.join(target_dir, curator_impl, basic.efect_sampling_name)
 
-    with open(curator_rep_fp, 'r') as f:
-        curator_rep = libssr.EFECTReport.from_json(json.load(f))
+        with open(curator_rep_fp, 'r') as f:
+            curator_rep = libssr.EFECTReport.from_json(json.load(f))
 
-    curator_smp = pd.read_csv(curator_smp_fp, skiprows=1, header=None).iloc[:, 1].to_list()
+        curator_smp = pd.read_csv(curator_smp_fp, skiprows=1, header=None).iloc[:, 1].to_list()
 
-    res = _compare_results(modeler_res, curator_rep, curator_smp)
-    res[basic.comparison_key_modeler] = modeler_impl
-    res[basic.comparison_key_curator] = curator_impl
+        res = _compare_results(modeler_res, curator_rep, curator_smp)
+        res[basic.comparison_key_modeler] = modeler_impl
+        res[basic.comparison_key_curator] = curator_impl
 
-    return res
+        return res
+    except Exception as e:
+        return '\n'.join(traceback.format_exception(e))

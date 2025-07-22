@@ -11,6 +11,7 @@ import numpy as np
 import os
 import pandas as pd
 import sys
+import traceback
 from typing import Dict, List, Tuple, Type
 
 from workflow import basic
@@ -61,42 +62,51 @@ def _post_ecfs(_post_dir: str,
     if len(input_args) > 0:
         num_workers = min(len(input_args), mp.cpu_count())
         with mp.Pool(num_workers) as p:
-            p.starmap(_post_ecfs_job, input_args)
+            for res in p.starmap(_post_ecfs_job, input_args):
+                if isinstance(res, str):
+                    logger.error(res)
+                    raise RuntimeError(res)
 
 
 def _post_ecfs_job(_post_dir: str, var_names, impl_names, _impl_data_raw, ind, _output_fexts, _dpi):
-    # Plot ECFs
-    cs = _get_colors(len(impl_names))
-    fig, axs = plt.subplots(len(var_names), 2,
-                            layout='compressed',
-                            figsize=(6, 3 * len(var_names)))
-    for var_name, ax in zip(var_names, axs):
-        eval_t = None
+    try:
+        # Plot ECFs
+        cs = _get_colors(len(impl_names))
+        fig, axs = plt.subplots(len(var_names), 2,
+                                layout='compressed',
+                                figsize=(6, 3 * len(var_names)))
+        for var_name, ax in zip(var_names, axs):
+            eval_t = None
 
-        for i, impl_name in enumerate(impl_names):
-            try:
-                data = _impl_data_raw[impl_name][var_name][:, ind]
-            except KeyError:
-                logger.error(f'Missing variable {var_name} for implementation {impl_name}')
-                continue
+            for i, impl_name in enumerate(impl_names):
+                try:
+                    data = _impl_data_raw[impl_name][var_name][:, ind]
+                except KeyError:
+                    logger.error(f'Missing variable {var_name} for implementation {impl_name}')
+                    continue
 
-            if i == 0:
-                eval_t = libssr.get_eval_info_times(100, libssr.eval_final(data))
-            ecf = libssr.ecf(data, eval_t)
-            [ax[j].plot(eval_t, ecf[:, j], color=cs[i % len(cs)], label=impl_name) for j in range(2)]
+                if i == 0:
+                    eval_t = libssr.get_eval_info_times(100, libssr.eval_final(data))
+                ecf = libssr.ecf(data, eval_t)
+                [ax[j].plot(eval_t, ecf[:, j], color=cs[i % len(cs)], label=impl_name) for j in range(2)]
 
-        for j in range(2):
-            ax[j].set_xlabel(f'Step {ind}')
-            ax[j].set_title(var_name)
-            ax[j].set_ylim(-1, 1)
-            ax[j].legend()
+            for j in range(2):
+                ax[j].set_xlabel(f'Step {ind}')
+                ax[j].set_title(var_name)
+                ax[j].set_ylim(-1, 1)
+                ax[j].legend()
 
-    # Save
-    output_name = f'ecf_{ind}'
-    for fext in _output_fexts:
-        fig.savefig(os.path.join(_post_dir, output_name + '.' + fext),
-                    dpi=_dpi)
-    plt.close(fig)
+        # Save
+        output_name = f'ecf_{ind}'
+        for fext in _output_fexts:
+            fig.savefig(os.path.join(_post_dir, output_name + '.' + fext),
+                        dpi=_dpi)
+        plt.close(fig)
+
+        return 0
+
+    except Exception as e:
+        return '\n'.join(traceback.format_exception(e))
 
 
 def _post_summary(_post_dir: str,
