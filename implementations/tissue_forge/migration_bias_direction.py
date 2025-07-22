@@ -100,6 +100,7 @@ class Sim:
 
         from_json_data(self.model_label, **self.model_args)
         tf.event.on_time(period=tf.Universe.dt, invoke_method=lambda e: self.record_data())
+        self.record_data()
 
         tf.step(float(round(self.sim_time / tf.Universe.dt)))
 
