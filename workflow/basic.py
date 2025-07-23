@@ -47,6 +47,10 @@ post_rcparams = {
     'font.family': 'arial'
 }
 
+# Workflow specification
+workflow_fp = 'workflow.json'
+WFKEY_INITSKIP = 'init_skipped'
+
 
 def start_output_structure(_exp_dir: str):
     for d in output_dir_structure:
