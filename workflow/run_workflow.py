@@ -206,12 +206,17 @@ def _post_summary(_post_dir: str,
                             alpha=0.25,
                             color=cs[i % len(cs)])
 
-    handles, labels = axs[0].get_legend_handles_labels()
-    axs[0].legend(handles[:len(impl_names)], labels[:len(impl_names)])
-
     # Save
     if not os.path.isdir(_post_dir):
         os.makedirs(_post_dir)
+
+    output_name = 'summary_no_legend'
+    for fext in _output_fexts:
+        fig.savefig(os.path.join(_post_dir, output_name + '.' + fext),
+                    dpi=_dpi)
+
+    handles, labels = axs[0].get_legend_handles_labels()
+    axs[0].legend(handles[:len(impl_names)], labels[:len(impl_names)])
 
     output_name = 'summary'
     for fext in _output_fexts:

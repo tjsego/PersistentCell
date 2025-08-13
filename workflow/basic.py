@@ -1,3 +1,4 @@
+import json
 import os
 from typing import List
 
@@ -50,6 +51,7 @@ post_rcparams = {
 # Workflow specification
 workflow_fp = 'workflow.json'
 WFKEY_INITSKIP = 'init_skipped'
+DEF_SKIPPED = 1
 
 
 def start_output_structure(_exp_dir: str):
@@ -65,6 +67,16 @@ def get_output_subdirs(_exp_dir):
 
 def get_output_appended_subdirs(_exp_dir):
     return os.listdir(os.path.join(_exp_dir, output_subdir_results_appended))
+
+
+def get_init_skipped(_target_dir: str):
+    wf_fp = os.path.join(_target_dir, workflow_fp)
+    if os.path.isfile(wf_fp):
+        with open(wf_fp, 'r') as f:
+            wf_data = json.load(f)
+        if WFKEY_INITSKIP in wf_data:
+            return int(wf_data[WFKEY_INITSKIP])
+    return DEF_SKIPPED
 
 
 def get_results_raw(_exp_dir):

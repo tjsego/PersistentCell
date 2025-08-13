@@ -222,8 +222,16 @@ def do_ssr(_experiment_dir: str,
             continue
 
         # Execute the module
+        impl_results = load_results(impl_data[name])
+        init_skipped = basic.get_init_skipped(_experiment_dir)
+        if init_skipped > 0:
+            for k, v in impl_results.items():
+                if k == VAR_TIME:
+                    impl_results[k] = v[init_skipped:]
+                else:
+                    impl_results[k] = v[:, init_skipped:]
         sdata, err_sampling = efect_report(
-            load_results(impl_data[name]),
+            impl_results,
             sig_figs,
             err_thresh=err_thresh,
             return_sampling=True,

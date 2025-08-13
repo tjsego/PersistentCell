@@ -34,20 +34,9 @@ def _log_error(msg: str, err_type: Type[BaseException]):
     raise err_type(msg)
 
 
-def _get_init_skipped(_target_dir: str):
-    wf_fp = os.path.join(_target_dir, basic.workflow_fp)
-    if os.path.isfile(wf_fp):
-        with open(wf_fp, 'r') as f:
-            wf_data = json.load(f)
-        if basic.WFKEY_INITSKIP in wf_data:
-            return int(wf_data[basic.WFKEY_INITSKIP])
-    return DEF_SKIPPED
-
-
 def _compare_results(_modeler_res: Dict[str, np.ndarray],
                      _curator_rep: libssr.EFECTReport,
-                     _curator_smp: List[float],
-                     init_skipped: int = None):
+                     _curator_smp: List[float]):
     err_granular = {name: [] for name in _curator_rep.variable_names}
     for i, name in enumerate(_curator_rep.variable_names):
         for j in range(_curator_rep.simulation_times.shape[0]):
@@ -57,10 +46,7 @@ def _compare_results(_modeler_res: Dict[str, np.ndarray],
                 err_granular[name].append(libssr.ecf_compare(ecf_res, _curator_rep.ecf_evals[j, i, :, :]))
             except IndexError:
                 logger.error(f'Missing index {j}.')
-    if init_skipped is not None:
-        err_names = {n: max(v[init_skipped:]) for n, v in err_granular.items()}
-    else:
-        err_names = {n: max(v) for n, v in err_granular.items()}
+    err_names = {n: max(v) for n, v in err_granular.items()}
     err_res = max(err_names.values())
     return {
         basic.comparison_key_efect_error: err_res,
@@ -89,13 +75,13 @@ def _post_summary_name(_data: Dict[str, float],
         ax=ax,
         color='black'
     )
-    ax.legend().set_visible(False)
     ax.set_ylabel('EFECT Error')
     ax.set_title(f'{_modeler_impl}/{_curator_impl} p-val={_pval}')
     ax.set_ylim(0, 2)
     ax.axhline(y=efect_error, color='black', linestyle='--')
     ax.annotate(f'EFECT Error={efect_error:.2f}', xy=(0, efect_error), xytext=(0, efect_error + 0.25),
                 arrowprops=dict(facecolor='black', shrink=0.05))
+    ax.legend().set_visible(False)
 
     output_name = 'summary'
     for fext in _output_fexts:
@@ -107,8 +93,7 @@ def _post_summary_name(_data: Dict[str, float],
 def _post_summary_granular(_data: Dict[str, List[float]],
                            _output_dir: str,
                            _output_fexts: List[str],
-                           _dpi: int,
-                           ignore_first=True):
+                           _dpi: int):
 
     names = _data.keys()
 
@@ -120,10 +105,7 @@ def _post_summary_granular(_data: Dict[str, List[float]],
         values = _data[n]
 
         ax.plot(list(range(len(values))), values, color='black')
-        if ignore_first:
-            max_value = max(values)
-        else:
-            max_value = max(values[1:])
+        max_value = max(values)
         ax.axhline(max_value, color='black', linestyle='--')
 
         ax.set_ylim(0, 2)
@@ -334,7 +316,6 @@ def do_compare(_experiment_dir: str,
 
     # Construct candidate jobs
     input_args = []
-    init_skipped = _get_init_skipped(_experiment_dir)
     logger.info('Candidate jobs:')
     for modeler_impl, curator_impl in product(impl_names, impl_names):
         if modeler_impl == curator_impl:
@@ -345,7 +326,7 @@ def do_compare(_experiment_dir: str,
 
             modeler_res = _results_get(modeler_impl)
 
-            input_args.append((target_dir, modeler_impl, curator_impl, modeler_res, init_skipped))
+            input_args.append((target_dir, modeler_impl, curator_impl, modeler_res))
 
     if len(input_args) > 0:
         logger.info('Executing')
@@ -370,7 +351,7 @@ def do_compare(_experiment_dir: str,
     return output_data
 
 
-def _compare_job(target_dir: str, modeler_impl: str, curator_impl: str, modeler_res, init_skipped):
+def _compare_job(target_dir: str, modeler_impl: str, curator_impl: str, modeler_res):
     try:
         curator_rep_fp = os.path.join(target_dir, curator_impl, basic.efect_report_name)
         curator_smp_fp = os.path.join(target_dir, curator_impl, basic.efect_sampling_name)
@@ -380,7 +361,7 @@ def _compare_job(target_dir: str, modeler_impl: str, curator_impl: str, modeler_
 
         curator_smp = pd.read_csv(curator_smp_fp, skiprows=1, header=None).iloc[:, 1].to_list()
 
-        res = _compare_results(modeler_res, curator_rep, curator_smp, init_skipped)
+        res = _compare_results(modeler_res, curator_rep, curator_smp)
         res[basic.comparison_key_modeler] = modeler_impl
         res[basic.comparison_key_curator] = curator_impl
 
