@@ -27,6 +27,16 @@ for k, v in basic.post_rcparams.items():
     mpl.rcParams[k] = v
 
 
+def _get_ssr_kwargs(_target_dir: str):
+    wf_fp = os.path.join(_target_dir, basic.workflow_fp)
+    if os.path.isfile(wf_fp):
+        with open(wf_fp, 'r') as f:
+            wf_data = json.load(f)
+        if 'ssr' in wf_data:
+            return wf_data['ssr']
+    return {}
+
+
 def _log_error(msg: str, err_type: Type[BaseException]):
     logger.error(msg)
     raise err_type(msg)
@@ -45,7 +55,7 @@ def _post_ecfs(_post_dir: str,
                _output_fexts: List[str],
                _dpi: int,
                num_dists=11):
-    impl_names = list(_impl_data_raw.keys())
+    impl_names = sorted(_impl_data_raw.keys())
     var_names: List[str] = list(_impl_data_raw[impl_names[0]].keys())
     num_times = _impl_data_raw[impl_names[0]][var_names[0]].shape[1]
     if VAR_TIME in var_names:
@@ -113,7 +123,7 @@ def _post_summary(_post_dir: str,
                   _sampling_data: Dict[str, Tuple[float, float]],
                   _output_fexts: List[str],
                   _dpi: int):
-    names = list(_sampling_data.keys())
+    names = sorted(_sampling_data.keys())
     values = [_sampling_data[n] for n in names]
 
     fig, ax = plt.subplots(1, 1, layout='compressed', figsize=(3, 3))
@@ -209,6 +219,13 @@ def do_ssr(_experiment_dir: str,
 
     result = {}
 
+    ssr_kwargs = dict(
+        sig_figs=sig_figs,
+        err_thresh=err_thresh,
+        **kwargs
+    )
+    ssr_kwargs.update(_get_ssr_kwargs(_experiment_dir))
+
     for name in impl_names:
         logger.info(f'Working: {name}')
 
@@ -232,10 +249,8 @@ def do_ssr(_experiment_dir: str,
                     impl_results[k] = v[:, init_skipped:]
         sdata, err_sampling = efect_report(
             impl_results,
-            sig_figs,
-            err_thresh=err_thresh,
             return_sampling=True,
-            **kwargs
+            **ssr_kwargs
         )
 
         logger.info(f'\tOutput EFECT report  : {sdata_output_fp}')

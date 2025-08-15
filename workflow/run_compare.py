@@ -19,7 +19,7 @@ from workflow import basic
 
 sys.path.append(basic.dir_compare)
 
-from ssr.basic import load_results
+from ssr.basic import load_results, VAR_TIME
 
 logger = logging.getLogger(__name__)
 
@@ -231,6 +231,12 @@ def _post(_experiment_dir: str,
                 post_all_data[impl_name][impl_name] = json.load(f)["errorMetricMean"]
         _post_all(post_all_data, post_dir_root, _output_fexts, fig_dpi)
 
+        listing_data = [','.join(['Trial', 'Modeler', 'Curator'])]
+        for i, d in enumerate(output_data):
+            listing_data.append(','.join([str(i), d[basic.comparison_key_modeler], d[basic.comparison_key_curator]]))
+        with open(os.path.join(post_dir_root, 'listing.txt'), 'w') as f:
+            f.write('\n'.join(listing_data))
+
 
 def _post_job(output_data_job, output_dir_job, _output_fexts, fig_dpi):
     try:
@@ -316,6 +322,7 @@ def do_compare(_experiment_dir: str,
 
     # Construct candidate jobs
     input_args = []
+    init_skipped = basic.get_init_skipped(_experiment_dir)
     logger.info('Candidate jobs:')
     for modeler_impl, curator_impl in product(impl_names, impl_names):
         if modeler_impl == curator_impl:
@@ -325,6 +332,15 @@ def do_compare(_experiment_dir: str,
             logger.info(f'Working: {modeler_impl}, {curator_impl}')
 
             modeler_res = _results_get(modeler_impl)
+            for k, v in modeler_res.items():
+                if k != VAR_TIME:
+                    modeler_res[k] = v[v.shape[0] // 2:, :]
+            if init_skipped > 0:
+                for k, v in modeler_res.items():
+                    if k == VAR_TIME:
+                        modeler_res[k] = v[init_skipped:]
+                    else:
+                        modeler_res[k] = v[:, init_skipped:]
 
             input_args.append((target_dir, modeler_impl, curator_impl, modeler_res))
 

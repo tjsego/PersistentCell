@@ -103,7 +103,7 @@ def _post_dists(_post_dir: str,
                 _output_fexts: List[str],
                 _dpi: int,
                 num_dists=11):
-    impl_names = list(_impl_data_raw.keys())
+    impl_names = sorted(_impl_data_raw.keys())
     var_names: List[str] = list(_impl_data_raw[impl_names[0]].keys())
     num_times = _impl_data_raw[impl_names[0]][var_names[0]].shape[1]
     if VAR_TIME in var_names:
@@ -147,7 +147,7 @@ def _post_summary(_post_dir: str,
                   _dpi: int,
                   ci_int: float = 0.95,
                   num_stdevs: int = None):
-    impl_names = list(_impl_data_raw.keys())
+    impl_names = sorted(_impl_data_raw.keys())
     var_names: List[str] = list(_impl_data_raw[impl_names[0]].keys())
     if VAR_TIME in var_names:
         has_time = True

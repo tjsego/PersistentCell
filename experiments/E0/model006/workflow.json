@@ -1,3 +1,6 @@
 {
-  "init_skipped": 1
+  "init_skipped": 1,
+  "ssr": {
+    "err_thresh": 0.0001
+  }
 }
