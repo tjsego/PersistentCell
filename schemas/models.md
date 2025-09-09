@@ -8,12 +8,19 @@ Overview:
 | [MODEL000](#model000) | CPM    | No persistence                                                                |
 | MODEL001 | CPM    | Equation 2 in 10.1084/jem.20061278                                            |
 | MODEL002 | CPM    | Equation 3 in 10.1007/978-3-7643-8123-3_7                                     |
-| MODEL003 | CPM    | Constant persistence as implemented by ExternalPotentialPlugin in CompuCell3D |
+| [MODEL003](#model003) | CPM    | Constant persistence as implemented by ExternalPotentialPlugin in CompuCell3D |
 | MODEL004 | CM     | Equation 9 in 10.1371/journal.pcbi.1005991                                    |
-| MODEL005 | CPM    | Simple self-reinforcing PRW in the CPM, described below                       |
-| MODEL006 | CPM    | Persistent motion controlled by cell-intrinsic orientation under effect of continuous time noise |
+| [MODEL005](#model005) | CPM    | Simple self-reinforcing PRW in the CPM, described below                       |
+| [MODEL006](#model006) | CPM    | Persistent motion controlled by cell-intrinsic orientation under effect of continuous time noise |
 | MODEL007 | CPM    | Persistent motion controlled by cell-intrinsic orientation under effect of continuous time noise and self-reenforcement of direction of motion |
-| MODEL008 | CPM    | Chemotaxis: chemotaxis CPM coupled to a PDE |
+| [MODEL008](#model008) | CPM    | Chemotaxis: chemotaxis CPM coupled to a PDE |
+
+## Cellular Potts Models (CPM)
+
+This section describes the general background, notation, representation and update algorithm of the Cellular Potts Model (CPM). The specific models built within this overall framework are described in the section [CPM-based models](#cpm-based-models) below.
+
+
+
 
 ## CPM-based models
 
