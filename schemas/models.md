@@ -301,8 +301,6 @@ The PDE is implemented using a finite difference scheme (https://en.wikipedia.or
 | `cpm_force_mode` | "extension", i.e. $\delta_\text{src} = 1, \delta_\text{tgt} = 0$ (see "work term")              |
 
 
-
-
 ### MODEL007
 
 TO DO match description to that of the models above. 
