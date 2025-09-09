@@ -126,7 +126,11 @@ $$H_\text{perimeter} =  \lambda_\text{perim} \left ( P(t) - P_\text{target} \rig
 
 with $A(t)$ and $P(t)$ the cell's current area and perimeter, respectively.
 
-In addition to the [shared implementation details](#overview-of-shared-cpm-implementation-details), we specify:
+In practice we only consider the change $\Delta H$ that would be induced by the copy attempt:
+
+$$\Delta H = H_\text{accept copy} - H_\text{reject copy}$$
+
+To summarize, in addition to the [shared implementation details](#overview-of-shared-cpm-implementation-details), we specify:
 
 | Parameter | Description                                                                 | Value |
 |-----------|-----------------------------------------------------------------------------|-------|
