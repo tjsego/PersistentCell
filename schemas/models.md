@@ -263,14 +263,30 @@ All other parameters are as described in the [general implementation details](#o
 
 
 ### MODEL008
-This model implements chemotaxis of a single cell in a coupled chemotactic field. Both the CPM and the chemokine grid have periodic boundaries. 
+This model implements chemotaxis of a single-cell CPM ($G_\text{CPM}$) in a coupled chemotactic field ($G_\text{chem}$). Both the CPM and the chemokine grid have periodic boundaries. 
 
 #### CPM
-We use model000 along with the following work term:
+We extend [model000](#model000) with the following work term:
 
 $$\Delta H_\text{chem} (\sigma) = \lambda_\text{chem}(\sigma) \left( c( p_\text{tgt} ) - c( p_\text{src} ) \right)$$
 
 where $c(p)$ is the current chemokine concentration at pixel p, and $p_\text{src},p_\text{tgt}$ are the source and target pixel of the copy attempt.
+
+#### CPM initialization
+
+The initial cell pixels are now: 
+
+```
+			[48,12], [48,13], [48,14], [49,11], [49,12],
+			[49,13], [49,14], [49,15], [49,16], [50,11],
+			[50,12], [50,13], [50,14], [50,15], [50,16],
+			[50,17], [51,12], [51,13], [51,14], [51,15],
+			[51,16], [51,17], [51,18], [52,12], [52,13],
+			[52,14], [52,15], [52,16], [53,13], [53,14],
+			[53,15]
+```
+
+This is similar to the initial condition described [here](#initial-condition), but shifted.
 
 #### PDE
 The chemokine is implemented on a separate (Float32) grid of the same dimensions as the CPM itself (initial condition: zero everywhere). The chemokine is described by the following PDE:
@@ -286,19 +302,42 @@ k_\text{prod} & p = p_\text{chem source}\\
 
 The PDE is implemented using a finite difference scheme (https://en.wikipedia.org/wiki/Discrete_Laplace_operator#Finite_differences) with h = 1, and solved with $N_{ds}=10$ steps after every MCS in the CPM (where $D$, $k_\text{prod}$ and $k_\text{decay}$ have to be divided by $N_{ds}$ to maintain the same effective rates per MCS).
 
+#### Coupling:
+
+A timestep of the overall model consists of the following steps: 
+
+1. Run one simulation step (MCS) in $G_\text{CPM}$
+2. Run $N_{ds}$ PDE steps in $G_\text{chem}$ by repeating the following $N_{ds}$ times:
+	1. Secrete chemokine at the source with rate $k_\text{prod}/ N_{ds}$
+    2. Perform diffusion at rate $D / N_{ds}$
+	3. Decay chemokine at rate $k_\text{decay}/ N_{ds}$
+
+#### Example
+
+<img width="80%" src = "https://github.com/tjsego/PersistentCell/blob/start/implementations/artistoo/model008.gif?raw=true">
 
 
+#### Implementation details overview
 
+The model follows the implementation details outlined [here](#overview-of-shared-cpm-implementation-details) and [model000](#model000), with the following changes compared to [model000](#model000):
 
-| Parameter | Description                                                                 |
-|-----------|-----------------------------------------------------------------------------|
-| $\lambda_\text{chem}$ | As Model003, the Lagrange multiplier controls sensitivity to the chemokine gradient.     |
-| $p_\text{chem source}$ | Location of the point source of the chemokine |
-| $k_\text{prod}$ | Units of chemokine produced per MCS at the point source |
-| $k_\text{decay}$ | Fraction of chemokine that decays each MCS at a given location |
-| $D$ | diffusion coefficient in pixels<sup>2</sup>/MCS) |
-| $N_{ds}$ | number of PDE steps performed after every MCS |
-| `cpm_force_mode` | "extension", i.e. $\delta_\text{src} = 1, \delta_\text{tgt} = 0$ (see "work term")              |
+| Parameter/choice | Description                                                                 | Value |
+|-----------|-----------------------------------------------------------------------------|-------|
+| $w \times h$ | Grid dimensions in horizontal and vertical direction (number of pixels), this is the same for $G_\text{CPM}$ and $G_\text{chem}$ | 200 $\times$ 30 pixels |
+| Boundary conditions | For both $G_\text{CPM}$ and $G_\text{chem}$ | periodic |
+| Initial condition | | $\sigma(p) = 0$ except for a specific list of pixels initialized with $\sigma(p)=1$, see [CPM initialization](#cpm-initialization) above. |
+
+And the following additions: 
+
+| Parameter | Description                                                                 | Value |
+|-----------|-----------------------------------------------------------------------------|-------|
+| $\lambda_\text{chem}$ | the Lagrange multiplier controls sensitivity to the chemokine gradient.     | 1000 |
+| $p_\text{chem source}$ | Location of the point source of the chemokine | $(120,15)$ |
+| $k_\text{prod}$ | Units of chemokine produced per MCS at the point source | 100 |
+| $k_\text{decay}$ | Fraction of chemokine that decays each MCS at a given location | 0.001 |
+| $D$ | diffusion coefficient in pixels<sup>2</sup>/MCS) | 1 |
+| $N_{ds}$ | number of PDE steps performed after every MCS | 10 |
+| `cpm_force_mode` | Does the chemotactic force act on extending and/or retracting copy attempts? (see [General work term](#general-work-term))   | "extension", i.e. $\delta_\text{src} = 1, \delta_\text{tgt} = 0$ | 
 
 
 ### MODEL007
