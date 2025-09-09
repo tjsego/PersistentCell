@@ -128,7 +128,7 @@ with $A(t)$ and $P(t)$ the cell's current area and perimeter, respectively.
 
 In practice we only consider the change $\Delta H$ that would be induced by the copy attempt:
 
-$$\Delta H = H_\text{accept copy} - H_\text{reject copy}$$
+$$\Delta H_\text{model000} = H_\text{accept copy} - H_\text{reject copy}$$
 
 To summarize, in addition to the [shared implementation details](#overview-of-shared-cpm-implementation-details), we specify:
 
@@ -175,7 +175,11 @@ The following figure illustrates the relation between the different models (furt
 
 ### MODEL003
 
-Extends MODEL000 with a work term to favour motion in a static target direction (yielding ballistic motion in a predefined direction). Starting from the general work term as defined above: 
+Extends MODEL000 with a work term to favour motion in a static target direction (yielding ballistic motion in a predefined direction):
+
+$$\Delta H_\text{model003} = \Delta H_\text{model000} + \Delta H_\text{dir}$$
+
+Starting from the general work term as defined above: 
 
 $$\Delta H_\text{dir} (\sigma) = \lambda_\text{dir}(\sigma) \left( \vec{dx}(\sigma) \cdot \vec{b}(\sigma) \right)$$
 
@@ -199,7 +203,11 @@ All other parameters are as described in the [general implementation details](#o
 
 ### MODEL005
 
-Similar to MODEL003, but target directions can now adapt through self-reinforcement of random fluctuations, yielding a persistent random walk rather than ballistic motion. Specifically, we rephrase the reference direction in the work term:
+Similar to MODEL003, we again extend MODEL000 with a work term:
+
+$$\Delta H_\text{model005} = \Delta H_\text{model000} + \Delta H_\text{dir}$$
+
+But now, target directions can now adapt through self-reinforcement of random fluctuations, yielding a persistent random walk rather than ballistic motion. Specifically, we rephrase the reference direction in the work term:
 
 $$\Delta H_\text{dir} (\sigma) = \lambda_\text{dir}(\sigma) \left( \vec{dx}(\sigma) \cdot \vec{b}(\sigma) \right)$$
 
@@ -233,8 +241,11 @@ All other parameters are as described in the [general implementation details](#o
 ### MODEL006
 
 This simple, Langevin PRW model is similar to MODEL005, but directly evolves the cell orientation with angular noise. 
+We again extend MODEL000 with a work term:
 
-Specifically, we rephrase the work term 
+$$\Delta H_\text{model006} = \Delta H_\text{model000} + \Delta H_\text{dir}$$
+
+Specifically, we now rephrase the work term 
 
 $$\Delta H_\text{dir} (\sigma) = \lambda_\text{dir}(\sigma) \left( \vec{dx}(\sigma) \cdot \vec{b}(\sigma) \right)$$
 
@@ -271,6 +282,8 @@ This model implements chemotaxis of a single-cell CPM ($G_\text{CPM}$) in a coup
 
 #### CPM
 We extend [model000](#model000) with the following work term:
+
+$$\Delta H_\text{model008} = \Delta H_\text{model000} + \Delta H_\text{chem}$$
 
 $$\Delta H_\text{chem} (\sigma) = \lambda_\text{chem}(\sigma) \left( c( p_\text{tgt} ) - c( p_\text{src} ) \right)$$
 
