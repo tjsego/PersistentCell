@@ -184,16 +184,18 @@ i.e. we define:
 - $\vec{dx}(\sigma) = \vec{v}_\text{copy}$ as the **unnormalized** vector from source pixel $s$ to target pixel $t$; i.e. `cpm_update_direction` = `source-to-target-unnorm`
 - $\vec{b}(\sigma) = \vec{e}_\alpha = ( \cos \alpha, \sin \alpha )$, a unit vector in a (fixed) reference direction $\alpha$.
 
-| Parameter | Description                                                                 |
-|-----------|-----------------------------------------------------------------------------|
-| $\lambda_\text{dir}$ | Lagrange multiplier of the work term, controls the cell speed.	 |
-| $\alpha$ | Angle (to the positive x-axis) of the fixed target direction              |
-| `cpm_force_mode` | "extension", i.e. $\delta_\text{src} = 1, \delta_\text{tgt} = 0$ (see "work term")              |
-| `cpm_update_direction` | "source-to-target-unnorm", i.e.  $\vec{dx}(\sigma)$ is the unnormalized vector $s\rightarrow t$    |
+| Parameter | Description                                                                 | Value | 
+|-----------|-----------------------------------------------------------------------------|-------|
+| $\lambda_\text{dir}$ | Lagrange multiplier of the work term, controls the cell speed.	 | 10 |
+| $\alpha$ | Angle (to the positive x-axis) of the fixed target direction              | 0 |
+| `cpm_force_mode` | Does the force act on extending and/or retracting copy attempts? (see [General work term](#general-work-term))   | "extension", i.e. $\delta_\text{src} = 1, \delta_\text{tgt} = 0$ | 
+| `cpm_update_direction` | How do we defined the proposal direction $\vec{dx}(\sigma)$? (see [Directional work term](#directional-work-term)) | "source-to-target-unnorm", i.e.  $\vec{dx}(\sigma)$ is the unnormalized vector $s\rightarrow t$    |
+
+All other parameters are as described in the [general implementation details](#overview-of-shared-cpm-implementation-details) and [model000](#model000).
 
 ### MODEL005
 
-Similar to MODEL003, but target directions can adapt through self-reinforcement of random fluctuations, yielding a persistent random walk rather than ballistic motion. Specifically, we rephrase the reference direction in the work term:
+Similar to MODEL003, but target directions can now adapt through self-reinforcement of random fluctuations, yielding a persistent random walk rather than ballistic motion. Specifically, we rephrase the reference direction in the work term:
 
 $$\Delta H_\text{dir} (\sigma) = \lambda_\text{dir}(\sigma) \left( \vec{dx}(\sigma) \cdot \vec{b}(\sigma) \right)$$
 
@@ -203,23 +205,25 @@ $$\Delta H_\text{dir} (\sigma) = \lambda_\text{dir}(\sigma) \left( \vec{v}_{\tex
 
 
 i.e. we define:
-- update direction as MODEL003: $\vec{dx}(\sigma) = \vec{v}_\text{copy}$ as the **unnormalized** vector from source pixel $s$ to target pixel $t$; i.e. `cpm_update_direction` = `source-to-target-unnorm`
+- update direction as in [MODEL003](#model003): $\vec{dx}(\sigma) = \vec{v}_\text{copy}$ as the **unnormalized** vector from source pixel $s$ to target pixel $t$; i.e. `cpm_update_direction` = `source-to-target-unnorm`
 - target direction $\vec{b}(\sigma) = \tfrac{\vec{u}(t)}{ \Vert \vec{u}(t) \Vert }$
 
 which now also gets a temporal update:
 
 $$\vec{u}(t)= \vec{\Delta c} (\Delta t)$$
 
-where $\vec{\Delta c}(\Delta t)$ is the (normalized) observed displacement vector of the cell centroid over the last $\Delta t$ MCS. 
+where $\vec{\Delta c}(\Delta t)$ is the (normalized) observed displacement vector of the cell centroid over the last $\Delta t$ MCS. Note: while $t < \Delta t$, $\vec{b}(\sigma) = \vec{e}_{\alpha 0}$, a unit vector in direction $\alpha_0$.
 
 
-| Parameter | Description                                                                 |
-|-----------|-----------------------------------------------------------------------------|
-| $\lambda_\text{dir}$ | As Model003, the Lagrange multiplier controls the cell speed.     |
-| $\Delta t$   | Time interval (in MCS) over which we evaluate the cell's recent displacement; this determines persistence time of the random walk.      |
-| `cpm_force_mode` | "extension", i.e. $\delta_\text{src} = 1, \delta_\text{tgt} = 0$ (see "work term")              |
-| `cpm_update_direction` | "source-to-target-unnorm", i.e.  $\vec{dx}(\sigma)$ is the unnormalized vector $s\rightarrow t$         |
+| Parameter | Description                                                                 | Value |
+|-----------|-----------------------------------------------------------------------------|--------|
+| $\lambda_\text{dir}$ | Lagrange multiplier of the work term, controls the cell speed.     | 10 (same as [model003](#model003) ) |
+| $\Delta t$   | Time interval (in MCS) over which we evaluate the cell's recent displacement; this determines persistence time of the random walk.      | 50 MCS |
+| $\alpha_0$ | Initial direction (angle to positive x-axis) | 0 |
+| `cpm_force_mode` | Does the force act on extending and/or retracting copy attempts? (see [General work term](#general-work-term))   | Same as [model003](#model003): "extension", i.e. $\delta_\text{src} = 1, \delta_\text{tgt} = 0$ | 
+| `cpm_update_direction` | How do we defined the proposal direction $\vec{dx}(\sigma)$? (see [Directional work term](#directional-work-term)) | Same as [model003](#model003): "source-to-target-unnorm", i.e.  $\vec{dx}(\sigma)$ is the unnormalized vector $s\rightarrow t$    |
 
+All other parameters are as described in the [general implementation details](#overview-of-shared-cpm-implementation-details) and [model000](#model000).
 
 
 ### MODEL006
@@ -247,13 +251,16 @@ Without loss of generality, we assume the integer $\Delta t = 1$ MCS, such that 
 $$ \vec{e}_\alpha(\sigma, t) = \left(\cos \quad \alpha(\sigma, t), \sin \quad \alpha(\sigma, t) \right)$$
 
 
-| Parameter | Description                                                                 |
-|-----------|-----------------------------------------------------------------------------|
-| $\alpha(0)$   | Initial angle (to the positive x-axis) of the target direction $\alpha$.     |
-| $\lambda_\text{dir}$ | As Model003, the Lagrange multiplier controls the cell speed.     |
-| $\xi$   | Standard deviation of noise added to the cell direction (larger $\xi$ implies lower persistence time).   |
-| `cpm_force_mode` | "extension", i.e. $\delta_\text{src} = 1, \delta_\text{tgt} = 0$ (see "work term")              |
-| `cpm_update_direction` | "cell-mass-displacement", i.e.   $\vec{dx}(\sigma) = A(\sigma,t)\vec{\delta c}(\sigma) $     |
+| Parameter | Description                                                                 | Value |
+|-----------|-----------------------------------------------------------------------------|--------|
+| $\lambda_\text{dir}$ | Lagrange multiplier of the work term, controls the cell speed.     | 5  |
+| $\alpha(0)$   | Initial angle (to the positive x-axis) of the target direction $\alpha$.     | 0 |
+| $\xi$   | Standard deviation of noise added to the cell direction (larger $\xi$ implies lower persistence time).   | 0.09 |
+| `cpm_force_mode` | Does the force act on extending and/or retracting copy attempts? (see [General work term](#general-work-term))   | Unlike [model003](#model003), now "reciprocal", i.e. $\delta_\text{src} = \delta_\text{tgt} = 1$ | 
+| `cpm_update_direction` | How do we defined the proposal direction $\vec{dx}(\sigma)$? (see [Directional work term](#directional-work-term)) | Unlike [model003](#model003), now "cell-mass-displacement", i.e.   $\vec{dx}(\sigma) = A(\sigma,t)\vec{\delta c}(\sigma) $    |
+
+All other parameters are as described in the [general implementation details](#overview-of-shared-cpm-implementation-details) and [model000](#model000).
+
 
 ### MODEL008
 This model implements chemotaxis of a single cell in a coupled chemotactic field. Both the CPM and the chemokine grid have periodic boundaries. 
