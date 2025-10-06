@@ -94,6 +94,9 @@ def _post_ecfs_job(_post_dir: str, var_names, impl_names, _impl_data_raw, ind, _
                 except KeyError:
                     logger.error(f'Missing variable {var_name} for implementation {impl_name}')
                     continue
+                except IndexError:
+                    logger.error(f'Missing index {ind} for implementation {impl_name} and variable {var_name}')
+                    continue
 
                 if i == 0:
                     eval_t = libssr.get_eval_info_times(100, libssr.eval_final(data))

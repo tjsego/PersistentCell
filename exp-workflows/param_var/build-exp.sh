@@ -7,4 +7,4 @@ source ${PC_CONDAENVSH}
 conda activate ${PC_CONDAENVNAME_COMPARE}
 export PYTHONPATH=${PVEXP_THISDIR}/..
 
-python ${PVEXP_THISDIR}/build-exp.py "$@"
+python ${PVEXP_THISDIR}/build_exp.py "$@"
