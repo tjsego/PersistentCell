@@ -1,26 +1,122 @@
 Persistent random walk models
-==
+===
+
+Overview:
 
 | Label    | Method | Description                                                                   |
 |----------|--------|-------------------------------------------------------------------------------|
-| MODEL000 | CPM    | No persistence                                                                |
+| [MODEL000](#model000) | CPM    | No persistence                                                                |
 | MODEL001 | CPM    | Equation 2 in 10.1084/jem.20061278                                            |
 | MODEL002 | CPM    | Equation 3 in 10.1007/978-3-7643-8123-3_7                                     |
-| MODEL003 | CPM    | Constant persistence as implemented by ExternalPotentialPlugin in CompuCell3D |
+| [MODEL003](#model003) | CPM    | Constant persistence as implemented by ExternalPotentialPlugin in CompuCell3D |
 | MODEL004 | CM     | Equation 9 in 10.1371/journal.pcbi.1005991                                    |
-| MODEL005 | CPM    | Simple self-reinforcing PRW in the CPM, described below                       |
-| MODEL006 | CPM    | Persistent motion controlled by cell-intrinsic orientation under effect of continuous time noise |
+| [MODEL005](#model005) | CPM    | Simple self-reinforcing PRW in the CPM, described below                       |
+| [MODEL006](#model006) | CPM    | Persistent motion controlled by cell-intrinsic orientation under effect of continuous time noise |
 | MODEL007 | CPM    | Persistent motion controlled by cell-intrinsic orientation under effect of continuous time noise and self-reenforcement of direction of motion |
-| MODEL008 | CPM    | Chemotaxis: chemotaxis CPM coupled to a PDE |
+| [MODEL008](#model008) | CPM    | Chemotaxis: chemotaxis CPM coupled to a PDE |
 
-## CPM-based models
+## Cellular Potts Models (CPM)
+
+This section describes the general notation, representation, initial condition and update algorithm of the Cellular Potts Model (CPM). The specific models built within this overall framework are described in the section [CPM-based models](#cpm-based-models) below.
+
+### Representation and notation
+The CPM is implemented as a (square) lattice $G_\text{CPM}$ of width $w$ and height $h$, consisting of $n_p = w \times h$ pixels $p$ with periodic boundary conditions in all dimensions.
+The identity function $\sigma(p)$ reflects by which cell the position is currently occupied. Since we are considering only single-cell models here:
+
+$$\sigma(p) = \begin{cases}
+0 & \text{unoccupied}\\
+1 & \text{occupied the cell}\\
+\end{cases}$$
+
+Generally speaking, we also define the "cell type" function $\tau(p)$ as:
+
+$$\tau(p) = \begin{cases}
+0 & \sigma(p) = 0\\
+1 & \text{otherwise}
+\end{cases}$$
+
+But since $\sigma(p) \in 0,1$ for our single-cell models, $\sigma(p) = \tau(p)$ for all models considered here.
+
+### Initial condition
+
+Starting with an empty CPM ($\sigma(p) = 0 \quad \forall \quad p \in G_\text{CPM}$), before the start of the simulation, a single cell was seeded as a collection of the following 31 pixels:
+
+```
+			[ 48, 47 ], [ 48, 48 ], [ 48, 49 ], [ 49, 46 ], [ 49, 47 ], 
+			[ 49, 48 ], [ 49, 49 ], [ 49, 50 ], [ 49, 51 ], [ 50, 46 ], 
+			[ 50, 47 ], [ 50, 48 ], [ 50, 49 ], [ 50, 50 ], [ 50, 51 ], 
+			[ 50, 52 ], [ 51, 47 ], [ 51, 48 ], [ 51, 49 ], [ 51, 50 ], 
+			[ 51, 51 ], [ 51, 52 ], [ 51, 53 ], [ 52, 47 ], [ 52, 48 ], 
+			[ 52, 49 ], [ 52, 50 ], [ 52, 51 ], [ 53, 48 ], [ 53, 49 ], 
+			[ 53, 50 ]
+```
+
+This list was obtained by running a single cell in [MODEL000](#model000) until equilibrium. As such, 
+there was no burnin time before the start of the simulation.
+
+### Update algorithm
+
+#### Naive variant
+
+Every Monte Carlo Step (MCS), $n_p = w \times h$ copy attempts are performed using the following modified Metropolis-Hastings algorithm. 
+Naively speaking, the basic algorithm to perform one MCS works as follows:
+
+- initialize $\Delta t = 0$
+
+- while $\Delta t < n_p$:
+
+  1. $\Delta t$++
+  2. Uniformly sample a source pixel $p_s$ on $G_\text{CPM}$
+  3. Uniformly sample a target pixel $p_t$ from its neighborhood defined by neighborhood function $\cal{N}^\text{MH}(p_s)$.
+  4. Evaluate the difference $\Delta \mathcal{H}$ in the global system energy $\mathcal{H}$ (defined below) that would arise from the proposed update: $\sigma(p_t) \leftarrow \sigma(p_s)$
+  5. Accept change $\sigma(p_t) \leftarrow \sigma(p_s)$ with probability :
+  
+$$P_\text{copy}(p_s \rightarrow p_t) = \begin{cases}
+  1 & \Delta \mathcal{H} \leq 0\\
+  e^{-\Delta \mathcal{H} / T} & \text{otherwise}
+  \end{cases}$$
+
+Where $\Delta \mathcal{H}$ is the change in the global energy or *Hamiltonian* $\mathcal{H}$ that would be induced 
+by the proposed change, and the temperature parameter $T$ controls the acceptance rate of "unfavourable" copy attempts ($\Delta \mathcal{H} > 0$). See section [CPM-based models](#cpm-based-models) for details on how $\Delta \mathcal{H}$ is specified.
+
+We'll call the abovementioned algorithm the "naive" algorithm. In practice, this is inefficient since in many cases, $\sigma(p_s) = \sigma(p_t)$ and there is no need to evaluate the corresponding $\Delta \mathcal{H}$. 
+
+#### "edgelist" variant
+
+In practice, we therefore use the so-called "edgelist" algorithm instead:
+
+- initialize $\Delta t = 0$
+
+- while $\Delta t < 1$:
+
+  1. Create a list $\cal{E}$ of pixels $p$ for which at least one neighbor $n_p \in \cal{N}^\text{MH} (p)$ has $\sigma(n_p) \neq \sigma(p)$. Denote the number of pixels in this list $n_E$.
+  2. Uniformly sample $p_s$ from $\cal{E}$
+  3. $\Delta t \leftarrow \Delta t + \frac{1}{n_E}$ (the expected time this would have taken to find a $p_s \in \cal{E}$ through uniform sampling from the entire grid)
+  4. Proceed with steps 3-5 of the [naive algorithm](#naive-variant).
+
+### Overview of shared CPM implementation details
+
+| Parameter/choice | Description                                                                 | Value |
+|-----------|-----------------------------------------------------------------------------|-------|
+| Lattice type | Type of lattice (square/hex/...) | square |
+| $w \times h$ | Grid dimensions in horizontal and vertical direction (number of pixels) | 100 $\times$ 100 pixels |
+| Boundary conditions | | periodic |
+| Initial condition | | $\sigma(p) = 0$ except for a specific list of pixels initialized with $\sigma(p)=1$, see [Initial condition](#initial-condition) above. |
+| Update algorithm | How is $p_s$ sampled?  | [edgelist](#edgelist-variant) |
+| $\cal{N}^\text{MH}$ | Neighborhood definition used for sampling neighboring $p_s, p_t$ in the modified Metropolis-Hastings algorithm | 2nd-order (Moore) |
+| $T$ | CPM temperature controlling acceptance rate of energetically unfavourable updates | T = 10 |
 
 ### Definition of time
 In all CPM models, we relate the time discrete Monte Carlo Step to continuous simulation time such that 1 MCS corresponds to 1 a.t.u.
 
+
+## CPM-based models
+
+Within the overall framework described above, the individual models are further specified in terms of their Hamiltonian $H$ controlling the system dynamics.
+
 ### MODEL000
 
-A standard, single-cell CPM with only area and perimeter terms (diffusive motion without persistence).
+Model000 is the basis for all other models and considers a standard, single-cell CPM with only area and perimeter terms (diffusive motion without persistence). The Hamiltonian is:
 
 $$H = H_\text{area} + H_\text{perimeter}$$
 
@@ -30,15 +126,24 @@ $$H_\text{perimeter} =  \lambda_\text{perim} \left ( P(t) - P_\text{target} \rig
 
 with $A(t)$ and $P(t)$ the cell's current area and perimeter, respectively.
 
-| Parameter | Description                                                                 |
-|-----------|-----------------------------------------------------------------------------|
-| $T$ | CPM temperature             |
-| $\lambda_\text{area}$ | Lagrange multiplier of the area term in the Hamiltonian		              |
-| $A_\text{target}$  | Cell target area (in # pixels) |
-| $\lambda_\text{perim}$ | Lagrange multiplier of the perimeter term in the Hamiltonian		              |
-| $P_\text{target}$  | Cell target perimeter (in # pixels within neighborhood radius not belonging to same cell; unless explicitly mentioned otherwise, we consider the 3x3 Moore neighborhood) |
+In practice we only consider the change $\Delta H$ that would be induced by the copy attempt:
+
+$$\Delta H_\text{model000} = H_\text{accept copy} - H_\text{reject copy}$$
+
+To summarize, in addition to the [shared implementation details](#overview-of-shared-cpm-implementation-details), we specify:
+
+| Parameter | Description                                                                 | Value |
+|-----------|-----------------------------------------------------------------------------|-------|
+| $\lambda_\text{area}$ | Lagrange multiplier of the area term in the Hamiltonian		              | 2.0 |
+| $A_\text{target}$  | Cell target area (in # pixels) | 36|
+| $\lambda_\text{perim}$ | Lagrange multiplier of the perimeter term in the Hamiltonian	| 2.0 |	           
+| $P_\text{target}$  | Cell target perimeter (as defined [here](https://bmcbiophys.biomedcentral.com/articles/10.1186/s13628-015-0022-x) ) | 60 |
+| $\cal{N}^\text{S}$ | Neighborhood used to define surface/perimeter | 2nd-order (Moore) |
+
 
 ### Shared definition of work terms
+
+Model000 results in a single cell with only diffusive motion. The other models introduce active motility by adding a so-called "work term" to the CPM that favours copy attempts in a (static or dynamic) target direction. 
 
 #### General work term
 
@@ -62,9 +167,19 @@ where:
 - $\vec{b}(\sigma)$ is the target direction along which some extrinsic/intrinsic force acts. This and its temporal dynamics are specified in the individual models below.
 - $\lambda_\text{dir}(\sigma)$ defines the magnitude of the acting force and can be cell-dependent. For the case $\sigma = 0$ (the "background" rather than a cell), we assume $\lambda_\text{dir}(\sigma=0) = 0$.
 
+The following figure illustrates the relation between the different models (further detailed below): 
+
+<img width="922" height="322" alt="image" src="https://github.com/user-attachments/assets/1287fd3b-c1b1-4840-8507-038a5e425da3" />
+
+**Figure : Implementations of directional work terms.** In general, the work term $\Delta H_\text{dir}$ considers the alignment between the proposed movement vector, $\vec{d}\_x$, and the force causing the motion, $\vec{b}$. (A): In this overall framework, we obtain model000 by setting the force magnitude $\lambda_\text{dir} = 0$. (B) The simplest implementation specifies $\vec{b}$ as a unit vector in a static target direction, and yields ballistic motion (albeit with fluctuations arising from the CPM dynamics). (C,D) To achieve a persistent random walk, we update the direction of the force $\vec{b}(t)$ over time. In model005 (C), $\vec{b}(t)$ is updated based on the cell's recent displacement history, whereas in model006 (D), it is updated independently of movement history by adding Gaussian noise to the target angle. 
+
 ### MODEL003
 
-Extends MODEL000 with a work term to favour motion in a static target direction (yielding ballistic motion in a predefined direction). Starting from the general work term as defined above: 
+Extends MODEL000 with a work term to favour motion in a static target direction (yielding ballistic motion in a predefined direction):
+
+$$\Delta H_\text{model003} = \Delta H_\text{model000} + \Delta H_\text{dir}$$
+
+Starting from the general work term as defined above: 
 
 $$\Delta H_\text{dir} (\sigma) = \lambda_\text{dir}(\sigma) \left( \vec{dx}(\sigma) \cdot \vec{b}(\sigma) \right)$$
 
@@ -77,21 +192,22 @@ i.e. we define:
 - $\vec{dx}(\sigma) = \vec{v}_\text{copy}$ as the **unnormalized** vector from source pixel $s$ to target pixel $t$; i.e. `cpm_update_direction` = `source-to-target-unnorm`
 - $\vec{b}(\sigma) = \vec{e}_\alpha = ( \cos \alpha, \sin \alpha )$, a unit vector in a (fixed) reference direction $\alpha$.
 
-| Parameter | Description                                                                 |
-|-----------|-----------------------------------------------------------------------------|
-| $T$ | As Model000             |
-| $\lambda_\text{area}$ | As Model000		              |
-| $A_\text{target}$  | As Model000 |
-| $\lambda_\text{perim}$ | As Model000		              |
-| $P_\text{target}$  | As Model000 |
-| $\lambda_\text{dir}$ | Lagrange multiplier of the work term, controls the cell speed.	              |
-| $\alpha$ | Angle (to the positive x-axis) of the fixed target direction              |
-| `cpm_force_mode` | "extension", i.e. $\delta_\text{src} = 1, \delta_\text{tgt} = 0$ (see "work term")              |
-| `cpm_update_direction` | "source-to-target-unnorm", i.e.  $\vec{dx}(\sigma)$ is the unnormalized vector $s\rightarrow t$    |
+| Parameter | Description                                                                 | Value | 
+|-----------|-----------------------------------------------------------------------------|-------|
+| $\lambda_\text{dir}$ | Lagrange multiplier of the work term, controls the cell speed.	 | 10 |
+| $\alpha$ | Angle (to the positive x-axis) of the fixed target direction              | 0 |
+| `cpm_force_mode` | Does the force act on extending and/or retracting copy attempts? (see [General work term](#general-work-term))   | "extension", i.e. $\delta_\text{src} = 1, \delta_\text{tgt} = 0$ | 
+| `cpm_update_direction` | How do we defined the proposal direction $\vec{dx}(\sigma)$? (see [Directional work term](#directional-work-term)) | "source-to-target-unnorm", i.e.  $\vec{dx}(\sigma)$ is the unnormalized vector $s\rightarrow t$    |
+
+All other parameters are as described in the [general implementation details](#overview-of-shared-cpm-implementation-details) and [model000](#model000).
 
 ### MODEL005
 
-Similar to MODEL003, but target directions can adapt through self-reinforcement of random fluctuations, yielding a persistent random walk rather than ballistic motion. Specifically, we rephrase the reference direction in the work term:
+Similar to MODEL003, we again extend MODEL000 with a work term:
+
+$$\Delta H_\text{model005} = \Delta H_\text{model000} + \Delta H_\text{dir}$$
+
+But now, target directions can now adapt through self-reinforcement of random fluctuations, yielding a persistent random walk rather than ballistic motion. Specifically, we rephrase the reference direction in the work term:
 
 $$\Delta H_\text{dir} (\sigma) = \lambda_\text{dir}(\sigma) \left( \vec{dx}(\sigma) \cdot \vec{b}(\sigma) \right)$$
 
@@ -101,35 +217,35 @@ $$\Delta H_\text{dir} (\sigma) = \lambda_\text{dir}(\sigma) \left( \vec{v}_{\tex
 
 
 i.e. we define:
-- update direction as MODEL003: $\vec{dx}(\sigma) = \vec{v}_\text{copy}$ as the **unnormalized** vector from source pixel $s$ to target pixel $t$; i.e. `cpm_update_direction` = `source-to-target-unnorm`
+- update direction as in [MODEL003](#model003): $\vec{dx}(\sigma) = \vec{v}_\text{copy}$ as the **unnormalized** vector from source pixel $s$ to target pixel $t$; i.e. `cpm_update_direction` = `source-to-target-unnorm`
 - target direction $\vec{b}(\sigma) = \tfrac{\vec{u}(t)}{ \Vert \vec{u}(t) \Vert }$
 
 which now also gets a temporal update:
 
 $$\vec{u}(t)= \vec{\Delta c} (\Delta t)$$
 
-where $\vec{\Delta c}(\Delta t)$ is the (normalized) observed displacement vector of the cell centroid over the last $\Delta t$ MCS. 
+where $\vec{\Delta c}(\Delta t)$ is the (normalized) observed displacement vector of the cell centroid over the last $\Delta t$ MCS. Note: while $t < \Delta t$, $\vec{b}(\sigma) = \vec{e}_{\alpha 0}$, a unit vector in direction $\alpha_0$.
 
 
-| Parameter | Description                                                                 |
-|-----------|-----------------------------------------------------------------------------|
-| $T$ | As Model000             |
-| $\lambda_\text{area}$ | As Model000		              |
-| $A_\text{target}$  | As Model000 |
-| $\lambda_\text{perim}$ | As Model000		              |
-| $P_\text{target}$  | As Model000 |
-| $\lambda_\text{dir}$ | As Model003, the Lagrange multiplier controls the cell speed.     |
-| $\Delta t$   | Time interval (in MCS) over which we evaluate the cell's recent displacement; this determines persistence time of the random walk.      |
-| `cpm_force_mode` | "extension", i.e. $\delta_\text{src} = 1, \delta_\text{tgt} = 0$ (see "work term")              |
-| `cpm_update_direction` | "source-to-target-unnorm", i.e.  $\vec{dx}(\sigma)$ is the unnormalized vector $s\rightarrow t$         |
+| Parameter | Description                                                                 | Value |
+|-----------|-----------------------------------------------------------------------------|--------|
+| $\lambda_\text{dir}$ | Lagrange multiplier of the work term, controls the cell speed.     | 10 (same as [model003](#model003) ) |
+| $\Delta t$   | Time interval (in MCS) over which we evaluate the cell's recent displacement; this determines persistence time of the random walk.      | 50 MCS |
+| $\alpha_0$ | Initial direction (angle to positive x-axis) | 0 |
+| `cpm_force_mode` | Does the force act on extending and/or retracting copy attempts? (see [General work term](#general-work-term))   | Same as [model003](#model003): "extension", i.e. $\delta_\text{src} = 1, \delta_\text{tgt} = 0$ | 
+| `cpm_update_direction` | How do we defined the proposal direction $\vec{dx}(\sigma)$? (see [Directional work term](#directional-work-term)) | Same as [model003](#model003): "source-to-target-unnorm", i.e.  $\vec{dx}(\sigma)$ is the unnormalized vector $s\rightarrow t$    |
 
+All other parameters are as described in the [general implementation details](#overview-of-shared-cpm-implementation-details) and [model000](#model000).
 
 
 ### MODEL006
 
 This simple, Langevin PRW model is similar to MODEL005, but directly evolves the cell orientation with angular noise. 
+We again extend MODEL000 with a work term:
 
-Specifically, we rephrase the work term 
+$$\Delta H_\text{model006} = \Delta H_\text{model000} + \Delta H_\text{dir}$$
+
+Specifically, we now rephrase the work term 
 
 $$\Delta H_\text{dir} (\sigma) = \lambda_\text{dir}(\sigma) \left( \vec{dx}(\sigma) \cdot \vec{b}(\sigma) \right)$$
 
@@ -150,28 +266,44 @@ Without loss of generality, we assume the integer $\Delta t = 1$ MCS, such that 
 $$ \vec{e}_\alpha(\sigma, t) = \left(\cos \quad \alpha(\sigma, t), \sin \quad \alpha(\sigma, t) \right)$$
 
 
-| Parameter | Description                                                                 |
-|-----------|-----------------------------------------------------------------------------|
-| $T$ | As Model000             |
-| $\lambda_\text{area}$ | As Model000		              |
-| $A_\text{target}$  | As Model000 |
-| $\lambda_\text{perim}$ | As Model000		              |
-| $P_\text{target}$  | As Model000 |
-| $\alpha(0)$   | Initial angle (to the positive x-axis) of the target direction $\alpha$.     |
-| $\lambda_\text{dir}$ | As Model003, the Lagrange multiplier controls the cell speed.     |
-| $\xi$   | Standard deviation of noise added to the cell direction (larger $\xi$ implies lower persistence time).   |
-| `cpm_force_mode` | "extension", i.e. $\delta_\text{src} = 1, \delta_\text{tgt} = 0$ (see "work term")              |
-| `cpm_update_direction` | "cell-mass-displacement", i.e.   $\vec{dx}(\sigma) = A(\sigma,t)\vec{\delta c}(\sigma) $     |
+| Parameter | Description                                                                 | Value |
+|-----------|-----------------------------------------------------------------------------|--------|
+| $\lambda_\text{dir}$ | Lagrange multiplier of the work term, controls the cell speed.     | 5  |
+| $\alpha(0)$   | Initial angle (to the positive x-axis) of the target direction $\alpha$.     | 0 |
+| $\xi$   | Standard deviation of noise added to the cell direction (larger $\xi$ implies lower persistence time).   | 0.09 |
+| `cpm_force_mode` | Does the force act on extending and/or retracting copy attempts? (see [General work term](#general-work-term))   | Unlike [model003](#model003), now "reciprocal", i.e. $\delta_\text{src} = \delta_\text{tgt} = 1$ | 
+| `cpm_update_direction` | How do we defined the proposal direction $\vec{dx}(\sigma)$? (see [Directional work term](#directional-work-term)) | Unlike [model003](#model003), now "cell-mass-displacement", i.e.   $\vec{dx}(\sigma) = A(\sigma,t)\vec{\delta c}(\sigma) $    |
+
+All other parameters are as described in the [general implementation details](#overview-of-shared-cpm-implementation-details) and [model000](#model000).
+
 
 ### MODEL008
-This model implements chemotaxis of a single cell in a coupled chemotactic field. Both the CPM and the chemokine grid have periodic boundaries. 
+This model implements chemotaxis of a single-cell CPM ($G_\text{CPM}$) in a coupled chemotactic field ($G_\text{chem}$). Both the CPM and the chemokine grid have periodic boundaries. 
 
 #### CPM
-We use model000 along with the following work term:
+We extend [model000](#model000) with the following work term:
+
+$$\Delta H_\text{model008} = \Delta H_\text{model000} + \Delta H_\text{chem}$$
 
 $$\Delta H_\text{chem} (\sigma) = \lambda_\text{chem}(\sigma) \left( c( p_\text{tgt} ) - c( p_\text{src} ) \right)$$
 
 where $c(p)$ is the current chemokine concentration at pixel p, and $p_\text{src},p_\text{tgt}$ are the source and target pixel of the copy attempt.
+
+#### CPM initialization
+
+The initial cell pixels are now: 
+
+```
+			[48,12], [48,13], [48,14], [49,11], [49,12],
+			[49,13], [49,14], [49,15], [49,16], [50,11],
+			[50,12], [50,13], [50,14], [50,15], [50,16],
+			[50,17], [51,12], [51,13], [51,14], [51,15],
+			[51,16], [51,17], [51,18], [52,12], [52,13],
+			[52,14], [52,15], [52,16], [53,13], [53,14],
+			[53,15]
+```
+
+This is similar to the initial condition described [here](#initial-condition), but shifted.
 
 #### PDE
 The chemokine is implemented on a separate (Float32) grid of the same dimensions as the CPM itself (initial condition: zero everywhere). The chemokine is described by the following PDE:
@@ -187,26 +319,42 @@ k_\text{prod} & p = p_\text{chem source}\\
 
 The PDE is implemented using a finite difference scheme (https://en.wikipedia.org/wiki/Discrete_Laplace_operator#Finite_differences) with h = 1, and solved with $N_{ds}=10$ steps after every MCS in the CPM (where $D$, $k_\text{prod}$ and $k_\text{decay}$ have to be divided by $N_{ds}$ to maintain the same effective rates per MCS).
 
+#### Coupling:
+
+A timestep of the overall model consists of the following steps: 
+
+1. Run one simulation step (MCS) in $G_\text{CPM}$
+2. Run $N_{ds}$ PDE steps in $G_\text{chem}$ by repeating the following $N_{ds}$ times:
+	1. Secrete chemokine at the source with rate $k_\text{prod}/ N_{ds}$
+    2. Perform diffusion at rate $D / N_{ds}$
+	3. Decay chemokine at rate $k_\text{decay}/ N_{ds}$
+
+#### Example
+
+<img width="80%" src = "https://github.com/tjsego/PersistentCell/blob/start/implementations/artistoo/model008.gif?raw=true">
 
 
+#### Implementation details overview
 
+The model follows the implementation details outlined [here](#overview-of-shared-cpm-implementation-details) and [model000](#model000), with the following changes compared to [model000](#model000):
 
-| Parameter | Description                                                                 |
-|-----------|-----------------------------------------------------------------------------|
-| $T$ | As Model000             |
-| $\lambda_\text{area}$ | As Model000		              |
-| $A_\text{target}$  | As Model000 |
-| $\lambda_\text{perim}$ | As Model000		              |
-| $P_\text{target}$  | As Model000 |
-| $\lambda_\text{chem}$ | As Model003, the Lagrange multiplier controls sensitivity to the chemokine gradient.     |
-| $p_\text{chem source}$ | Location of the point source of the chemokine |
-| $k_\text{prod}$ | Units of chemokine produced per MCS at the point source |
-| $k_\text{decay}$ | Fraction of chemokine that decays each MCS at a given location |
-| $D$ | diffusion coefficient in pixels<sup>2</sup>/MCS) |
-| $N_{ds}$ | number of PDE steps performed after every MCS |
-| `cpm_force_mode` | "extension", i.e. $\delta_\text{src} = 1, \delta_\text{tgt} = 0$ (see "work term")              |
+| Parameter/choice | Description                                                                 | Value |
+|-----------|-----------------------------------------------------------------------------|-------|
+| $w \times h$ | Grid dimensions in horizontal and vertical direction (number of pixels), this is the same for $G_\text{CPM}$ and $G_\text{chem}$ | 200 $\times$ 30 pixels |
+| Boundary conditions | For both $G_\text{CPM}$ and $G_\text{chem}$ | periodic |
+| Initial condition | | $\sigma(p) = 0$ except for a specific list of pixels initialized with $\sigma(p)=1$, see [CPM initialization](#cpm-initialization) above. |
 
+And the following additions: 
 
+| Parameter | Description                                                                 | Value |
+|-----------|-----------------------------------------------------------------------------|-------|
+| $\lambda_\text{chem}$ | the Lagrange multiplier controls sensitivity to the chemokine gradient.     | 1000 |
+| $p_\text{chem source}$ | Location of the point source of the chemokine | $(120,15)$ |
+| $k_\text{prod}$ | Units of chemokine produced per MCS at the point source | 100 |
+| $k_\text{decay}$ | Fraction of chemokine that decays each MCS at a given location | 0.001 |
+| $D$ | diffusion coefficient in pixels<sup>2</sup>/MCS) | 1 |
+| $N_{ds}$ | number of PDE steps performed after every MCS | 10 |
+| `cpm_force_mode` | Does the chemotactic force act on extending and/or retracting copy attempts? (see [General work term](#general-work-term))   | "extension", i.e. $\delta_\text{src} = 1, \delta_\text{tgt} = 0$ | 
 
 
 ### MODEL007
