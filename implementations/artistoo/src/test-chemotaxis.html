@@ -1,0 +1,134 @@
+
+<!DOCTYPE html>
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Chemotaxis</title>
+<style type="text/css">
+body{
+		font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue",
+		 Helvetica, Arial, "Lucida Grande", sans-serif;
+	 padding : 15px;
+	 max-width: 600px;
+	 margin: auto;
+}
+td {
+	 padding: 10px;
+	 vertical-align: top;
+}
+
+canvas {
+	box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+}
+</style>
+
+
+<script src="./artistoo.js"></script>
+<script>
+"use strict"
+
+
+/*	----------------------------------
+	CONFIGURATION SETTINGS
+	----------------------------------
+*/
+
+let config = {
+
+	// Grid settings
+	ndim : 2,
+	field_size : [200,30],
+	
+	// CPM parameters and configuration
+	conf : {
+		// Basic CPM parameters
+		torus : [true,true],	
+		seed : 1,							
+		T : 10,		
+		D : 1,
+		LAMBDA_V : [0,2],					
+		V : [0,36]	,					
+		P : [0,60],
+		LAMBDA_P : [0,2]
+		
+	},
+	
+	// Simulation setup and configuration: this controls stuff like grid initialization,
+	// runtime, and what the output should look like.
+	simsettings : {
+		CANVASCOLOR : "eaecef",
+		NRCELLS : [1],					// Number of cells to seed for all
+		BURNIN : 0,
+		RUNTIME : 1000,
+		zoom : 4,							// zoom in on canvas with this factor.
+		SAVEIMG : false,						// Should a png image of the grid be saved
+		STATSOUT : { browser: false, node: true }, // Should stats be computed?
+		LOGRATE : 10							// Output stats every <LOGRATE> MCS.
+
+	}
+}
+/*	---------------------------------- */
+let sim, meter
+
+
+function initialize(){
+
+	 let custommethods = {
+	 	initializeGrid : initializeGrid,
+	 	postMCSListener : postMCSListener,
+	 	drawCanvas : drawCanvas
+	 }
+	sim = new CPM.Simulation( config, custommethods )
+	sim.g = new CPM.Grid2D(sim.C.extents, [true,true], "Float32"),
+	sim.gi = new CPM.CoarseGrid( sim.g, 1 ),
+
+
+	sim.C.add( new CPM.ChemotaxisConstraint( {
+		LAMBDA_CH: [0,1000],
+		CH_FIELD : sim.gi }
+	) )
+
+	step()
+}
+
+
+function step(){
+	sim.step()
+	console.log(sim.time)
+	requestAnimationFrame( step )
+}
+
+
+
+/* The following custom methods will be added to the simulation object*/
+function initializeGrid(){
+	
+	this.addGridManipulator()
+	this.gm.seedCellAt( 1, [50,15])
+	
+}
+function postMCSListener(){
+	let center = [120,15]
+	this.g.setpix( center, 100+this.g.pixt(center) )
+	for( let i = 1 ; i <= 10 ; i ++ ){
+		this.g.diffusion( this.C.conf["D"]/10 )
+	}
+	this.g.multiplyBy( 0.999 )
+}
+
+function drawCanvas(){
+	
+	// Add the canvas if required
+	if( !this.helpClasses["canvas"] ){ this.addCanvas() }
+	this.Cim.drawField( this.g )
+	this.Cim.drawCellBorders( 1, "000000" )
+		
+}
+
+</script>
+</head>
+<body onload="initialize()">
+ 
+ <h1>Chemotaxis</h1>
+ <p>
+  Cells moving up a gradient of a diffusing chemokine, which is produced in the center. </p>
+</body>
+</html>

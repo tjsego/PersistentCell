@@ -6,9 +6,13 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-wEmeIV1mKuiNpC+IOBjI7aAzPcEZeedi5yW5f2yOq55WWLwNGmvvx4Um1vskeMj0" crossorigin="anonymous">
 <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
 <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.13.0/css/all.css">
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+
+</script>
 <link rel="stylesheet" href="./style.css">
 
 <script src="./artistoo.js"></script>
+<script src="./langevinPRW.js"></script>
 
 <!-- Model scripts -->
 <script src="./configuration.js"></script>
@@ -18,6 +22,12 @@
 
 <script>
 "use strict"
+
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  }
+};
 
 let config = {
 		field_size : [configJSON["len_1"],configJSON["len_2"]],
@@ -107,11 +117,8 @@ let rangeMap = {
 			return v 
 		},
 		modelToRange : function(v){ 
-			console.log( v )
 			let ang = Math.atan2( v[1], v[0] )
 			ang = Math.round( 180 * ang / Math.PI )
-			console.log( ang )
-			
 			return ang
 		}
 	},
@@ -135,6 +142,22 @@ let rangeMap = {
 		model : "MODEL005",
 		constraint : "PersistenceConstraint", 
 		key : 'DELTA_T',
+		position : 1,
+		rangeToModel : function(v){ return v/1000 },
+		modelToRange : function(v){ return v*1000 }
+	},
+	"mu" : {
+		model : "MODEL006",
+		constraint : "LangevinPRW", 
+		key : 'MU',
+		position : 1,
+		rangeToModel : function(v){ return v/1000 },
+		modelToRange : function(v){ return v*1000 }
+	},
+	"xi" : {
+		model : "MODEL006",
+		constraint :  "LangevinPRW",
+		key : 'XI',
 		position : 1,
 		rangeToModel : function(v){ return v/1000 },
 		modelToRange : function(v){ return v*1000 }
@@ -300,7 +323,28 @@ function initialize(){
 					{
 						LAMBDA_DIR: [0,0.000001], 
 						PERSIST: [0,0],
-						DELTA_T : [0,5]
+						DELTA_T : [0,50]
+					} )
+				simi.C.add( pconstraint )
+				break
+			}
+			case 'MODEL006' : {
+				//const alpha = configJSON["model_args"][modelName]["target_angle"]
+			
+				let prefdir = new LangevinPRW( 
+					{
+						MU: [0,configJSON["model_args"][modelName]["mu"]], 
+						XI: [0,configJSON["model_args"][modelName]["xi"]], 
+						PROTRUDE: [false,true],
+						RETRACT : [false,true]
+					} )
+				simi.C.add( prefdir )
+				// non-active persistence just for the visualization
+				let pconstraint = new CPM.PersistenceConstraint( 
+					{
+						LAMBDA_DIR: [0,0.000001], 
+						PERSIST: [0,0],
+						DELTA_T : [0,50]
 					} )
 				simi.C.add( pconstraint )
 				break
@@ -342,7 +386,7 @@ function initCanvas(){
 </head>
 <body onload = "initialize(); setPlayPause(); setSliders(); sliderInput(); step()">
 
-<div style="text-align:center;max-width:1000px;margin:auto">
+<div style="text-align:center;max-width:1600px;margin:auto">
 
 <h1>Persistent Random Walk Models in the CPM</h1>
 <p><br><br><i>This is a work in progress; some debugging still required.</i></p>
@@ -358,25 +402,25 @@ all models, whereas others can be controlled for each model individually.<br><br
 	<td style="width:5%">0</td>
 	<td style="width:70%"> 
 		<div class="range-wrap">
-		  <input type="range" class="range" min="0" max="1000" id="T" oninput="sliderInput()" >
+		  <input type="range" class="range" min="0" max="20000" id="T" oninput="sliderInput()" >
 		  <output class="bubble"></output>
 		</div>
 	</td>
-	<td style="width:5%">10</td>
+	<td style="width:5%">20</td>
 </tr>
 <tr>
 	<td style="width:20%">&lambda;<sub>area</sub></td>
 	<td style="width:5%">0</td>
 	<td style="width:70%"> 
 		<div class="range-wrap">
-		  <input type="range" class="range" min="0" max="100" id="larea" oninput="sliderInput()">
+		  <input type="range" class="range" min="0" max="10000" id="larea" oninput="sliderInput()">
 		  <output class="bubble"></output>
 		</div>
 	</td>
-	<td style="width:5%">0.1</td>
+	<td style="width:5%">10</td>
 </tr>
 <tr>
-	<td style="width:20%">Area</td>
+	<td style="width:20%">A<sub>target</sub></td>
 	<td style="width:5%">0</td>
 	<td style="width:70%"> 
 		<div class="range-wrap">
@@ -391,14 +435,14 @@ all models, whereas others can be controlled for each model individually.<br><br
 	<td style="width:5%">0</td>
 	<td style="width:70%"> 
 		<div class="range-wrap">
-		  <input type="range" class="range" min="0" max="100" id="lper" oninput="sliderInput()">
+		  <input type="range" class="range" min="0" max="3000" id="lper" oninput="sliderInput()">
 		  <output class="bubble"></output>
 		</div>
 	</td>
-	<td style="width:5%">0.1</td>
+	<td style="width:5%">3</td>
 </tr>
 <tr>
-	<td style="width:20%">Perimeter</td>
+	<td style="width:20%">P<sub>target</sub></td>
 	<td style="width:5%">0</td>
 	<td style="width:70%"> 
 		<div class="range-wrap">
@@ -422,29 +466,59 @@ all models, whereas others can be controlled for each model individually.<br><br
 
 <div align="center">
 	<div class="row sim-controls">
-		<div class="col-12 col-sm-12 col-md-6 col-lg-4 col-xl-4">
+		<div class="col-12 col-sm-12 col-md-6 col-lg-4 col-xl-3">
 			<h3>MODEL000</h3>
-			<p>A basic CPM with no persistence and diffusive motion.</p>
+			<p>A standard, single-cell CPM with only area and perimeter terms (diffusive motion without persistence).
+			
+			</p>
 			<div id="canvasMODEL000" class="simulationCanvas"></div><br>
+			<table width="300px" align="center">
+				<tr>
+					<td style="width:20%;color:#ffffff">.</td>
+					<td style="width:5%"></td>
+					<td style="width:70%"></td>
+					<td style="width:5%"></td>
+				</tr>
+				<tr>
+					<td style="width:20%;color:#ffffff"">.</td>
+					<td style="width:5%"></td>
+					<td style="width:70%"></td>
+					<td style="width:5%"></td>
+				</tr>
+				<tr>
+					<td style="width:20%;color:#ffffff"">.</td>
+					<td style="width:5%"></td>
+					<td style="width:70%"></td>
+					<td style="width:5%"></td>
+				</tr>
+				</table>
+			<p>
+			With:
+			$$H = H_\text{area} + H_\text{perimeter}$$
+			$$H_\text{area} =  \lambda_\text{area} (A(t) - A_\text{target})^2$$
+			$$H_\text{perimeter} =  \lambda_\text{perim} (P(t) - P_\text{target})^2$$
+			with $A(t)$ and $P(t)$ the cell's current area and perimeter, respectively.
+			</p>
 		</div>	
-		<div class="col-12 col-sm-12 col-md-6 col-lg-4 col-xl-4">
+		<div class="col-12 col-sm-12 col-md-6 col-lg-4 col-xl-3">
 			<h3>MODEL003</h3>
-			<p>Extends MODEL000 with a term in &Delta;H that favours motion in a (fixed) target direction.</p>
+			<p>Extends MODEL000 with a term to favour motion in a static target direction (yielding ballistic motion). </p>
+			
 			<div id="canvasMODEL003" class="simulationCanvas"></div><br>
-			<table width="350px" align="center">
+			<table width="300px" align="center">
 				<tr>
 					<td style="width:20%">&lambda;<sub>dir</sub></td>
 					<td style="width:5%">0</td>
 					<td style="width:70%"> 
 						<div class="range-wrap">
-						  <input type="range" class="range" min="0" max="10000" step="100" id="ldir003" oninput="sliderInput()">
+						  <input type="range" class="range" min="0" max="20000" step="100" id="ldir003" oninput="sliderInput()">
 						  <output class="bubble"></output>
 						</div>
 					</td>
-					<td style="width:5%">10</td>
+					<td style="width:5%">20</td>
 				</tr>
 				<tr>
-					<td style="width:20%">&phi;<sub>target</sub></td>
+					<td style="width:20%"> $\alpha$</td>
 					<td style="width:5%">0</td>
 					<td style="width:70%"> 
 						<div class="range-wrap">
@@ -452,16 +526,30 @@ all models, whereas others can be controlled for each model individually.<br><br
 						  <output class="bubble"></output>
 						</div>
 					</td>
-					<td style="width:5%">360</td>
+					<td style="width:5%">360</td></tr>
+				<tr>
+					<td style="width:20%;color:#ffffff"">.</td>
+					<td style="width:5%"></td>
+					<td style="width:70%"></td>
+					<td style="width:5%"></td>
 				</tr>
 				</table>
+				<p> Where we extend model000 with a work term:
+			$$\Delta H_\text{dir} = \lambda_\text{dir} (\vec{e_\alpha} \cdot \vec{a})$$
+
+			where $\vec{e_\alpha}= ( \cos \alpha, \sin \alpha )$ 
+			
+			is a unit vector in a (fixed) reference direction $\alpha$ and $\vec{a}$ is 
+			the (unnormalized) vector pointing from source to target pixel involved 
+			in the copy attempt.
+			</p>
 
 		</div>	
-		<div class="col-12 col-sm-12 col-md-6 col-lg-4 col-xl-4">
+		<div class="col-12 col-sm-12 col-md-6 col-lg-4 col-xl-3">
 			<h3>MODEL005</h3>
-			<p>Extends MODEL003 with updates to target directions; simple self-reinforcement.</p>
+			<p>Similar to MODEL003, but target directions can adapt through self-reinforcement of random fluctuations.</p>
 			<div id="canvasMODEL005" class="simulationCanvas"></div><br>
-			<table width="350px" align="center">
+			<table width="300px" align="center">
 				<tr>
 					<td style="width:20%">P<sub>persist</sub></td>
 					<td style="width:5%">0</td>
@@ -478,14 +566,14 @@ all models, whereas others can be controlled for each model individually.<br><br
 					<td style="width:5%">0</td>
 					<td style="width:70%"> 
 						<div class="range-wrap">
-						  <input type="range" class="range" min="0" max="10000" step="100" id="ldir" oninput="sliderInput()">
+						  <input type="range" class="range" min="0" max="20000" step="100" id="ldir" oninput="sliderInput()">
 						  <output class="bubble"></output>
 						</div>
 					</td>
-					<td style="width:5%">10</td>
+					<td style="width:5%">20</td>
 				</tr>
 				<tr>
-					<td style="width:20%">&Delta;<sub>t</sub></td>
+					<td style="width:20%">&Delta;t</td>
 					<td style="width:5%">0</td>
 					<td style="width:70%"> 
 						<div class="range-wrap">
@@ -496,6 +584,55 @@ all models, whereas others can be controlled for each model individually.<br><br
 					<td style="width:5%">100</td>
 				</tr>
 				</table>
+				<p> Rephrasing the target direction in model003
+			$$\Delta H_\text{dir} = \lambda_\text{dir} (\tfrac{\vec{u}(t)}{||\vec{u}(t)||} \cdot \vec{a})$$
+
+			$$\vec{u}(t)= P_\text{persist}\vec{u}(t-1) + (1-P_\text{persist})\vec{\Delta c} (\Delta t)$$
+			
+			where $\vec{a}$ is defined as in model003 and $\vec{\Delta c}(\Delta t)$ is the (normalized) observed displacement vector of the cell centroid over the last $\Delta t$ MCS, and 
+			$\Delta t$ determines persistence time.
+			</p>
+		</div>			
+		<div class="col-12 col-sm-12 col-md-6 col-lg-4 col-xl-3">
+			<h3>MODEL006</h3>
+			<p>Produces a PRW similar to MODEL005, but directly evolves angle with angular noise.</p>
+			<div id="canvasMODEL006" class="simulationCanvas"></div><br>
+			<table width="300px" align="center">
+				<tr>
+					<td style="width:20%">&xi; (noise level)</td>
+					<td style="width:5%">0</td>
+					<td style="width:70%"> 
+						<div class="range-wrap">
+						  <input type="range" class="range" min="0" max="1000" step = "10" id="xi" oninput="sliderInput()" >
+						  <output class="bubble"></output>
+						</div>
+					</td>
+					<td style="width:5%">1</td>
+				</tr>
+				<tr>
+					<td style="width:20%">&lambda;<sub>dir</sub></td>
+					<td style="width:5%">0</td>
+					<td style="width:70%"> 
+						<div class="range-wrap">
+						  <input type="range" class="range" min="0" max="10000" step="100" id="mu" oninput="sliderInput()">
+						  <output class="bubble"></output>
+						</div>
+					</td>
+					<td style="width:5%">10</td>
+				</tr>
+				</table>
+				<p> Rephrasing the target direction in model003
+			$$\Delta H_\text{dir} = \lambda_\text{dir}  ( \vec{e_\alpha(t)} \cdot A(t)\vec{\delta c} )$$
+
+			where $\vec{\delta c}$ is the cell centroid displacement due to the proposed update,
+			$A(t)$ is the cell's current area, and 
+			the target $\alpha$ diffuses over time with Gaussian noise:
+
+			$$\alpha(t) = \alpha(t-\Delta t) + \epsilon\sqrt{\Delta t}, \quad \epsilon \sim \mathcal{N}(0,\xi^2)$$
+			
+			with step size $\Delta t \geq 1$ MCS.
+			
+			</p>
 		</div>			
 	</div>
 	

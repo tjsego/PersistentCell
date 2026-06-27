@@ -19,7 +19,7 @@
     },
     "sim": {
         "num_sims": 100,
-        "output_name": "model003_morpheus",
-        "output_per": 10
+        "output_name": "model003_100",
+        "output_per": 100
     }
 }

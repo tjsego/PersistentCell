@@ -1,0 +1,70 @@
+{
+    "model": {
+        "cpm_temperature": 10,
+        "cpm_area_c": 36,
+        "cpm_area_v": 2.0,
+        "cpm_perim_c": 60.0,
+        "cpm_perim_v": 2.0,
+        "len_1": 200,
+        "len_2": 30,
+        "cpm_nbs_n": 2,
+        "cpm_surface_nbs_n": 2,
+        "max_time": 1000,
+        "method": "CPM",
+        "model": "MODEL008",
+        "model_args": {
+            "lambda_chem": 1000.0,
+            "chemo_source_position" : [120,15],
+            "chemo_production_rate_per_mcs" : 100.0,
+            "diffusion_coefficient_per_mcs" : 1.0,
+            "diffusion_steps_per_mcs" : 10.0,
+            "chemo_decay_rate_per_mcs" : 0.001,
+            "cpm_force_mode": "extension"
+        }
+    },
+    "sim": {
+        "num_sims": 1000,
+        "output_name": "model008",
+        "output_per": 1,
+        "init_voxels": [
+			[48,12],
+			[48,13],
+			[48,14],
+			[49,11],
+			[49,12],
+			[49,13],
+			[49,14],
+			[49,15],
+			[49,16],
+			[50,11],
+			[50,12],
+			[50,13],
+			[50,14],
+			[50,15],
+			[50,16],
+			[50,17],
+			[51,12],
+			[51,13],
+			[51,14],
+			[51,15],
+			[51,16],
+			[51,17],
+			[51,18],
+			[52,12],
+			[52,13],
+			[52,14],
+			[52,15],
+			[52,16],
+			[53,13],
+			[53,14],
+			[53,15]
+		]
+    },
+    "cc3d": {
+        "output_name": "model008_cc3d"
+    },
+    "artistoo": {
+        "prng": "MersenneTwister",
+        "output_name" : "model008_artistoo"
+    }
+}

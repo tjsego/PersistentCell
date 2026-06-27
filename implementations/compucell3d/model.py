@@ -3,13 +3,28 @@ from cc3d import __revision__ as cc3d_revision
 from cc3d import __githash__ as cc3d_githash
 from cc3d.core import PyCoreSpecs as pcs
 import json
-from math import sqrt, cos, sin
+from math import pi
+import os
 from typing import Any, List, Optional, Type, Union
 
-cell_type_name = 'Cell'
+with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'constants.json'), 'r') as f:
+    constants_data = json.load(f)
+    cell_type_name = constants_data['cell_type_name']
 
 # Check version-dependent stuff
 HAS_SURFACE_NBS = 'neighbor_order' in pcs.SurfacePlugin.check_dict
+
+
+force_mapping = {
+    'extension': pcs.PERSISTENCE_FORCEMODE_EXTENSION,
+    'retraction': pcs.PERSISTENCE_FORCEMODE_RETRACTION,
+    'reciprocal': pcs.PERSISTENCE_FORCEMODE_RECIPROCAL
+}
+disp_mapping = {
+    'source-to-target-unnorm': pcs.PERSISTENCE_WORKTERM_REGULAR,
+    'source-to-target-norm': pcs.PERSISTENCE_WORKTERM_NORMALIZED,
+    'cell-mass-displacement': pcs.PERSISTENCE_WORKTERM_MASS
+}
 
 
 def _impl_MODEL000(**kwargs):
@@ -17,24 +32,95 @@ def _impl_MODEL000(**kwargs):
 
 
 def _impl_MODEL003(**kwargs):
-    lambda_dir = - float(kwargs['lambda_dir'])
-    target_angle = float(kwargs['target_angle'])
-    return [
-        pcs.ExternalPotentialPlugin(lambda_x=lambda_dir * cos(target_angle),
-                                    lambda_y=lambda_dir * sin(target_angle))
-    ]
+    cpm_force_mode = kwargs['cpm_force_mode']
+    cpm_update_direction = kwargs['cpm_update_direction']
+    lambda_dir = kwargs['lambda_dir']
+    target_angle = pi + kwargs['target_angle']
+
+    return [pcs.PersistencePlugin([pcs.PersistencePluginANModel(cell_type=cell_type_name,
+                                                                magnitude=lambda_dir,
+                                                                force_mode=force_mapping[cpm_force_mode],
+                                                                work_term=disp_mapping[cpm_update_direction],
+                                                                vector_init=[pcs.PersistencePluginInitTransformRotate(
+                                                                    value=target_angle,
+                                                                    axis='Z',
+                                                                    units=pcs.PERSISTENCE_TRANSFORM_UNIT_RADIANS
+                                                                )])])]
 
 
 def _impl_MODEL005(**kwargs):
-    return [
-        pcs.ExternalPotentialPlugin()
-    ]
+    cpm_force_mode = kwargs['cpm_force_mode']
+    cpm_update_direction = kwargs['cpm_update_direction']
+    lambda_dir = kwargs['lambda_dir']
+    initial_alpha = pi + kwargs['initial_alpha']
+    dt = kwargs['dt']
+
+    return [pcs.PersistencePlugin([pcs.PersistencePluginSRModel(cell_type=cell_type_name,
+                                                                magnitude=lambda_dir,
+                                                                force_mode=force_mapping[cpm_force_mode],
+                                                                work_term=disp_mapping[cpm_update_direction],
+                                                                period=dt,
+                                                                vector_init=[pcs.PersistencePluginInitTransformRotate(
+                                                                    value=initial_alpha,
+                                                                    axis='Z',
+                                                                    units=pcs.PERSISTENCE_TRANSFORM_UNIT_RADIANS
+                                                                )])])]
+
+
+def _impl_MODEL006(**kwargs):
+    cpm_force_mode = kwargs['cpm_force_mode']
+    cpm_update_direction = kwargs['cpm_update_direction']
+    lambda_dir = kwargs['lambda_dir']
+    initial_alpha = pi + kwargs['initial_alpha']
+    xi = kwargs['xi']
+
+    return [pcs.PersistencePlugin([pcs.PersistencePluginANModel(cell_type=cell_type_name,
+                                                                magnitude=lambda_dir,
+                                                                force_mode=force_mapping[cpm_force_mode],
+                                                                work_term=disp_mapping[cpm_update_direction],
+                                                                stdev3=xi,
+                                                                vector_init=[pcs.PersistencePluginInitTransformRotate(
+                                                                    value=initial_alpha,
+                                                                    axis='Z',
+                                                                    units=pcs.PERSISTENCE_TRANSFORM_UNIT_RADIANS
+                                                                )])])]
+
+
+def _impl_MODEL008(**kwargs):
+    cpm_force_mode = kwargs['cpm_force_mode']
+    lambda_chem = kwargs['lambda_chem']
+    diffusion_coefficient_per_mcs = kwargs['diffusion_coefficient_per_mcs']
+    chemo_decay_rate_per_mcs = kwargs['chemo_decay_rate_per_mcs']
+
+    field_name = constants_data['MODEL008']['field_name']
+
+    spec_solver = pcs.DiffusionSolverFE()
+    field: pcs.DiffusionSolverFEField = spec_solver.field_new(field_name)
+    diff_data: pcs.DiffusionSolverFEDiffusionData = field.diff_data
+    diff_data.diff_global = diffusion_coefficient_per_mcs
+    diff_data.decay_global = chemo_decay_rate_per_mcs
+    field.bcs.x_min_type = field.bcs.y_min_type = pcs.PDEBOUNDARYPERIODIC
+
+    spec_chemo = pcs.ChemotaxisPlugin()
+    if cpm_force_mode == 'extension':
+        spec_chemo.algorithm = pcs.CHEMOTAXIS_ALGORITHM_REGULAR
+    elif cpm_force_mode == 'reciprocal':
+        spec_chemo.algorithm = pcs.CHEMOTAXIS_ALGORITHM_RECIPROCATED
+    else:
+        ValueError(f'Unsupported force model: {cpm_force_mode}')
+
+    chemo_field_params = spec_chemo.param_new(field_name, spec_solver.registered_name)
+    chemo_field_params.params_new(cell_type_name, lambda_chem)
+
+    return [spec_solver, spec_chemo]
 
 
 model_implementations = {
     'MODEL000': _impl_MODEL000,
     'MODEL003': _impl_MODEL003,
-    'MODEL005': _impl_MODEL005
+    'MODEL005': _impl_MODEL005,
+    'MODEL006': _impl_MODEL006,
+    'MODEL008': _impl_MODEL008
 }
 method_implementation = 'CPM'
 
@@ -240,6 +326,49 @@ class StringConstraint(SpecConstraint):
         super().__init__(_key, str, **kwargs)
 
 
+class ListConstraint(SpecConstraint):
+
+    def __init__(self, _key: str, item_constraint: SpecConstraint, list_size: int = None, **kwargs):
+        super().__init__(_key, list, **kwargs)
+
+        self.item_constraint = item_constraint
+        self.list_size = list_size
+
+    def constraint(self, _x):
+        if not super().constraint(_x):
+            return False
+        elif self.list_size is not None:
+            return len(_x) == self.list_size
+
+        for x in _x:
+            if not self.item_constraint.constraint(x):
+                return False
+        return True
+
+    def check_type(self, _x):
+        if not super().check_type(_x):
+            return False
+        for x in _x:
+            if not self.item_constraint.check_type(x):
+                return False
+        return True
+
+    def check(self, _x):
+        if not super().check(_x):
+            return False
+        for x in _x:
+            if not self.item_constraint.check(x):
+                return False
+        return True
+
+    def verify(self, _x):
+        super().verify(_x)
+        [self.item_constraint.verify(x) for x in _x]
+
+    def cast(self, _x):
+        return [self.item_constraint.cast(x) for x in super().cast(_x)]
+
+
 __supported_specs__ = [
     FloatConstraint('cpm_area_c', non_negative=True),
     FloatConstraint('cpm_area_v'),
@@ -372,7 +501,7 @@ def model(cell_area_target,
                         cell_perim_target,
                         cell_perim_lm,
                         model_label,
-                        model_args), cell_type_name, int(sqrt(cell_area_target))
+                        model_args), cell_type_name
 
 
 def from_json_data(spec_data: dict):

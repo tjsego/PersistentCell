@@ -1,64 +1,104 @@
 .SECONDARY:
 .DELETE_ON_ERROR:
 
-all : model000 model003 model005
+all : allA allB allC
 
-REPS=$(shell seq 1 100)
+allA : model000a model003a model005a model006a model008a
+allB : model000b model003b model005b model006b model008b
+allC : model000c model003c model005c model006c model008c
+
 
 
 # Directories
 results :
 	mkdir -p $@
 
-results/MODEL%/tracks : 
-	mkdir -p $@
 
-results/MODEL%/img : 
+NSIM=100
+THIS_DIR=E0
+MAX_PROC=4
+
+# Copy/edit input jsons
+# ===============================
+#MODELXXXA : default Artistoo.
+#MODELXXXB : substitute Math.Random prng
+#MODELXXXC : repeat default artistoo.
+
+input :
 	mkdir -p $@
 	
+input/model%a.json : make-json.R ../available_runs/model%.json | input
+	Rscript $^ $(NSIM) a $@
 
-# MODEL000
+input/model%b.json : make-json.R ../available_runs/model%.json | input
+	Rscript $^ $(NSIM) b $@
+
+input/model%c.json : make-json.R ../available_runs/model%.json | input
+	Rscript $^ $(NSIM) c $@
+
+
+# Run models
 # ===============================
-model000 : results/model000-corrected-tracks.csv
 
-results/MODEL000/tracks/track%.csv : ../persistent-cell.js model000.json | results/MODEL000/tracks \
-	results/MODEL000/img
-	node $< E0/model000.json $* > $@
+model000a : results/model000a_artistoo/corrected-tracks.csv
+model000b : results/model000b_artistoo/corrected-tracks.csv
+model000c : results/model000c_artistoo/corrected-tracks.csv
+
+model003a : results/model003a_artistoo/corrected-tracks.csv
+model003b : results/model003b_artistoo/corrected-tracks.csv
+model003c : results/model003c_artistoo/corrected-tracks.csv
+
+model005a : results/model005a_artistoo/corrected-tracks.csv
+model005b : results/model005b_artistoo/corrected-tracks.csv
+model005c : results/model005c_artistoo/corrected-tracks.csv
+
+model006a : results/model006a_artistoo/corrected-tracks.csv
+model006b : results/model006b_artistoo/corrected-tracks.csv
+model006c : results/model006c_artistoo/corrected-tracks.csv
+
+model008a : results/model008a_artistoo/corrected-tracks.csv
+model008b : results/model008b_artistoo/corrected-tracks.csv
+model008c : results/model008c_artistoo/corrected-tracks.csv
 
 
-# combine tracks of independently simulated cells	
-results/MODEL000/combined-tracks.csv : $(foreach s, $(REPS), results/MODEL000/tracks/track$(s).csv)
-	cat $< | head -n 1 > $@ && cat $^ | grep -v time >> $@
+results/model%a_artistoo/corrected-tracks.csv : ../run.py ../src/persistent-cell.js input/model%a.json 
+	rm -rf results/model$*a_artistoo && \
+	python $< -s ../src/persistent-cell.js -f input/model$*a.json -j $(MAX_PROC)
 
-results/model000-corrected-tracks.csv : correct-torus.R results/MODEL000/combined-tracks.csv model000.json
-	Rscript $^ $@
-	
+results/model%b_artistoo/corrected-tracks.csv : ../run.py ../src/persistent-cell.js input/model%b.json 
+	rm -rf results/model$*b_artistoo && \
+	python $< -s ../src/persistent-cell.js -f input/model$*b.json -j $(MAX_PROC)
+
+results/model%c_artistoo/corrected-tracks.csv : ../run.py ../src/persistent-cell.js input/model%c.json 
+	rm -rf results/model$*c_artistoo && \
+	python $< -s ../src/persistent-cell.js -f input/model$*c.json -j $(MAX_PROC) -i $(NSIM)
+
+results/model008a_artistoo/corrected-tracks.csv : ../run.py ../src/chemotaxis.js input/model008a.json 
+	rm -rf results/model$*a_artistoo && \
+	python $< -s ../src/chemotaxis.js -f input/model008a.json -j $(MAX_PROC)
+
+results/model008b_artistoo/corrected-tracks.csv : ../run.py ../src/chemotaxis.js input/model008b.json 
+	rm -rf results/model$*b_artistoo && \
+	python $< -s ../src/chemotaxis.js -f input/model008b.json -j $(MAX_PROC)
+
+results/model008c_artistoo/corrected-tracks.csv : ../run.py ../src/chemotaxis.js input/model008c.json 
+	rm -rf results/model$*c_artistoo && \
+	python $< -s ../src/chemotaxis.js -f input/model008c.json -j $(MAX_PROC) -i $(NSIM)
 
 
-# MODEL003
-# ===============================
-model003 : results/model003-corrected-tracks.csv
 
-results/MODEL003/tracks/track%.csv : ../persistent-cell.js model003.json | results/MODEL003/tracks results/MODEL003/img
-	node $< E0/model003.json $* > $@
-
-# combine tracks of independently simulated cells	
-results/MODEL003/combined-tracks.csv : $(foreach s, $(REPS), results/MODEL003/tracks/track$(s).csv)
-	cat $< | head -n 1 > $@ && cat $^ | grep -v time >> $@
-
-results/model003-corrected-tracks.csv : correct-torus.R results/MODEL003/combined-tracks.csv model003.json
-	Rscript $^ $@
-
-# MODEL005
-# ===============================
-model005 : results/model005-corrected-tracks.csv
-
-results/MODEL005/tracks/track%.csv : ../persistent-cell.js model005.json | results/MODEL005/tracks results/MODEL005/img
-	node $< E0/model005.json $* > $@
-
-# combine tracks of independently simulated cells	
-results/MODEL005/combined-tracks.csv : $(foreach s, $(REPS), results/MODEL005/tracks/track$(s).csv)
-	cat $< | head -n 1 > $@ && cat $^ | grep -v time >> $@
-
-results/model005-corrected-tracks.csv : correct-torus.R results/MODEL005/combined-tracks.csv model005.json
-	Rscript $^ $@
+# # MODEL003D test
+# # ===============================
+# model003d : results/model003d-corrected-tracks.csv
+# 
+# results/MODEL003D/tracks/track%.csv : ../persistent-cell-test.js model003.json | results/MODEL003D/tracks \
+# 	results/MODEL003D/img
+# 	node $< E0/model003.json $* > $@
+# 
+# # combine tracks of independently simulated cells	
+# results/MODEL003D/combined-tracks.csv : $(foreach s, $(REPS), results/MODEL003D/tracks/track$(s).csv)
+# 	cat $< | head -n 1 > $@ && cat $^ | grep -v time >> $@
+# 
+# results/model003d-corrected-tracks.csv : correct-torus.R results/MODEL003D/combined-tracks.csv model003.json
+# 	Rscript $^ $@
+# 

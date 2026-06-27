@@ -1,0 +1,5 @@
+experiments/E*/model00*/derived
+experiments/E*/model00*/post
+experiments/E*/model00*/results_raw
+.DS_Store
+local-stuff

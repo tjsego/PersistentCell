@@ -13,7 +13,27 @@
   },
   "MODEL003": {
     "method": "CPM",
-    "description": "Constant persistence as implemented by ExternalPotentialPlugin in CompuCell3D"
+    "description": "Constant persistence as implemented by ExternalPotentialPlugin in CompuCell3D",
+    "model_args": {
+      "lambda_dir": {
+        "description": "Lagrange multiplier of the work term, controls the cell speed.",
+        "type": "number"
+      },
+      "target_angle": {
+        "description": "Angle (to the positive x-axis) of the fixed target direction.",
+        "type": "number"
+      },
+      "cpm_force_mode": {
+        "description": "Work term for movement along a given direction.",
+        "type": "string",
+        "enum": ["extension", "retraction", "reciprocal"]
+      },
+      "cpm_update_direction": {
+        "description": "Cell movement that would be induced by the proposed copy attempt.",
+        "type": "string",
+        "enum": ["source-to-target-unnorm", "source-to-target-norm", "cell-mass-displacement"]
+      }
+    }
   },
   "MODEL004": {
     "method": "CM",
@@ -21,14 +41,100 @@
   },
   "MODEL005": {
     "method": "CPM",
-    "description": "Simple self-reinforcing PRW in the CPM"
+    "description": "Simple self-reinforcing PRW in the CPM",
+    "model_args": {
+      "initial_alpha": {
+        "description": "Initial angle (to the positive x-axis) of the target direction.",
+        "type": "number"
+      },
+      "lambda_dir": {
+        "description": "Lagrange multiplier of the work term, controls the cell speed.",
+        "type": "number"
+      },
+      "dt": {
+        "description": "Time interval (in MCS) over which we evaluate the cell's recent displacement; this determines persistence time of the random walk.",
+        "type": "number"
+      },
+      "cpm_force_mode": {
+        "description": "Work term for movement along a given direction.",
+        "type": "string",
+        "enum": ["extension", "retraction", "reciprocal"]
+      },
+      "cpm_update_direction": {
+        "description": "Cell movement that would be induced by the proposed copy attempt.",
+        "type": "string",
+        "enum": ["source-to-target-unnorm", "source-to-target-norm", "cell-mass-displacement"]
+      }
+    }
   },
   "MODEL006": {
     "method": "CPM",
-    "description": "Persistent motion controlled by cell-intrinsic orientation under effect of continuous time noise"
+    "description": "Persistent motion controlled by cell-intrinsic orientation under effect of continuous time noise",
+    "model_args": {
+      "initial_alpha": {
+        "description": "Initial angle (to the positive x-axis) of the target direction.",
+        "type": "number"
+      },
+      "lambda_dir": {
+        "description": "Lagrange multiplier of the work term, controls the cell speed.",
+        "type": "number"
+      },
+      "xi": {
+        "description": "Standard deviation of noise added to the cell direction (larger value implies lower persistence time).",
+        "type": "number"
+      },
+      "cpm_force_mode": {
+        "description": "Work term for movement along a given direction.",
+        "type": "string",
+        "enum": ["extension", "retraction", "reciprocal"]
+      },
+      "cpm_update_direction": {
+        "description": "Cell movement that would be induced by the proposed copy attempt.",
+        "type": "string",
+        "enum": ["source-to-target-unnorm", "source-to-target-norm", "cell-mass-displacement"]
+      }
+    }
   },
   "MODEL007": {
     "method": "CPM",
     "description": "Persistent motion controlled by cell-intrinsic orientation under effect of continuous time noise and self-reenforcement of direction of motion"
+  },
+  "MODEL008": {
+    "method": "CPM",
+    "description": "Chemotaxis of a single cell in a coupled chemotactic field.",
+    "model_args": {
+      "lambda_chem": {
+        "description": "The Lagrange multiplier controls sensitivity to the chemokine gradient",
+        "type": "number"
+      },
+      "chemo_source_position": {
+        "description": "Location of the point source of the chemokine.",
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      },
+      "chemo_production_rate_per_mcs": {
+        "description": "Units of chemokine produced per MCS at the point source.",
+        "type": "number"
+      },
+      "chemo_decay_rate_per_mcs": {
+        "description": "Fraction of chemokine that decays each MCS at a given location.",
+        "type": "number"
+      },
+      "diffusion_coefficient_per_mcs": {
+        "description": "Diffusion coefficient (in pixels2/MCS).",
+        "type": "number"
+      },
+      "diffusion_steps_per_mcs": {
+        "description": "Number of PDE steps performed after every MCS.",
+        "type": "number"
+      },
+      "cpm_force_mode": {
+        "description": "Work term for movement along a given direction.",
+        "type": "string",
+        "enum": ["extension", "retraction", "reciprocal"]
+      }
+    }
   }
 }

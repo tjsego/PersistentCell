@@ -23,6 +23,18 @@
 			"idColumn" : 2,
 			"xColumn" : 3,
 			"yColumn" : 4
+		},
+		{
+			"name" : "Artistoo-\nMODEL003",
+			"file" : "../../implementations/artistoo/results/MODEL003/combined-tracks.csv",
+			"fieldSize" : [100,100],
+			"periodicBoundary" : true,
+			"secondsPerSimulationStep" : 1,
+			"micronsPerLengthUnit" : 1,
+			"timeColumn" : 1,
+			"idColumn" : 2,
+			"xColumn" : 3,
+			"yColumn" : 4
 		}
 	]
 }

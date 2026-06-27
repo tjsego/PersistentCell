@@ -1,10 +1,13 @@
 import json
+from model import from_json_data
+
 import multiprocessing as mp
 from time import sleep
 import os
 import subprocess
 import csv
-import math 
+import math
+import random
 import numpy as np
 import xml.etree.ElementTree as ET
 import matplotlib as mpl
@@ -32,7 +35,7 @@ def unique_data_dir(_output_dir: str, label : int):
     return os.path.join(_output_dir, result), label
 
 
-def _simulate(model, sim_label, sim_output_dir, output_freq):
+def _simulate(model, sim_label, sim_output_dir):
     print(f'Simulation {sim_label}: {sim_output_dir}')
 
     
@@ -43,10 +46,13 @@ def _simulate(model, sim_label, sim_output_dir, output_freq):
             raise r"Morpheus version of at least 2.3.9 required"
     else :
         raise r"Unable to launch Morpheus. Make sure 'morpheus' binary is reachable from path"
+    
+    model_xml = ET.tostring(model.getroot(), encoding='utf8', method='xml')
+    model.write(os.path.join(sim_output_dir,'model.xml'))
      
     subprocess.run(
-        ['morpheus','--num-threads=1', f'-s  log_freq={output_freq}' , '-'],
-        input=ET.tostring(model.getroot(), encoding='utf8', method='xml'),
+        ['morpheus','--num-threads=1', '-'],
+        input=model_xml,
         cwd=sim_output_dir)
 
     sim_data = csv.reader(open(os.path.join(sim_output_dir,'logger.csv'),"r"), delimiter="\t",quoting=csv.QUOTE_NONNUMERIC)
@@ -69,13 +75,14 @@ def _simulate(model, sim_label, sim_output_dir, output_freq):
             indent=4
         )
 
-def simulate(model,
+def simulate(model_data,
+             input_dir: str,
              output_dir: str, 
              num_sims: int,
-             output_freq: float,
              plot: bool):
     
-    output_data_dir = os.path.join(output_dir, 'data')
+    
+    output_data_dir = os.path.join(output_dir, 'morpheus_data')
 
     ensure_output_dir(output_data_dir)
 
@@ -88,25 +95,32 @@ def simulate(model,
         sim_output_dir, sim_label = unique_data_dir(output_data_dir, sim_label)
         ensure_output_dir(sim_output_dir)
         
-        input_args.append((model, sim_label, sim_output_dir, output_freq ))
+        
+        my_data= model_data.copy()
+        my_data["seed"] = random.randint(0, 2147483647)
+        
+        model = from_json_data(my_data )
+        
         model.write(os.path.join(sim_output_dir,'model.xml'), encoding='utf-8');
+        input_args.append((model, sim_label, sim_output_dir ))
         
         scheduled_labels.append(sim_label)
         sim_label = sim_label+1
     
     with mp.Pool() as p:
         p.starmap(_simulate, input_args)
+        
     
+    writer = csv.writer(open(os.path.join(sim_output_dir,"..", f'sim.csv'), 'a'))
+    writer.writerow(['time','id','com_1','com_2','area','surface'])
     for spec in input_args :
         sim_label = spec[1]
         sim_output_dir = spec[2]
         sim_data = csv.reader(open(os.path.join(sim_output_dir,'logger.csv'),"r"), delimiter="\t",quoting=csv.QUOTE_NONNUMERIC)
         next(sim_data, None)  # Skip header row
-        with open(os.path.join(sim_output_dir,"..", f'sim.csv'), 'a') as f:
-            writer = csv.writer(f)
-            for row in sim_data:
-                row[1] = sim_label
-                writer.writerow(row)
+        for row in sim_data:
+            row[1] = sim_label
+            writer.writerow(row)
     
     if (plot):
         plot_DAC_MSD(output_data_dir, [ sim[1] for sim in input_args])

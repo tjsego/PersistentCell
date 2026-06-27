@@ -13,7 +13,12 @@ def run(fp: str, output_dir: str = None):
 
     model_data: dict = config_data['model']
     center_data: dict = config_data['center-model']  # New entry for conversion to center models
-    tf_data: dict = config_data['tissue-forge']
+    # Support 'sim' key, prefer 'tissue-forge' key
+    tf_data = {}
+    if 'sim' in config_data:
+        tf_data.update(config_data['sim'])
+    if 'tissue-forge' in config_data:
+        tf_data.update(config_data['tissue-forge'])
 
     damping = float(center_data['damping'])
     space_conv = float(center_data['space_conv'])
@@ -24,7 +29,7 @@ def run(fp: str, output_dir: str = None):
 
     num_sims = tf_data.get('num_sims', DEF_NUM_SIMS)
     if output_dir is None:
-        output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'results', tf_data['output_name'])
+        output_dir = str(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'results', tf_data['output_name']))
     output_per = int(tf_data['output_per']) * time_conv
 
     simulate(output_dir=output_dir,
@@ -34,7 +39,7 @@ def run(fp: str, output_dir: str = None):
              sim_time=sim_time,
              dt=time_conv,
              model_label=model_data['model'],
-             model_args=model_data['model_args'],  # Assumes only one possible model
+             model_args=model_data['model_args'],
              damping=damping)
 
 

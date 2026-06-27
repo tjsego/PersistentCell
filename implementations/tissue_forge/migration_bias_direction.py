@@ -12,11 +12,19 @@ class PType(tf.ParticleTypeSpec):
 
 
 class Sim:
+    """
+    Accounts for potential issues for single-precision builds by translating to an internal timestep of 1.0.
+
+    The potential issue for single-precision builds is when rounding errors cause the event that records results
+    to sometimes not be triggered.
+    """
 
     data_header = [
         'time',
         'com_1',
-        'com_2'
+        'com_2',
+        'area',
+        'surface'
     ]
 
     def __init__(self,
@@ -33,7 +41,7 @@ class Sim:
         self.sim_time = sim_time
         self.dt = dt
         self.damping = damping
-        self.output_per = output_per
+        self.output_per = float(round(output_per / dt))
 
         self.pid = -1
         self.pdata = []
@@ -45,6 +53,7 @@ class Sim:
     def record_data(self):
         if self.pid < 0:
             raise RuntimeError
+
         ph = tf.ParticleHandle(self.pid)
         pos = ph.position
 
@@ -65,7 +74,12 @@ class Sim:
             self.ycom_adjust -= dimy
         self.xcom_prev, self.ycom_prev = xcom, ycom
 
-        self.pdata.append((tf.Universe.time, xcom + self.xcom_adjust, ycom + self.ycom_adjust))
+        if divmod(tf.Universe.time, self.output_per)[1] != 0:
+            return
+
+        r = ph.radius
+        pir = np.pi * r
+        self.pdata.append((tf.Universe.time * self.dt, xcom + self.xcom_adjust, ycom + self.ycom_adjust, pir * r, pir * 2.))
 
     def run(self):
         np.random.seed()
@@ -74,19 +88,20 @@ class Sim:
         tf.Logger.enableConsoleLogging(tf.Logger.ERROR)
         tf.init(dim=[self.dim[0], self.dim[1], dim2],
                 cells=[int(self.dim[0] / dim2 * cells2), int(self.dim[1] / dim2 * cells2), cells2],
-                dt=self.dt,
+                dt=1.0,
                 threads=1,
                 windowless=True)
         if tf.system.context_has_current():
             tf.system.context_release()
 
         ph = PType.get()(position=tf.Universe.center)
-        ph.mass = self.damping
+        ph.mass = self.damping / self.dt
         self.pid = ph.id
 
         from_json_data(self.model_label, **self.model_args)
-        tf.event.on_time(period=self.output_per, invoke_method=lambda e: self.record_data())
+        tf.event.on_time(period=tf.Universe.dt, invoke_method=lambda e: self.record_data())
+        self.record_data()
 
-        tf.step(self.sim_time)
+        tf.step(float(round(self.sim_time / tf.Universe.dt)))
 
         return np.asarray(self.pdata, dtype=float)
