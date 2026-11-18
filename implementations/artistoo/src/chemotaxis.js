@@ -82,6 +82,39 @@ switch( prng ){
 	
 }
 
+// Border sampling correction: this is the default artistoo timeStep only changed to 
+// let the timer 'overshoot' from the previous step continue in the current step. 
+let overshoot = 0.0
+sim.C.timeStep = function(){
+	let delta_t = overshoot
+	while( delta_t < 1.0 ){
+		delta_t += 1./(this.borderpixels.length)
+		const tgt_i = this.borderpixels.sample()
+		const Ni = this.grid.neighi( tgt_i )
+		const src_i = Ni[this.ran( 0, Ni.length - 1 )]
+		const src_type = this.grid.pixti( src_i )
+		const tgt_type = this.grid.pixti( tgt_i )
+		if( tgt_type != src_type ){
+			let ok = true
+			for( let h of this.hard_constraints ){
+				if( !h.fulfilled( src_i, tgt_i, src_type, tgt_type ) ){
+					ok = false; break
+				}
+			}
+			if( ok && this.docopy( this.deltaH( src_i, tgt_i, src_type, tgt_type ) ) ){
+				this.setpixi( tgt_i, src_type )
+			}
+		}
+	}
+	overshoot = delta_t - 1.0
+	this.time++
+	this.stat_values = {}
+	for( let l of this.post_mcs_listeners ){
+		l()
+	}
+}
+
+
 // print header
 console.log( "time,id,com_1,com_2,area,surface" )	
 
@@ -131,7 +164,7 @@ function initializeGrid(){
 function drawCanvas(){
 	if( !this.helpClasses["canvas"] ){ this.addCanvas() }
 	this.Cim.drawField( this.g )
-	this.Cim.drawCellBorders( 1, "000000" )
+	this.Cim.drawCellBorders( 1, "ffffff" )
 }
 
 sim.drawCanvas()
